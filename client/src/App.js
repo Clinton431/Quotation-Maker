@@ -438,10 +438,14 @@ function App() {
                 This is how your quotation will look
               </p>
             </div>
-
             <div
               ref={quotationRef}
-              className="bg-white p-4 sm:p-6 md:p-10 rounded-xl border-2 border-slate-200 shadow-inner"
+              className="bg-white p-6 md:p-10 rounded-xl border-2 border-slate-200 shadow-inner"
+              style={{
+                width: "794px",
+                minHeight: "1123px",
+                margin: "0 auto",
+              }}
             >
               {/* Header Section - RESPONSIVE: Stacks on mobile */}
               <div className="mb-6 sm:mb-8 pb-4 sm:pb-6 border-b-2 border-slate-300">

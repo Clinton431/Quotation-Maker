@@ -164,42 +164,46 @@ function App() {
   const downloadPDF = async () => {
     const element = quotationRef.current;
 
+    // Force desktop-like width for capture
     const canvas = await html2canvas(element, {
       scale: 2,
       backgroundColor: "#ffffff",
-      logging: false,
       useCORS: true,
-      windowHeight: element.scrollHeight,
-      height: element.scrollHeight,
+      windowWidth: 1200, // 👈 important: simulate desktop width
     });
 
     const imgData = canvas.toDataURL("image/png");
+
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
       format: "a4",
     });
 
-    const pdfWidth = 210; // A4 width in mm
-    const pdfHeight = 297; // A4 height in mm
-    const imgWidth = pdfWidth;
-    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+    const pageWidth = 210;
+    const pageHeight = 297;
 
-    // If content is taller than one page, scale it to fit
-    if (imgHeight > pdfHeight) {
-      const scaleFactor = pdfHeight / imgHeight;
-      const scaledWidth = imgWidth * scaleFactor;
-      const scaledHeight = pdfHeight;
+    // Scale image to fit ONE page
+    const imgRatio = canvas.width / canvas.height;
+    const pageRatio = pageWidth / pageHeight;
 
-      // Center the scaled image horizontally
-      const xOffset = (pdfWidth - scaledWidth) / 2;
+    let imgWidth, imgHeight;
 
-      pdf.addImage(imgData, "PNG", xOffset, 0, scaledWidth, scaledHeight);
+    if (imgRatio > pageRatio) {
+      // Image is wider — fit to width
+      imgWidth = pageWidth;
+      imgHeight = pageWidth / imgRatio;
     } else {
-      // Content fits in one page, center it vertically
-      const yOffset = (pdfHeight - imgHeight) / 2;
-      pdf.addImage(imgData, "PNG", 0, yOffset, imgWidth, imgHeight);
+      // Image is taller — fit to height
+      imgHeight = pageHeight;
+      imgWidth = pageHeight * imgRatio;
     }
+
+    // Center image on page
+    const x = (pageWidth - imgWidth) / 2;
+    const y = (pageHeight - imgHeight) / 2;
+
+    pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
 
     pdf.save(`Quotation-${formData.quotationNumber}.pdf`);
     showNotification("PDF downloaded successfully!");

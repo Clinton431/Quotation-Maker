@@ -44,6 +44,7 @@ function App() {
     message: "",
     type: "",
   });
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const quotationRef = useRef(null);
 
   const calculateTotal = (quantity, price) => {
@@ -162,51 +163,64 @@ function App() {
   };
 
   const downloadPDF = async () => {
-    const element = quotationRef.current;
+    try {
+      setIsGeneratingPDF(true);
+      showNotification("Generating PDF...", "info");
 
-    // Force desktop-like width for capture
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      backgroundColor: "#ffffff",
-      useCORS: true,
-      windowWidth: 1200, // 👈 important: simulate desktop width
-    });
+      // Small delay to allow UI to update
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
-    const imgData = canvas.toDataURL("image/png");
+      const element = quotationRef.current;
 
-    const pdf = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
+      // Force desktop-like width for capture
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        windowWidth: 1200, // 👈 important: simulate desktop width
+      });
 
-    const pageWidth = 210;
-    const pageHeight = 297;
+      const imgData = canvas.toDataURL("image/png");
 
-    // Scale image to fit ONE page
-    const imgRatio = canvas.width / canvas.height;
-    const pageRatio = pageWidth / pageHeight;
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
 
-    let imgWidth, imgHeight;
+      const pageWidth = 210;
+      const pageHeight = 297;
 
-    if (imgRatio > pageRatio) {
-      // Image is wider — fit to width
-      imgWidth = pageWidth;
-      imgHeight = pageWidth / imgRatio;
-    } else {
-      // Image is taller — fit to height
-      imgHeight = pageHeight;
-      imgWidth = pageHeight * imgRatio;
+      // Scale image to fit ONE page
+      const imgRatio = canvas.width / canvas.height;
+      const pageRatio = pageWidth / pageHeight;
+
+      let imgWidth, imgHeight;
+
+      if (imgRatio > pageRatio) {
+        // Image is wider — fit to width
+        imgWidth = pageWidth;
+        imgHeight = pageWidth / imgRatio;
+      } else {
+        // Image is taller — fit to height
+        imgHeight = pageHeight;
+        imgWidth = pageHeight * imgRatio;
+      }
+
+      // Center image on page
+      const x = (pageWidth - imgWidth) / 2;
+      const y = (pageHeight - imgHeight) / 2;
+
+      pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+
+      pdf.save(`Quotation-${formData.quotationNumber}.pdf`);
+      showNotification("PDF downloaded successfully!");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      showNotification("Failed to generate PDF. Please try again.", "error");
+    } finally {
+      setIsGeneratingPDF(false);
     }
-
-    // Center image on page
-    const x = (pageWidth - imgWidth) / 2;
-    const y = (pageHeight - imgHeight) / 2;
-
-    pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-
-    pdf.save(`Quotation-${formData.quotationNumber}.pdf`);
-    showNotification("PDF downloaded successfully!");
   };
 
   return (
@@ -216,6 +230,8 @@ function App() {
           className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl animate-slide-up ${
             notification.type === "error"
               ? "bg-red-500 text-white"
+              : notification.type === "info"
+              ? "bg-blue-500 text-white"
               : "bg-green-500 text-white"
           }`}
         >
@@ -243,10 +259,22 @@ function App() {
           </button>
           <button
             onClick={downloadPDF}
-            className="btn-secondary flex items-center gap-2"
+            disabled={isGeneratingPDF}
+            className={`btn-secondary flex items-center gap-2 ${
+              isGeneratingPDF ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            <Download className="w-5 h-5" />
-            Download PDF
+            {isGeneratingPDF ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Generating...
+              </>
+            ) : (
+              <>
+                <Download className="w-5 h-5" />
+                Download PDF
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -123,7 +123,7 @@ function App() {
         return;
       }
 
-      const response = await axios.post(
+      await axios.post(
         "http://localhost:5000/api/quotations",
         {
           ...formData,

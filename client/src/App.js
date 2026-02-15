@@ -442,7 +442,8 @@ function App() {
               ref={quotationRef}
               className="bg-white p-6 md:p-10 rounded-xl border-2 border-slate-200 shadow-inner"
               style={{
-                width: "794px",
+                width: "100%",
+                maxWidth: "794px",
                 minHeight: "1123px",
                 margin: "0 auto",
               }}

@@ -180,20 +180,25 @@ function App() {
       format: "a4",
     });
 
-    const imgWidth = 210;
-    const pageHeight = 297;
+    const pdfWidth = 210; // A4 width in mm
+    const pdfHeight = 297; // A4 height in mm
+    const imgWidth = pdfWidth;
     const imgHeight = (canvas.height * imgWidth) / canvas.width;
-    let heightLeft = imgHeight;
-    let position = 0;
 
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
+    // If content is taller than one page, scale it to fit
+    if (imgHeight > pdfHeight) {
+      const scaleFactor = pdfHeight / imgHeight;
+      const scaledWidth = imgWidth * scaleFactor;
+      const scaledHeight = pdfHeight;
 
-    while (heightLeft > 0) {
-      position = heightLeft - imgHeight;
-      pdf.addPage();
-      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Center the scaled image horizontally
+      const xOffset = (pdfWidth - scaledWidth) / 2;
+
+      pdf.addImage(imgData, "PNG", xOffset, 0, scaledWidth, scaledHeight);
+    } else {
+      // Content fits in one page, center it vertically
+      const yOffset = (pdfHeight - imgHeight) / 2;
+      pdf.addImage(imgData, "PNG", 0, yOffset, imgWidth, imgHeight);
     }
 
     pdf.save(`Quotation-${formData.quotationNumber}.pdf`);

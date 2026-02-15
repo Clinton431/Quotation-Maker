@@ -15,6 +15,8 @@ import jsPDF from "jspdf";
 import { format } from "date-fns";
 import axios from "axios";
 
+const API_URL = process.env.REACT_APP_API_URL;
+
 function App() {
   const initialFormState = {
     quotationNumber: `Quote-${Math.floor(Math.random() * 10000)}`,
@@ -124,7 +126,7 @@ function App() {
       }
 
       await axios.post(
-        "http://localhost:5000/api/quotations",
+        `${API_URL}/api/quotations`,
         {
           ...formData,
           subtotal: getSubtotal(),
@@ -132,7 +134,7 @@ function App() {
           createdAt: new Date(),
         },
         {
-          timeout: 5000, // 5 second timeout
+          timeout: 5000,
         }
       );
 

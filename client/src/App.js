@@ -177,7 +177,7 @@ function App() {
         scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
-        windowWidth: 1200, // 👈 important: simulate desktop width
+        windowWidth: 1400,
       });
 
       const imgData = canvas.toDataURL("image/png");
@@ -191,20 +191,20 @@ function App() {
       const pageWidth = 210;
       const pageHeight = 297;
 
-      // Scale image to fit ONE page
+      // Calculate dimensions to use more page width
       const imgRatio = canvas.width / canvas.height;
       const pageRatio = pageWidth / pageHeight;
 
       let imgWidth, imgHeight;
 
-      if (imgRatio > pageRatio) {
-        // Image is wider — fit to width
-        imgWidth = pageWidth;
-        imgHeight = pageWidth / imgRatio;
-      } else {
-        // Image is taller — fit to height
-        imgHeight = pageHeight;
-        imgWidth = pageHeight * imgRatio;
+      // Always try to maximize width usage
+      imgWidth = pageWidth - 10; // Use almost full width (leave 5mm margin each side)
+      imgHeight = imgWidth / imgRatio;
+
+      // If height exceeds page, scale down to fit
+      if (imgHeight > pageHeight - 10) {
+        imgHeight = pageHeight - 10;
+        imgWidth = imgHeight * imgRatio;
       }
 
       // Center image on page
@@ -224,7 +224,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-8 px-1 sm:px-6 lg:px-8">
       {notification.show && (
         <div
           className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl animate-slide-up ${
@@ -457,7 +457,7 @@ function App() {
         </div>
 
         <div className="lg:col-span-2 animate-scale-in">
-          <div className="card sticky top-8">
+          <div className="card sticky top-8 p-1 sm:p-2">
             <div className="mb-6">
               <h2 className="text-2xl font-display font-bold text-slate-800 mb-2">
                 Preview
@@ -468,12 +468,12 @@ function App() {
             </div>
             <div
               ref={quotationRef}
-              className="bg-white p-6 md:p-10 rounded-xl border-2 border-slate-200 shadow-inner"
+              className="bg-white px-1 py-3 sm:px-4 sm:py-6 md:px-8 md:py-10 rounded-xl border border-slate-200 shadow-inner"
               style={{
                 width: "100%",
-                maxWidth: "794px",
+                maxWidth: "100%",
                 minHeight: "1123px",
-                margin: "0 auto",
+                margin: "0",
               }}
             >
               {/* Header Section - RESPONSIVE: Stacks on mobile */}
@@ -684,7 +684,7 @@ function App() {
               </p>
 
               {/* Items Table */}
-              <div className="overflow-x-auto mb-6 sm:mb-8 -mx-4 sm:mx-0">
+              <div className="overflow-x-auto mb-6 sm:mb-8">
                 <div className="inline-block min-w-full align-middle">
                   <div className="overflow-hidden">
                     <table className="min-w-full text-xs sm:text-sm border-collapse">

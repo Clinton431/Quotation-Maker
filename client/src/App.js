@@ -683,7 +683,7 @@ function App() {
                 below:
               </p>
 
-              {/* Items Table */}
+              {/* Items Table creation */}
               <div className="overflow-x-auto mb-6 sm:mb-8">
                 <div className="inline-block min-w-full align-middle">
                   <div className="overflow-hidden">

@@ -193,7 +193,6 @@ function App() {
 
       // Calculate dimensions to use more page width
       const imgRatio = canvas.width / canvas.height;
-      const pageRatio = pageWidth / pageHeight;
 
       let imgWidth, imgHeight;
 
@@ -457,7 +456,7 @@ function App() {
         </div>
 
         <div className="lg:col-span-2 animate-scale-in">
-          <div className="card sticky top-8 p-1 sm:p-2">
+          <div className="card sticky top-8">
             <div className="mb-6">
               <h2 className="text-2xl font-display font-bold text-slate-800 mb-2">
                 Preview
@@ -468,12 +467,12 @@ function App() {
             </div>
             <div
               ref={quotationRef}
-              className="bg-white px-1 py-3 sm:px-4 sm:py-6 md:px-8 md:py-10 rounded-xl border border-slate-200 shadow-inner"
+              className="bg-white p-1 sm:p-6 md:p-10 rounded-xl border border-slate-200 shadow-inner"
               style={{
                 width: "100%",
                 maxWidth: "100%",
                 minHeight: "1123px",
-                margin: "0",
+                margin: "0 auto",
               }}
             >
               {/* Header Section - RESPONSIVE: Stacks on mobile */}
@@ -683,8 +682,8 @@ function App() {
                 below:
               </p>
 
-              {/* Items Table creation */}
-              <div className="overflow-x-auto mb-6 sm:mb-8">
+              {/* Items Table */}
+              <div className="overflow-x-auto mb-6 sm:mb-8 sm:-mx-4">
                 <div className="inline-block min-w-full align-middle">
                   <div className="overflow-hidden">
                     <table className="min-w-full text-xs sm:text-sm border-collapse">

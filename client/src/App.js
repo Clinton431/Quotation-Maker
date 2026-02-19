@@ -171,11 +171,12 @@ function App() {
 
       // 2. Mount it off-screen with NO overflow restrictions at any level
       const offscreen = document.createElement("div");
+      const A4_WIDTH_PX = 794;
       offscreen.style.cssText = [
         "position:fixed",
         "top:0",
         "left:0",
-        `width:${element.offsetWidth}px`,
+        `width:${A4_WIDTH_PX}px`,
         "transform:translateX(-99999px)",
         "overflow:visible",
         "z-index:-9999",
@@ -202,15 +203,13 @@ function App() {
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       const canvas = await html2canvas(clone, {
-        scale: 2,
+        scale: 3,
         backgroundColor: "#ffffff",
         useCORS: true,
         scrollX: 0,
         scrollY: 0,
-        width: clone.scrollWidth,
-        height: clone.scrollHeight,
-        windowWidth: clone.scrollWidth,
-        windowHeight: clone.scrollHeight,
+        width: A4_WIDTH_PX,
+        windowWidth: A4_WIDTH_PX,
       });
 
       // 5. Clean up the temporary node

@@ -34,7 +34,8 @@ function App() {
       phone: "",
       email: "",
     },
-    items: [{ description: "", quantity: 1, price: 0, total: 0 }],
+    // unit defaults to "pcs" for every new item
+    items: [{ description: "", quantity: 1, unit: "pcs", price: 0, total: 0 }],
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -47,13 +48,10 @@ function App() {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const quotationRef = useRef(null);
 
-  const calculateTotal = (quantity, price) => {
-    return quantity * price;
-  };
+  const calculateTotal = (quantity, price) => quantity * price;
 
-  const getSubtotal = () => {
-    return formData.items.reduce((sum, item) => sum + item.total, 0);
-  };
+  const getSubtotal = () =>
+    formData.items.reduce((sum, item) => sum + item.total, 0);
 
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
@@ -66,14 +64,19 @@ function App() {
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
     newItems[index][field] = value;
-
     if (field === "quantity" || field === "price") {
       newItems[index].total = calculateTotal(
         Number(newItems[index].quantity),
         Number(newItems[index].price)
       );
     }
+    setFormData({ ...formData, items: newItems });
+  };
 
+  // Set a specific item's unit to either "pcs" or "kgs"
+  const setUnit = (index, unit) => {
+    const newItems = [...formData.items];
+    newItems[index].unit = unit;
     setFormData({ ...formData, items: newItems });
   };
 
@@ -82,7 +85,7 @@ function App() {
       ...formData,
       items: [
         ...formData.items,
-        { description: "", quantity: 1, price: 0, total: 0 },
+        { description: "", quantity: 1, unit: "pcs", price: 0, total: 0 },
       ],
     });
   };
@@ -111,13 +114,10 @@ function App() {
 
   const saveQuotation = async () => {
     try {
-      // Validate that client name is provided
       if (!formData.clientInfo.name.trim()) {
         showNotification("Please enter client name", "error");
         return;
       }
-
-      // Validate that at least one item has a description
       const hasValidItems = formData.items.some(
         (item) => item.description.trim() !== ""
       );
@@ -125,7 +125,6 @@ function App() {
         showNotification("Please add at least one item description", "error");
         return;
       }
-
       await axios.post(
         `${API_URL}/api/quotations`,
         {
@@ -134,20 +133,12 @@ function App() {
           grandTotal: getSubtotal(),
           createdAt: new Date(),
         },
-        {
-          timeout: 5000,
-        }
+        { timeout: 5000 }
       );
-
       showNotification("Quotation saved successfully to database!");
-
-      // Reset form after successful save
-      setTimeout(() => {
-        resetForm();
-      }, 1000);
+      setTimeout(() => resetForm(), 1000);
     } catch (error) {
       console.error("Error saving quotation:", error);
-
       if (error.code === "ECONNREFUSED" || error.message.includes("timeout")) {
         showNotification(
           "Cannot connect to server. Make sure MongoDB and server are running.",
@@ -162,23 +153,68 @@ function App() {
     }
   };
 
+  // ─────────────────────────────────────────────────────────────────────────
+  // downloadPDF — clones the node off-screen so html2canvas captures every
+  // element without any overflow clipping from scroll containers.
+  // ─────────────────────────────────────────────────────────────────────────
   const downloadPDF = async () => {
     try {
       setIsGeneratingPDF(true);
       showNotification("Generating PDF...", "info");
 
-      // Small delay to allow UI to update
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const element = quotationRef.current;
 
-      // Force desktop-like width for capture
-      const canvas = await html2canvas(element, {
+      // 1. Deep-clone the preview node
+      const clone = element.cloneNode(true);
+
+      // 2. Mount it off-screen with NO overflow restrictions at any level
+      const offscreen = document.createElement("div");
+      offscreen.style.cssText = [
+        "position:fixed",
+        "top:0",
+        "left:0",
+        `width:${element.offsetWidth}px`,
+        "transform:translateX(-99999px)",
+        "overflow:visible",
+        "z-index:-9999",
+        "background:#fff",
+        "pointer-events:none",
+      ].join(";");
+
+      offscreen.appendChild(clone);
+      document.body.appendChild(offscreen);
+
+      // 3. Strip overflow clipping from every descendant so html2canvas
+      //    paints badge backgrounds completely without clipping
+      clone.querySelectorAll("*").forEach((el) => {
+        const cs = window.getComputedStyle(el);
+        if (["hidden", "auto", "scroll"].includes(cs.overflow))
+          el.style.overflow = "visible";
+        if (["hidden", "auto", "scroll"].includes(cs.overflowX))
+          el.style.overflowX = "visible";
+        if (["hidden", "auto", "scroll"].includes(cs.overflowY))
+          el.style.overflowY = "visible";
+      });
+
+      // 4. Let the browser fully paint the clone
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      const canvas = await html2canvas(clone, {
         scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
-        windowWidth: 1400,
+        scrollX: 0,
+        scrollY: 0,
+        width: clone.scrollWidth,
+        height: clone.scrollHeight,
+        windowWidth: clone.scrollWidth,
+        windowHeight: clone.scrollHeight,
       });
+
+      // 5. Clean up the temporary node
+      document.body.removeChild(offscreen);
 
       const imgData = canvas.toDataURL("image/png");
 
@@ -190,29 +226,22 @@ function App() {
 
       const pageWidth = 210;
       const pageHeight = 297;
-
-      // Calculate dimensions to use more page width
       const imgRatio = canvas.width / canvas.height;
 
-      let imgWidth, imgHeight;
+      let imgWidth = pageWidth - 2; // 2mm margin each side
+      let imgHeight = imgWidth / imgRatio;
 
-      // Always try to maximize width usage
-      imgWidth = pageWidth - 10; // Use almost full width (leave 5mm margin each side)
-      imgHeight = imgWidth / imgRatio;
-
-      // If height exceeds page, scale down to fit
-      if (imgHeight > pageHeight - 10) {
-        imgHeight = pageHeight - 10;
+      if (imgHeight > pageHeight - 2) {
+        imgHeight = pageHeight - 2;
         imgWidth = imgHeight * imgRatio;
       }
 
-      // Center image on page
       const x = (pageWidth - imgWidth) / 2;
       const y = (pageHeight - imgHeight) / 2;
 
       pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
-
       pdf.save(`Quotation-${formData.quotationNumber}.pdf`);
+
       showNotification("PDF downloaded successfully!");
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -223,7 +252,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen py-8 px-1 sm:px-6 lg:px-8">
+    <div className="min-h-screen py-8 px-0 sm:px-6 lg:px-8">
       {notification.show && (
         <div
           className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl animate-slide-up ${
@@ -278,8 +307,10 @@ function App() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-0 sm:gap-8">
+        {/* ── Left Column: Form ── */}
         <div className="lg:col-span-1 space-y-6 animate-slide-up">
+          {/* Client Info — unchanged */}
           <div className="card">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-primary-100 rounded-lg">
@@ -289,7 +320,6 @@ function App() {
                 Client Information
               </h2>
             </div>
-
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
@@ -304,7 +334,6 @@ function App() {
                   required
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Address
@@ -319,7 +348,6 @@ function App() {
                   placeholder="Enter address"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Phone
@@ -332,7 +360,6 @@ function App() {
                   placeholder="+254 XXX XXX XXX"
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Email
@@ -348,6 +375,7 @@ function App() {
             </div>
           </div>
 
+          {/* Items */}
           <div className="card">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -419,21 +447,62 @@ function App() {
                       />
                     </div>
 
+                    {/* ── Unit selector — the ONLY new UI element ── */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 mb-1">
-                        Price (KSh)
+                        Unit
                       </label>
-                      <input
-                        type="number"
-                        value={item.price}
-                        onChange={(e) =>
-                          handleItemChange(index, "price", e.target.value)
-                        }
-                        className="input-field text-sm"
-                        min="0"
-                        step="0.01"
-                      />
+                      {/*
+                        Two-button pill: pcs (dark) or kgs (amber).
+                        Active = filled with colour. Inactive = plain ghost.
+                        Clicking a button directly sets that item's unit.
+                      */}
+                      <div
+                        className="flex rounded-lg border-2 border-slate-300 overflow-hidden w-full"
+                        style={{ height: "38px" }}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => setUnit(index, "pcs")}
+                          className="flex-1 text-xs font-bold transition-colors duration-150 focus:outline-none"
+                          style={{
+                            backgroundColor:
+                              item.unit === "pcs" ? "#0f172a" : "transparent",
+                            color: item.unit === "pcs" ? "#ffffff" : "#94a3b8",
+                          }}
+                        >
+                          pcs
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setUnit(index, "kgs")}
+                          className="flex-1 text-xs font-bold transition-colors duration-150 focus:outline-none border-l-2 border-slate-300"
+                          style={{
+                            backgroundColor:
+                              item.unit === "kgs" ? "#b45309" : "transparent",
+                            color: item.unit === "kgs" ? "#ffffff" : "#94a3b8",
+                          }}
+                        >
+                          kgs
+                        </button>
+                      </div>
                     </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1">
+                      Price (KSh)
+                    </label>
+                    <input
+                      type="number"
+                      value={item.price}
+                      onChange={(e) =>
+                        handleItemChange(index, "price", e.target.value)
+                      }
+                      className="input-field text-sm"
+                      min="0"
+                      step="0.01"
+                    />
                   </div>
 
                   <div className="pt-2 border-t border-slate-300">
@@ -455,8 +524,9 @@ function App() {
           </div>
         </div>
 
+        {/* ── Right Column: Preview ── */}
         <div className="lg:col-span-2 animate-scale-in">
-          <div className="card sticky top-8">
+          <div className="p-0 sm:card sm:p-6 sticky top-8">
             <div className="mb-6">
               <h2 className="text-2xl font-display font-bold text-slate-800 mb-2">
                 Preview
@@ -467,19 +537,19 @@ function App() {
             </div>
             <div
               ref={quotationRef}
-              className="bg-white p-1 sm:p-6 md:p-10 rounded-xl border border-slate-200 shadow-inner"
+              className="bg-white p-0 sm:p-6 md:p-10 rounded-lg"
               style={{
                 width: "100%",
                 maxWidth: "100%",
                 minHeight: "1123px",
                 margin: "0 auto",
+                overflow: "visible",
+                backgroundColor: "#f8fafc",
               }}
             >
-              {/* Header Section - RESPONSIVE: Stacks on mobile */}
+              {/* Header — Mobile */}
               <div className="mb-6 sm:mb-8 pb-4 sm:pb-6 border-b-2 border-slate-300">
-                {/* Mobile Layout (< 640px) - Stacked */}
                 <div className="sm:hidden space-y-4">
-                  {/* Logo and Company Name - Mobile */}
                   <div className="flex items-start gap-3">
                     <div className="w-16 h-16 flex-shrink-0 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center shadow-lg">
                       <div className="text-center">
@@ -498,8 +568,6 @@ function App() {
                       <p className="text-xs text-slate-600 mb-1">Wimwa Tech</p>
                     </div>
                   </div>
-
-                  {/* Quotation Badge - Mobile */}
                   <div
                     className="w-full py-3 rounded-lg shadow-lg text-center"
                     style={{ color: "#000" }}
@@ -511,8 +579,6 @@ function App() {
                       QUOTATION
                     </h2>
                   </div>
-
-                  {/* Quotation Details - Mobile */}
                   <div className="bg-slate-50 p-3 rounded-lg space-y-2 text-xs">
                     <div className="flex justify-between items-center">
                       <span className="font-bold text-slate-700">
@@ -529,8 +595,6 @@ function App() {
                       </span>
                     </div>
                   </div>
-
-                  {/* Company Contact - Mobile */}
                   <div className="space-y-1.5 text-xs text-slate-700">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
@@ -556,11 +620,9 @@ function App() {
                   </div>
                 </div>
 
-                {/* Desktop Layout (>= 640px) - Side by side */}
+                {/* Header — Desktop */}
                 <div className="hidden sm:flex justify-between items-start gap-6">
-                  {/* Left side - Logo and Company Info */}
                   <div className="flex items-start gap-4">
-                    {/* Company Logo */}
                     <div className="w-20 h-20 flex-shrink-0 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl flex items-center justify-center shadow-lg">
                       <div className="text-center">
                         <div className="text-white font-bold text-sm leading-tight">
@@ -571,8 +633,6 @@ function App() {
                         </div>
                       </div>
                     </div>
-
-                    {/* Company Details */}
                     <div className="flex-1">
                       <h1 className="text-lg font-bold text-slate-900 mb-1 leading-tight">
                         {formData.companyInfo.name}
@@ -603,8 +663,6 @@ function App() {
                       </p>
                     </div>
                   </div>
-
-                  {/* Right side - Quotation Badge */}
                   <div className="text-right flex-shrink-0">
                     <div
                       className="inline-flex items-center justify-center px-12 py-4 rounded-lg mb-4 shadow-lg min-w-[200px]"
@@ -672,78 +730,138 @@ function App() {
                 </div>
               </div>
 
-              {/* Greeting */}
               <p className="text-xs sm:text-sm text-slate-800 mb-1 sm:mb-2 font-medium">
-                Dear Sir/Mam,
+                Dear Sir/Madam,
               </p>
-
               <p className="text-xs sm:text-sm text-slate-700 mb-4 sm:mb-6">
                 Thank you for your valuable inquiry. We are pleased to quote as
                 below:
               </p>
 
-              {/* Items Table */}
-              <div className="overflow-x-auto mb-6 sm:mb-8 sm:-mx-4">
-                <div className="inline-block min-w-full align-middle">
-                  <div className="overflow-hidden">
-                    <table className="min-w-full text-xs sm:text-sm border-collapse">
-                      <thead>
-                        <tr className="bg-slate-800 text-white border-b-2 border-slate-900">
-                          <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
-                            #
-                          </th>
-                          <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase min-w-[120px] sm:min-w-0">
-                            DESCRIPTION
-                          </th>
-                          <th className="text-center p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
-                            QTY
-                          </th>
-                          <th className="text-right p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
-                            PRICE
-                          </th>
-                          <th className="text-right p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
-                            TOTAL
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {formData.items.map((item, index) => (
-                          <tr
-                            key={index}
-                            className="border-b border-slate-200 hover:bg-slate-50"
+              {/*
+                Items Table
+                ─────────────────────────────────────────────────────────────
+                Key changes from the original:
+                • overflow wrappers use "visible" not "hidden" — prevents
+                  html2canvas from clipping the unit badge
+                • tableLayout "auto" — QTY column sizes to its content
+                • QTY <td> — quantity on one line, coloured badge below it;
+                  uses generous padding + whiteSpace:nowrap so both are fully
+                  painted inside the cell in both preview and PDF
+              */}
+              <div
+                className="mb-6 sm:mb-8 sm:-mx-4"
+                style={{ overflowX: "auto", overflowY: "visible" }}
+              >
+                <div
+                  style={{
+                    display: "inline-block",
+                    minWidth: "100%",
+                    verticalAlign: "middle",
+                    overflow: "visible",
+                  }}
+                >
+                  <table
+                    className="min-w-full text-xs sm:text-sm border-collapse"
+                    style={{ tableLayout: "auto" }}
+                  >
+                    <thead>
+                      <tr className="bg-slate-800 text-white border-b-2 border-slate-900">
+                        <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
+                          #
+                        </th>
+                        <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase min-w-[120px] sm:min-w-0">
+                          DESCRIPTION
+                        </th>
+                        <th
+                          className="text-center font-bold text-[10px] sm:text-xs uppercase"
+                          style={{ minWidth: "100px", padding: "8px 16px" }}
+                        >
+                          QTY
+                        </th>
+                        <th className="text-right p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
+                          PRICE
+                        </th>
+                        <th className="text-right p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
+                          TOTAL
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {formData.items.map((item, index) => (
+                        <tr
+                          key={index}
+                          className="border-b border-slate-200 hover:bg-slate-50"
+                        >
+                          <td className="p-2 sm:p-3 font-medium text-slate-700 text-[10px] sm:text-xs">
+                            {index + 1}
+                          </td>
+                          <td className="p-2 sm:p-3">
+                            <p className="font-medium text-slate-900 text-xs sm:text-sm leading-relaxed">
+                              {item.description || "Item description"}
+                            </p>
+                          </td>
+
+                          {/* QTY cell — quantity number + clear unit badge */}
+                          <td
+                            style={{
+                              padding: "10px 16px",
+                              textAlign: "center",
+                              verticalAlign: "middle",
+                              whiteSpace: "nowrap",
+                            }}
                           >
-                            <td className="p-2 sm:p-3 font-medium text-slate-700 text-[10px] sm:text-xs">
-                              {index + 1}
-                            </td>
-                            <td className="p-2 sm:p-3">
-                              <p className="font-medium text-slate-900 text-xs sm:text-sm leading-relaxed">
-                                {item.description || "Item description"}
-                              </p>
-                            </td>
-                            <td className="p-2 sm:p-3 text-center text-slate-800 text-xs sm:text-sm whitespace-nowrap">
+                            {/* Quantity number */}
+                            <span
+                              style={{
+                                display: "block",
+                                fontSize: "1rem",
+                                fontWeight: 700,
+                                color: "#1e293b",
+                                lineHeight: 1.3,
+                                marginBottom: "5px",
+                              }}
+                            >
                               {item.quantity}
-                              <br />
-                              <span className="text-slate-500 text-[10px] sm:text-xs">
-                                pcs
-                              </span>
-                            </td>
-                            <td className="p-2 sm:p-3 text-right text-slate-800 text-xs sm:text-sm whitespace-nowrap">
-                              Ksh{" "}
-                              {item.price.toLocaleString("en-KE", {
-                                minimumFractionDigits: 2,
-                              })}
-                            </td>
-                            <td className="p-2 sm:p-3 text-right font-semibold text-slate-900 text-xs sm:text-sm whitespace-nowrap">
-                              Ksh{" "}
-                              {item.total.toLocaleString("en-KE", {
-                                minimumFractionDigits: 2,
-                              })}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                            </span>
+                            {/* Unit badge — wide, tall, easy to read */}
+                            <span
+                              style={{
+                                display: "inline-block",
+                                backgroundColor:
+                                  item.unit === "pcs" ? "#0f172a" : "#b45309",
+                                color: "#ffffff",
+                                fontSize: "0.75rem",
+                                fontWeight: 800,
+                                padding: "4px 12px",
+                                borderRadius: "6px",
+                                lineHeight: 1.6,
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase",
+                                minWidth: "44px",
+                                textAlign: "center",
+                              }}
+                            >
+                              {item.unit}
+                            </span>
+                          </td>
+
+                          <td className="p-2 sm:p-3 text-right text-slate-800 text-xs sm:text-sm whitespace-nowrap">
+                            Ksh{" "}
+                            {item.price.toLocaleString("en-KE", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                          <td className="p-2 sm:p-3 text-right font-semibold text-slate-900 text-xs sm:text-sm whitespace-nowrap">
+                            Ksh{" "}
+                            {item.total.toLocaleString("en-KE", {
+                              minimumFractionDigits: 2,
+                            })}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -799,7 +917,7 @@ function App() {
                 </div>
               </div>
 
-              {/* Signature Section */}
+              {/* Signature */}
               <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t-2 border-slate-300">
                 <p className="text-sm sm:text-base font-bold text-slate-900 text-center">
                   For, WIMWA TECH GENERAL SUPPLIES LIMITED

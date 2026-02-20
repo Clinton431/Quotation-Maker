@@ -187,8 +187,6 @@ function App() {
       offscreen.appendChild(clone);
       document.body.appendChild(offscreen);
 
-      // 3. Strip overflow clipping from every descendant so html2canvas
-      //    paints badge backgrounds completely without clipping
       clone.querySelectorAll("*").forEach((el) => {
         const cs = window.getComputedStyle(el);
         if (["hidden", "auto", "scroll"].includes(cs.overflow))
@@ -807,42 +805,13 @@ function App() {
                               padding: "10px 16px",
                               textAlign: "center",
                               verticalAlign: "middle",
-                              whiteSpace: "nowrap",
+                              whiteSpace: "nowrap", // prevents wrapping
+                              fontWeight: 600,
+                              color: "#1e293b", // same slate tone used in page
+                              fontSize: "0.95rem",
                             }}
                           >
-                            {/* Quantity number */}
-                            <span
-                              style={{
-                                display: "block",
-                                fontSize: "1rem",
-                                fontWeight: 700,
-                                color: "#1e293b",
-                                lineHeight: 1.3,
-                                marginBottom: "5px",
-                              }}
-                            >
-                              {item.quantity}
-                            </span>
-                            {/* Unit badge — wide, tall, easy to read */}
-                            <span
-                              style={{
-                                display: "inline-block",
-                                backgroundColor:
-                                  item.unit === "pcs" ? "#0f172a" : "#b45309",
-                                color: "#ffffff",
-                                fontSize: "0.75rem",
-                                fontWeight: 800,
-                                padding: "4px 12px",
-                                borderRadius: "6px",
-                                lineHeight: 1.6,
-                                letterSpacing: "0.08em",
-                                textTransform: "uppercase",
-                                minWidth: "44px",
-                                textAlign: "center",
-                              }}
-                            >
-                              {item.unit}
-                            </span>
+                            {item.quantity} {item.unit}
                           </td>
 
                           <td className="p-2 sm:p-3 text-right text-slate-800 text-xs sm:text-sm whitespace-nowrap">

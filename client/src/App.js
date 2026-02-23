@@ -1,15 +1,5 @@
 import React, { useState, useRef } from "react";
-import {
-  FileText,
-  Plus,
-  Trash2,
-  Download,
-  Save,
-  Mail,
-  Phone,
-  MapPin,
-  User,
-} from "lucide-react";
+import { FileText, Plus, Trash2, Download, Save, User } from "lucide-react";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { format } from "date-fns";
@@ -307,7 +297,7 @@ function App() {
       <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-0 sm:gap-8">
         {/* ── Left Column: Form ── */}
         <div className="lg:col-span-1 space-y-6 animate-slide-up">
-          {/* Client Info — unchanged */}
+          {/* Client Info */}
           <div className="card">
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 bg-primary-100 rounded-lg">
@@ -444,16 +434,11 @@ function App() {
                       />
                     </div>
 
-                    {/* ── Unit selector — the ONLY new UI element ── */}
+                    {/* ── Unit selector ── */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 mb-1">
                         Unit
                       </label>
-                      {/*
-                        Two-button pill: pcs (dark) or kgs (amber).
-                        Active = filled with colour. Inactive = plain ghost.
-                        Clicking a button directly sets that item's unit.
-                      */}
                       <div
                         className="flex rounded-lg border-2 border-slate-300 overflow-hidden w-full"
                         style={{ height: "38px" }}
@@ -592,22 +577,23 @@ function App() {
                       </span>
                     </div>
                   </div>
+                  {/* Mobile: company contact info — Unicode icons for pdf compat */}
                   <div className="space-y-1.5 text-xs text-slate-700">
                     <div className="flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
+                      <span className="flex-shrink-0 text-slate-500">📍</span>
                       <span className="leading-none">
                         {formData.companyInfo.address}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Phone className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
-                      <span className="leading-none">
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0 text-slate-500">📞</span>
+                      <span className="text-slate-700 break-words leading-relaxed">
                         {formData.companyInfo.phone}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
-                      <span className="leading-none break-all">
+                    <div className="flex items-start gap-2">
+                      <span className="flex-shrink-0 text-slate-500">✉️</span>
+                      <span className="text-slate-700 break-words leading-relaxed">
                         {formData.companyInfo.email}
                       </span>
                     </div>
@@ -635,22 +621,29 @@ function App() {
                         {formData.companyInfo.name}
                       </h1>
                       <p className="text-sm text-slate-600 mb-3">Wimwa Tech</p>
+                      {/* Desktop: company contact info — Unicode icons for pdf compat */}
                       <div className="space-y-1.5 text-sm text-slate-700">
                         <div className="flex items-center gap-2">
-                          <MapPin className="w-4 h-4 flex-shrink-0 text-slate-500" />
+                          <span className="flex-shrink-0 text-slate-500">
+                            📍
+                          </span>
                           <span className="leading-none">
                             {formData.companyInfo.address}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 flex-shrink-0 text-slate-500" />
-                          <span className="leading-none">
+                        <div className="flex items-start gap-2">
+                          <span className="flex-shrink-0 text-slate-500">
+                            📞
+                          </span>
+                          <span className="text-slate-700 break-words leading-relaxed">
                             {formData.companyInfo.phone}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 flex-shrink-0 text-slate-500" />
-                          <span className="leading-none">
+                        <div className="flex items-start gap-2">
+                          <span className="flex-shrink-0 text-slate-500">
+                            ✉️
+                          </span>
+                          <span className="text-slate-700 break-words leading-relaxed">
                             {formData.companyInfo.email}
                           </span>
                         </div>
@@ -706,19 +699,20 @@ function App() {
                       {formData.clientInfo.address}
                     </p>
                   )}
-                  <div className="flex flex-col sm:flex-row sm:flex-wrap gap-1 sm:gap-3 text-xs sm:text-sm text-slate-700">
+                  {/* Client contact info — Unicode icons for pdf compat */}
+                  <div className="space-y-2 text-xs sm:text-sm text-slate-700">
                     {formData.clientInfo.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
-                        <span className="leading-none">
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 text-slate-500">📞</span>
+                        <span className="break-words leading-relaxed">
                           {formData.clientInfo.phone}
                         </span>
                       </div>
                     )}
                     {formData.clientInfo.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-3.5 h-3.5 flex-shrink-0 text-slate-500" />
-                        <span className="leading-none break-all">
+                      <div className="flex items-start gap-2">
+                        <span className="flex-shrink-0 text-slate-500">✉️</span>
+                        <span className="break-words leading-relaxed">
                           {formData.clientInfo.email}
                         </span>
                       </div>
@@ -735,17 +729,7 @@ function App() {
                 below:
               </p>
 
-              {/*
-                Items Table
-                ─────────────────────────────────────────────────────────────
-                Key changes from the original:
-                • overflow wrappers use "visible" not "hidden" — prevents
-                  html2canvas from clipping the unit badge
-                • tableLayout "auto" — QTY column sizes to its content
-                • QTY <td> — quantity on one line, coloured badge below it;
-                  uses generous padding + whiteSpace:nowrap so both are fully
-                  painted inside the cell in both preview and PDF
-              */}
+              {/* Items Table */}
               <div
                 className="mb-6 sm:mb-8 sm:-mx-4"
                 style={{ overflowX: "auto", overflowY: "visible" }}
@@ -798,22 +782,19 @@ function App() {
                               {item.description || "Item description"}
                             </p>
                           </td>
-
-                          {/* QTY cell — quantity number + clear unit badge */}
                           <td
                             style={{
                               padding: "10px 16px",
                               textAlign: "center",
                               verticalAlign: "middle",
-                              whiteSpace: "nowrap", // prevents wrapping
+                              whiteSpace: "nowrap",
                               fontWeight: 600,
-                              color: "#1e293b", // same slate tone used in page
+                              color: "#1e293b",
                               fontSize: "0.95rem",
                             }}
                           >
                             {item.quantity} {item.unit}
                           </td>
-
                           <td className="p-2 sm:p-3 text-right text-slate-800 text-xs sm:text-sm whitespace-nowrap">
                             Ksh{" "}
                             {item.price.toLocaleString("en-KE", {

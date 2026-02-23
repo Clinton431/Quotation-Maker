@@ -201,7 +201,7 @@ function App() {
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       const canvas = await html2canvas(clone, {
-        scale: 3,
+        scale: 1.8,
         backgroundColor: "#ffffff",
         useCORS: true,
         scrollX: 0,
@@ -213,7 +213,7 @@ function App() {
       // 5. Clean up the temporary node
       document.body.removeChild(offscreen);
 
-      const imgData = canvas.toDataURL("image/png");
+      const imgData = canvas.toDataURL("image/jpeg", 0.7);
 
       const pdf = new jsPDF({
         orientation: "portrait",
@@ -236,7 +236,7 @@ function App() {
       const x = (pageWidth - imgWidth) / 2;
       const y = (pageHeight - imgHeight) / 2;
 
-      pdf.addImage(imgData, "PNG", x, y, imgWidth, imgHeight);
+      pdf.addImage(imgData, "JPEG", x, y, imgWidth, imgHeight);
       pdf.save(`Quotation-${formData.quotationNumber}.pdf`);
 
       showNotification("PDF downloaded successfully!");

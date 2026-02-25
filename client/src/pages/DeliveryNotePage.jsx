@@ -405,16 +405,6 @@ function AddCompanyModal({ onClose, onSaved }) {
 
 /* ─────────────────────────────────────────────────────
    COMPANY SELECTOR — PORTAL DROPDOWN
-   
-   THE ROOT CAUSE of the clipping bug:
-   Any ancestor with overflow:hidden (the .card class,
-   sticky wrappers, etc.) clips absolutely-positioned
-   children. The ONLY reliable fix is to render the
-   dropdown into document.body via createPortal(), then
-   position it with fixed coordinates measured from
-   getBoundingClientRect() on the trigger button.
-   
-   This means NO parent CSS can ever clip this dropdown.
 ───────────────────────────────────────────────────── */
 function CompanySelector({ companies, selected, onSelect, onAddNew }) {
   const [open, setOpen] = useState(false);
@@ -444,15 +434,31 @@ function CompanySelector({ companies, selected, onSelect, onAddNew }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [open]);
 
-  // Close on scroll or resize (position becomes stale)
+  // ─── FIX: Only close when the scroll happens OUTSIDE the dropdown.
+  // The previous code used `window.addEventListener("scroll", close, true)`
+  // with `useCapture=true`, which fired on EVERY scroll including the
+  // dropdown's own internal list scroll — causing it to vanish the moment
+  // the user tried to scroll through the company list.
+  // Now we check if the scroll target is inside the dropdown and ignore it.
   useEffect(() => {
     if (!open) return;
-    const close = () => setOpen(false);
-    window.addEventListener("scroll", close, true);
-    window.addEventListener("resize", close);
+
+    const handleScroll = (e) => {
+      // If the scroll event originated inside the dropdown, leave it open
+      if (dropdownRef.current && dropdownRef.current.contains(e.target)) {
+        return;
+      }
+      // Otherwise the page itself scrolled — close and reposition would be stale
+      setOpen(false);
+    };
+
+    const handleResize = () => setOpen(false);
+
+    window.addEventListener("scroll", handleScroll, true);
+    window.addEventListener("resize", handleResize);
     return () => {
-      window.removeEventListener("scroll", close, true);
-      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", handleScroll, true);
+      window.removeEventListener("resize", handleResize);
     };
   }, [open]);
 
@@ -495,7 +501,7 @@ function CompanySelector({ companies, selected, onSelect, onAddNew }) {
               overflow: "hidden",
             }}
           >
-            {/* Scrollable list — capped at ~3 rows (195px), scrollbar appears after */}
+            {/* Scrollable list — capped at ~3 rows, scrollbar appears after */}
             <div
               style={{
                 maxHeight: "195px",
@@ -572,7 +578,7 @@ function CompanySelector({ companies, selected, onSelect, onAddNew }) {
               ))}
             </div>
 
-            {/* Add New Company — ALWAYS visible, lives outside the scroll container */}
+            {/* Add New Company — ALWAYS visible, outside scroll container */}
             <div
               style={{
                 borderTop: "2px solid #f1f5f9",

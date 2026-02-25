@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+
 /* ───────────────── DATA ───────────────── */
 
 const faqs = [
@@ -319,7 +320,16 @@ export default function HomePage() {
                 {label}
               </a>
             ))}
-            <div className="pt-2 pb-1">
+            <div className="pt-2 pb-1 flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setMenuOpen(false);
+                  navigate("/delivery-note");
+                }}
+                className="w-full border-2 border-orange-400 text-orange-500 font-bold text-sm py-3 rounded-xl bg-transparent cursor-pointer transition-all duration-150 hover:bg-orange-50"
+              >
+                Delivery Note
+              </button>
               <button
                 onClick={() => {
                   setMenuOpen(false);

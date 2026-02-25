@@ -8,11 +8,7 @@ const app = express();
 // ── Middleware ──
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:5173",
-      "https://quotation-maker-wine.vercel.app/",
-    ],
+    origin: "https://quotation-maker-wine.vercel.app",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })

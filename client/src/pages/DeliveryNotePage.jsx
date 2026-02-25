@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   FileText,
   Plus,
@@ -9,6 +10,8 @@ import {
   Building2,
   ChevronDown,
   Check,
+  X,
+  Upload,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
@@ -18,7 +21,6 @@ import axios from "axios";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-/* ── Built-in companies ── */
 const BUILTIN_COMPANIES = [
   {
     id: "wimwa",
@@ -30,27 +32,46 @@ const BUILTIN_COMPANIES = [
     pvt: "PVT-Y2U9QXGP",
     logoInitials: "WT",
     logoColor: "from-orange-400 to-orange-600",
+    logoUrl: "",
   },
 ];
 
-/* ── Company Logo — identical to QuotationPage ── */
+/* ─── COMPANY LOGO ─── */
 function CompanyLogo({ company, size = "md" }) {
   const dims = { sm: "w-12 h-12", md: "w-16 h-16", lg: "w-20 h-20" };
-  const font = { sm: "text-[10px]", md: "text-xs", lg: "text-sm" };
-  const isWimwa = company.id === "wimwa";
-  const lines = isWimwa
-    ? ["Wimwa", "Tech"]
-    : company.name.split(" ").slice(0, 2);
+  const fonts = { sm: "text-[10px]", md: "text-xs", lg: "text-sm" };
+
+  if (company.logoUrl) {
+    return (
+      <div
+        className={`flex-shrink-0 rounded-xl overflow-hidden shadow-lg bg-white border border-slate-100 flex items-center justify-center ${dims[size]}`}
+      >
+        <img
+          src={company.logoUrl}
+          alt={company.name}
+          className="w-full h-full object-contain p-1"
+          crossOrigin="anonymous"
+        />
+      </div>
+    );
+  }
+
+  const lines =
+    company.id === "wimwa"
+      ? ["Wimwa", "Tech"]
+      : company.name.split(" ").slice(0, 2);
 
   return (
     <div
-      className={`flex-shrink-0 bg-gradient-to-br ${company.logoColor} rounded-xl flex items-center justify-center shadow-lg ${dims[size]}`}
+      className={`flex-shrink-0 bg-gradient-to-br ${
+        company.logoColor || "from-slate-600 to-slate-800"
+      } rounded-xl flex items-center justify-center shadow-lg ${dims[size]}`}
     >
       <div className="text-center px-1">
         {lines.map((line, i) => (
           <div
             key={i}
-            className={`text-white font-bold leading-tight ${font[size]}`}
+            className={`text-white font-bold leading-tight ${fonts[size]}`}
           >
             {line}
           </div>
@@ -60,88 +81,573 @@ function CompanyLogo({ company, size = "md" }) {
   );
 }
 
-/* ── Company Selector Dropdown ── */
-function CompanySelector({ companies, selected, onSelect }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+/* ─── LOGO THUMBNAIL ─── */
+function LogoThumb({ company, className = "w-8 h-8" }) {
+  if (company.logoUrl) {
+    return (
+      <img
+        src={company.logoUrl}
+        alt=""
+        className={`${className} rounded-lg object-contain border border-slate-100 bg-white p-0.5 flex-shrink-0 shadow-sm`}
+        crossOrigin="anonymous"
+      />
+    );
+  }
+  return (
+    <div
+      className={`${className} rounded-lg bg-gradient-to-br ${
+        company.logoColor || "from-slate-600 to-slate-800"
+      } flex-shrink-0 flex items-center justify-center shadow-sm`}
+    >
+      <span className="text-white font-bold text-[9px] leading-none">
+        {company.logoInitials}
+      </span>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    function handler(e) {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+/* ─── ADD COMPANY MODAL ─── */
+function AddCompanyModal({ onClose, onSaved }) {
+  const [form, setForm] = useState({
+    name: "",
+    shortName: "",
+    address: "",
+    phone: "",
+    email: "",
+    pvt: "",
+  });
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const fileRef = useRef(null);
+
+  const f = (key) => (e) => setForm((p) => ({ ...p, [key]: e.target.value }));
+
+  const pickFile = (file) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Logo must be under 5 MB");
+      return;
     }
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+    const allowed = ["image/jpeg", "image/png", "image/svg+xml", "image/webp"];
+    if (!allowed.includes(file.type)) {
+      setError("Only JPG, PNG, SVG or WebP allowed");
+      return;
+    }
+    setLogoFile(file);
+    setLogoPreview(URL.createObjectURL(file));
+    setError("");
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    pickFile(e.dataTransfer.files[0]);
+  };
+  const removeLogo = (e) => {
+    e.stopPropagation();
+    setLogoFile(null);
+    setLogoPreview("");
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name.trim()) {
+      setError("Company name is required");
+      return;
+    }
+    setSaving(true);
+    setError("");
+    try {
+      const data = new FormData();
+      Object.entries(form).forEach(([k, v]) => data.append(k, v));
+      if (logoFile) data.append("logo", logoFile);
+      const res = await axios.post(`${API_URL}/api/companies`, data, {
+        headers: { "Content-Type": "multipart/form-data" },
+        timeout: 20000,
+      });
+      const s = res.data.data;
+      onSaved({
+        id: s._id,
+        name: s.name,
+        shortName: s.shortName || s.name.split(" ").slice(0, 2).join(" "),
+        address: s.address || "",
+        phone: s.phone || "",
+        email: s.email || "",
+        pvt: s.pvt || "",
+        logoUrl: s.logoUrl || "",
+        logoInitials:
+          s.logoInitials ||
+          s.name
+            .split(" ")
+            .slice(0, 2)
+            .map((w) => w[0])
+            .join(""),
+        logoColor: s.logoColor || "from-slate-600 to-slate-800",
+      });
+      onClose();
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          "Failed to save. Check server connection."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
-    <div className="relative" ref={ref}>
+    <div
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm px-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center">
+              <Building2 className="w-4 h-4 text-orange-500" />
+            </div>
+            <h2 className="font-bold text-slate-900 text-lg">
+              Add New Company
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-lg hover:bg-slate-100 flex items-center justify-center transition-colors"
+          >
+            <X className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
+          {error && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+              <X className="w-4 h-4 shrink-0 mt-0.5" />
+              <span>{error}</span>
+            </div>
+          )}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Company Logo{" "}
+              <span className="text-slate-400 font-normal">(optional)</span>
+            </label>
+            <div
+              onDrop={handleDrop}
+              onDragOver={(e) => e.preventDefault()}
+              onClick={() => fileRef.current?.click()}
+              className="relative border-2 border-dashed border-slate-200 rounded-xl p-4 cursor-pointer hover:border-orange-300 hover:bg-orange-50/40 transition-all duration-200 flex items-center gap-4 group"
+            >
+              {logoPreview ? (
+                <>
+                  <img
+                    src={logoPreview}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-xl object-contain border border-slate-100 bg-white p-1 shadow-sm flex-shrink-0"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-700 truncate">
+                      {logoFile?.name}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {(logoFile?.size / 1024).toFixed(1)} KB
+                    </p>
+                    <button
+                      type="button"
+                      onClick={removeLogo}
+                      className="text-xs text-red-500 hover:text-red-700 mt-1 font-semibold"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-4 h-4 text-emerald-500" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-16 h-16 rounded-xl bg-slate-100 group-hover:bg-orange-50 border border-slate-200 group-hover:border-orange-200 flex items-center justify-center flex-shrink-0 transition-colors">
+                    <Upload className="w-6 h-6 text-slate-400 group-hover:text-orange-400 transition-colors" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-700">
+                      Upload company logo
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      PNG, JPG, SVG, WebP — max 5 MB
+                    </p>
+                    <p className="text-xs text-orange-500 mt-1 font-medium">
+                      Click or drag & drop
+                    </p>
+                  </div>
+                </>
+              )}
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/jpeg,image/png,image/svg+xml,image/webp"
+                className="hidden"
+                onChange={(e) => pickFile(e.target.files[0])}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              Company Name <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.name}
+              onChange={f("name")}
+              className="input-field"
+              placeholder="e.g. Acme Supplies Limited"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              Short Name{" "}
+              <span className="text-slate-400 font-normal text-xs">
+                (shown in nav)
+              </span>
+            </label>
+            <input
+              type="text"
+              value={form.shortName}
+              onChange={f("shortName")}
+              className="input-field"
+              placeholder="e.g. Acme Supplies"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              Address
+            </label>
+            <textarea
+              value={form.address}
+              onChange={f("address")}
+              className="input-field resize-none"
+              rows="2"
+              placeholder="P.O Box 123, Nairobi"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Phone
+              </label>
+              <input
+                type="tel"
+                value={form.phone}
+                onChange={f("phone")}
+                className="input-field"
+                placeholder="+254 XXX XXX XXX"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Email
+              </label>
+              <input
+                type="email"
+                value={form.email}
+                onChange={f("email")}
+                className="input-field"
+                placeholder="info@company.com"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+              PVT / Reg. No.{" "}
+              <span className="text-slate-400 font-normal text-xs">
+                (optional)
+              </span>
+            </label>
+            <input
+              type="text"
+              value={form.pvt}
+              onChange={f("pvt")}
+              className="input-field"
+              placeholder="e.g. PVT-XXXXXXXX"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-100 bg-slate-50/60 flex-shrink-0 rounded-b-2xl">
+          <button
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={saving}
+            className="px-5 py-2.5 rounded-xl text-sm font-bold text-white bg-gradient-to-br from-orange-400 to-orange-600 hover:opacity-90 shadow-[0_4px_14px_rgba(249,115,22,0.3)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-opacity"
+          >
+            {saving ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Check className="w-4 h-4" />
+                Save Company
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─────────────────────────────────────────────────────
+   COMPANY SELECTOR — PORTAL DROPDOWN
+   
+   THE ROOT CAUSE of the clipping bug:
+   Any ancestor with overflow:hidden (the .card class,
+   sticky wrappers, etc.) clips absolutely-positioned
+   children. The ONLY reliable fix is to render the
+   dropdown into document.body via createPortal(), then
+   position it with fixed coordinates measured from
+   getBoundingClientRect() on the trigger button.
+   
+   This means NO parent CSS can ever clip this dropdown.
+───────────────────────────────────────────────────── */
+function CompanySelector({ companies, selected, onSelect, onAddNew }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState({ top: 0, left: 0, width: 0 });
+  const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
+
+  // Recalculate position whenever dropdown opens
+  useEffect(() => {
+    if (open && triggerRef.current) {
+      const r = triggerRef.current.getBoundingClientRect();
+      setPos({ top: r.bottom + 6, left: r.left, width: r.width });
+    }
+  }, [open]);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      const clickedTrigger =
+        triggerRef.current && triggerRef.current.contains(e.target);
+      const clickedDropdown =
+        dropdownRef.current && dropdownRef.current.contains(e.target);
+      if (!clickedTrigger && !clickedDropdown) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  // Close on scroll or resize (position becomes stale)
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(false);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
+  }, [open]);
+
+  return (
+    <>
+      {/* ── Trigger button ── */}
       <button
+        ref={triggerRef}
         type="button"
-        onClick={() => setOpen(!open)}
+        onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between gap-2 px-4 py-3 bg-white border-2 border-slate-200 rounded-xl text-sm font-semibold text-slate-700 hover:border-orange-300 transition-colors"
       >
-        <div className="flex items-center gap-2 min-w-0">
-          <div
-            className={`w-6 h-6 rounded-md bg-gradient-to-br ${selected.logoColor} flex-shrink-0`}
-          />
+        <div className="flex items-center gap-2.5 min-w-0">
+          <LogoThumb company={selected} className="w-7 h-7" />
           <span className="truncate">{selected.name}</span>
         </div>
         <ChevronDown
-          className={`w-4 h-4 flex-shrink-0 text-slate-400 transition-transform ${
+          className={`w-4 h-4 flex-shrink-0 text-slate-400 transition-transform duration-200 ${
             open ? "rotate-180" : ""
           }`}
         />
       </button>
 
-      {open && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden">
-          {companies.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => {
-                onSelect(c);
-                setOpen(false);
+      {/* ── Portal dropdown — rendered into document.body, never clipped ── */}
+      {open &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            style={{
+              position: "fixed",
+              top: pos.top,
+              left: pos.left,
+              width: pos.width,
+              zIndex: 99999,
+              backgroundColor: "#ffffff",
+              border: "1px solid #e2e8f0",
+              borderRadius: "12px",
+              boxShadow:
+                "0 25px 60px -10px rgba(0,0,0,0.2), 0 10px 30px -5px rgba(0,0,0,0.1)",
+              overflow: "hidden",
+            }}
+          >
+            {/* Scrollable list — capped at ~3 rows (195px), scrollbar appears after */}
+            <div
+              style={{
+                maxHeight: "195px",
+                overflowY: "auto",
+                overflowX: "hidden",
               }}
-              className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-orange-50 transition-colors"
             >
-              <div
-                className={`w-8 h-8 rounded-lg bg-gradient-to-br ${c.logoColor} flex-shrink-0 flex items-center justify-center`}
+              {companies.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => {
+                    onSelect(c);
+                    setOpen(false);
+                  }}
+                  style={{
+                    width: "100%",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "10px 16px",
+                    background: "none",
+                    border: "none",
+                    borderBottom: "1px solid #f8fafc",
+                    cursor: "pointer",
+                    textAlign: "left",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.backgroundColor = "#fff7ed")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.backgroundColor = "transparent")
+                  }
+                >
+                  <LogoThumb company={c} className="w-9 h-9" />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        color: "#1e293b",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {c.name}
+                    </p>
+                    <p
+                      style={{
+                        margin: 0,
+                        fontSize: 12,
+                        color: "#94a3b8",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {c.phone || c.email || "—"}
+                    </p>
+                  </div>
+                  {selected.id === c.id && (
+                    <Check
+                      style={{
+                        width: 16,
+                        height: 16,
+                        color: "#f97316",
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Add New Company — ALWAYS visible, lives outside the scroll container */}
+            <div
+              style={{
+                borderTop: "2px solid #f1f5f9",
+                padding: "6px",
+                backgroundColor: "#ffffff",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false);
+                  onAddNew();
+                }}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  color: "#ea580c",
+                }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = "#fff7ed")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = "transparent")
+                }
               >
-                <span className="text-white font-bold text-[10px]">
-                  {c.logoInitials}
-                </span>
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-slate-800 truncate">
-                  {c.name}
-                </p>
-                <p className="text-xs text-slate-400 truncate">{c.phone}</p>
-              </div>
-              {selected.id === c.id && (
-                <Check className="w-4 h-4 text-orange-500 flex-shrink-0" />
-              )}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+                <div
+                  style={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: 8,
+                    border: "2px dashed #fb923c",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  <Plus style={{ width: 16, height: 16 }} />
+                </div>
+                Add New Company
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
 
-/* ══════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════
    MAIN PAGE
-══════════════════════════════════════════════════ */
-function DeliveryNotePage() {
+═══════════════════════════════════════════════════════════ */
+export default function DeliveryNotePage() {
   const navigate = useNavigate();
 
   const [companies, setCompanies] = useState(BUILTIN_COMPANIES);
   const [selectedCompany, setSelectedCompany] = useState(BUILTIN_COMPANIES[0]);
+  const [showAddCompany, setShowAddCompany] = useState(false);
+
+  const freshDN = () =>
+    `DN-${Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4, "0")}`;
 
   const initialFormState = {
-    deliveryNoteNumber: `DN-${Math.floor(Math.random() * 10000)
-      .toString()
-      .padStart(4, "0")}`,
+    deliveryNoteNumber: freshDN(),
     date: format(new Date(), "dd/MM/yyyy"),
     clientInfo: { name: "", address: "", phone: "", email: "" },
     shipTo: "",
@@ -160,50 +666,56 @@ function DeliveryNotePage() {
 
   useEffect(() => {
     axios
-      .get(`${API_URL}/api/companies`, { timeout: 3000 })
+      .get(`${API_URL}/api/companies`, { timeout: 5000 })
       .then((res) => {
-        if (Array.isArray(res.data) && res.data.length > 0) {
-          const mapped = res.data.map((c) => ({
-            id: c._id,
-            name: c.name,
-            shortName: c.name.split(" ").slice(0, 2).join(" "),
-            address: c.address || "",
-            phone: c.phone || "",
-            email: c.email || "",
-            pvt: c.pvt || "",
-            logoInitials: c.name
+        if (!Array.isArray(res.data) || !res.data.length) return;
+        const mapped = res.data.map((c) => ({
+          id: c._id,
+          name: c.name,
+          shortName: c.shortName || c.name.split(" ").slice(0, 2).join(" "),
+          address: c.address || "",
+          phone: c.phone || "",
+          email: c.email || "",
+          pvt: c.pvt || "",
+          logoUrl: c.logoUrl || "",
+          logoInitials:
+            c.logoInitials ||
+            c.name
               .split(" ")
               .slice(0, 2)
               .map((w) => w[0])
               .join(""),
-            logoColor: "from-slate-600 to-slate-800",
-          }));
-          setCompanies([...BUILTIN_COMPANIES, ...mapped]);
-        }
+          logoColor: c.logoColor || "from-slate-600 to-slate-800",
+        }));
+        setCompanies([...BUILTIN_COMPANIES, ...mapped]);
       })
       .catch(() => {});
   }, []);
 
-  const showNotification = (message, type = "success") => {
+  const handleCompanySaved = (newCo) => {
+    setCompanies((prev) => [...prev, newCo]);
+    setSelectedCompany(newCo);
+    showNotif(`"${newCo.name}" added and selected!`);
+  };
+
+  const showNotif = (message, type = "success") => {
     setNotification({ show: true, message, type });
     setTimeout(
       () => setNotification({ show: false, message: "", type: "" }),
-      3000
+      3500
     );
   };
 
-  const handleItemChange = (index, field, value) => {
-    const newItems = [...formData.items];
-    newItems[index][field] = value;
-    setFormData({ ...formData, items: newItems });
+  const handleItemChange = (idx, field, value) => {
+    const items = [...formData.items];
+    items[idx][field] = value;
+    setFormData({ ...formData, items });
   };
-
-  const setUnit = (index, unit) => {
-    const newItems = [...formData.items];
-    newItems[index].unit = unit;
-    setFormData({ ...formData, items: newItems });
+  const setUnit = (idx, unit) => {
+    const items = [...formData.items];
+    items[idx].unit = unit;
+    setFormData({ ...formData, items });
   };
-
   const addItem = () =>
     setFormData({
       ...formData,
@@ -212,11 +724,11 @@ function DeliveryNotePage() {
         { description: "", quantity: 1, unit: "pcs", remarks: "" },
       ],
     });
-  const removeItem = (index) => {
+  const removeItem = (idx) => {
     if (formData.items.length > 1)
       setFormData({
         ...formData,
-        items: formData.items.filter((_, i) => i !== index),
+        items: formData.items.filter((_, i) => i !== idx),
       });
   };
   const handleClientChange = (field, value) =>
@@ -224,38 +736,35 @@ function DeliveryNotePage() {
       ...formData,
       clientInfo: { ...formData.clientInfo, [field]: value },
     });
-
   const resetForm = () =>
     setFormData({
       ...initialFormState,
-      deliveryNoteNumber: `DN-${Math.floor(Math.random() * 10000)
-        .toString()
-        .padStart(4, "0")}`,
+      deliveryNoteNumber: freshDN(),
       date: format(new Date(), "dd/MM/yyyy"),
     });
 
   const saveDeliveryNote = async () => {
     if (!formData.clientInfo.name.trim()) {
-      showNotification("Please enter client name", "error");
+      showNotif("Please enter client name", "error");
       return;
     }
     if (!formData.items.some((i) => i.description.trim())) {
-      showNotification("Please add at least one item description", "error");
+      showNotif("Please add at least one item", "error");
       return;
     }
     try {
       await axios.post(
         `${API_URL}/api/delivery-notes`,
-        { ...formData, company: selectedCompany, createdAt: new Date() },
+        { ...formData, company: selectedCompany },
         { timeout: 5000 }
       );
-      showNotification("Delivery note saved successfully!");
-      setTimeout(() => resetForm(), 1000);
-    } catch (error) {
-      showNotification(
-        error.code === "ECONNREFUSED" || error.message?.includes("timeout")
-          ? "Cannot connect to server. Make sure MongoDB and server are running."
-          : "Failed to save. Check console for details.",
+      showNotif("Delivery note saved successfully!");
+      setTimeout(resetForm, 1000);
+    } catch (err) {
+      showNotif(
+        err.code === "ECONNREFUSED" || err.message?.includes("timeout")
+          ? "Cannot connect to server."
+          : "Failed to save. Check console.",
         "error"
       );
     }
@@ -264,24 +773,16 @@ function DeliveryNotePage() {
   const downloadPDF = async () => {
     try {
       setIsGeneratingPDF(true);
-      showNotification("Generating PDF...", "info");
+      showNotif("Generating PDF…", "info");
       await new Promise((r) => setTimeout(r, 100));
+
       const clone = deliveryNoteRef.current.cloneNode(true);
-      const A4_WIDTH_PX = 794;
+      const A4W = 794;
       const offscreen = document.createElement("div");
-      offscreen.style.cssText = [
-        "position:fixed",
-        "top:0",
-        "left:0",
-        `width:${A4_WIDTH_PX}px`,
-        "transform:translateX(-99999px)",
-        "overflow:visible",
-        "z-index:-9999",
-        "background:#fff",
-        "pointer-events:none",
-      ].join(";");
+      offscreen.style.cssText = `position:fixed;top:0;left:0;width:${A4W}px;transform:translateX(-99999px);overflow:visible;z-index:-9999;background:#fff;pointer-events:none`;
       offscreen.appendChild(clone);
       document.body.appendChild(offscreen);
+
       clone.querySelectorAll("*").forEach((el) => {
         const cs = window.getComputedStyle(el);
         if (["hidden", "auto", "scroll"].includes(cs.overflow))
@@ -291,6 +792,7 @@ function DeliveryNotePage() {
         if (["hidden", "auto", "scroll"].includes(cs.overflowY))
           el.style.overflowY = "visible";
       });
+
       await new Promise((r) => setTimeout(r, 200));
       const canvas = await html2canvas(clone, {
         scale: 1.8,
@@ -298,37 +800,38 @@ function DeliveryNotePage() {
         useCORS: true,
         scrollX: 0,
         scrollY: 0,
-        width: A4_WIDTH_PX,
-        windowWidth: A4_WIDTH_PX,
+        width: A4W,
+        windowWidth: A4W,
       });
       document.body.removeChild(offscreen);
-      const imgData = canvas.toDataURL("image/jpeg", 0.7);
+
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
-      const pageWidth = 210,
-        pageHeight = 297;
-      const imgRatio = canvas.width / canvas.height;
-      let imgWidth = pageWidth - 2,
-        imgHeight = imgWidth / imgRatio;
-      if (imgHeight > pageHeight - 2) {
-        imgHeight = pageHeight - 2;
-        imgWidth = imgHeight * imgRatio;
+      const pgW = 210,
+        pgH = 297;
+      const ratio = canvas.width / canvas.height;
+      let iW = pgW - 2,
+        iH = iW / ratio;
+      if (iH > pgH - 2) {
+        iH = pgH - 2;
+        iW = iH * ratio;
       }
+
       pdf.addImage(
-        imgData,
+        canvas.toDataURL("image/jpeg", 0.7),
         "JPEG",
-        (pageWidth - imgWidth) / 2,
-        (pageHeight - imgHeight) / 2,
-        imgWidth,
-        imgHeight
+        (pgW - iW) / 2,
+        (pgH - iH) / 2,
+        iW,
+        iH
       );
       pdf.save(`DeliveryNote-${formData.deliveryNoteNumber}.pdf`);
-      showNotification("PDF downloaded successfully!");
-    } catch (error) {
-      showNotification("Failed to generate PDF. Please try again.", "error");
+      showNotif("PDF downloaded!");
+    } catch {
+      showNotif("Failed to generate PDF.", "error");
     } finally {
       setIsGeneratingPDF(false);
     }
@@ -336,17 +839,24 @@ function DeliveryNotePage() {
 
   return (
     <div className="min-h-screen py-8 px-0 sm:px-6 lg:px-8">
+      {showAddCompany && (
+        <AddCompanyModal
+          onClose={() => setShowAddCompany(false)}
+          onSaved={handleCompanySaved}
+        />
+      )}
+
       {notification.show && (
         <div
-          className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl animate-slide-up ${
+          className={`fixed top-4 right-4 z-50 px-5 py-3.5 rounded-xl shadow-2xl text-sm font-semibold text-white flex items-center gap-2 ${
             notification.type === "error"
-              ? "bg-red-500 text-white"
+              ? "bg-red-500"
               : notification.type === "info"
-              ? "bg-blue-500 text-white"
-              : "bg-green-500 text-white"
+              ? "bg-blue-500"
+              : "bg-emerald-500"
           }`}
         >
-          <p className="font-semibold">{notification.message}</p>
+          {notification.message}
         </div>
       )}
 
@@ -371,13 +881,7 @@ function DeliveryNotePage() {
             Back to Home
           </button>
           <div className="flex items-center gap-2">
-            <div
-              className={`w-8 h-8 bg-gradient-to-br ${selectedCompany.logoColor} rounded-lg flex items-center justify-center`}
-            >
-              <span className="text-white font-bold text-xs">
-                {selectedCompany.logoInitials}
-              </span>
-            </div>
+            <LogoThumb company={selectedCompany} className="w-8 h-8" />
             <span className="text-sm font-semibold text-slate-700">
               {selectedCompany.shortName}
             </span>
@@ -398,8 +902,7 @@ function DeliveryNotePage() {
             onClick={saveDeliveryNote}
             className="btn-primary flex items-center gap-2"
           >
-            <Save className="w-5 h-5" />
-            Save Delivery Note
+            <Save className="w-5 h-5" /> Save Delivery Note
           </button>
           <button
             onClick={downloadPDF}
@@ -424,9 +927,9 @@ function DeliveryNotePage() {
       </div>
 
       <div className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-0 sm:gap-8">
-        {/* ════ LEFT FORM ════ */}
+        {/* LEFT FORM */}
         <div className="lg:col-span-1 space-y-6 animate-slide-up">
-          {/* Company */}
+          {/* Company card */}
           <div className="card">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-primary-100 rounded-lg">
@@ -440,11 +943,12 @@ function DeliveryNotePage() {
               companies={companies}
               selected={selectedCompany}
               onSelect={setSelectedCompany}
+              onAddNew={() => setShowAddCompany(true)}
             />
-            <div className="mt-3 p-3 bg-slate-50 rounded-xl text-xs text-slate-500 space-y-0.5">
-              <p>{selectedCompany.address}</p>
-              <p>{selectedCompany.phone}</p>
-              <p>{selectedCompany.email}</p>
+            <div className="mt-3 p-3 bg-slate-50 rounded-xl text-xs text-slate-500 space-y-1">
+              {selectedCompany.address && <p>📍 {selectedCompany.address}</p>}
+              {selectedCompany.phone && <p>📞 {selectedCompany.phone}</p>}
+              {selectedCompany.email && <p>✉️ {selectedCompany.email}</p>}
             </div>
           </div>
 
@@ -555,18 +1059,18 @@ function DeliveryNotePage() {
               </button>
             </div>
             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-              {formData.items.map((item, index) => (
+              {formData.items.map((item, idx) => (
                 <div
-                  key={index}
+                  key={idx}
                   className="p-4 bg-slate-50 rounded-xl border-2 border-slate-200 space-y-3"
                 >
                   <div className="flex justify-between items-start">
                     <span className="text-sm font-bold text-primary-600">
-                      Item {index + 1}
+                      Item {idx + 1}
                     </span>
                     {formData.items.length > 1 && (
                       <button
-                        onClick={() => removeItem(index)}
+                        onClick={() => removeItem(idx)}
                         className="text-red-500 hover:text-red-700 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -580,7 +1084,7 @@ function DeliveryNotePage() {
                     <textarea
                       value={item.description}
                       onChange={(e) =>
-                        handleItemChange(index, "description", e.target.value)
+                        handleItemChange(idx, "description", e.target.value)
                       }
                       className="input-field text-sm"
                       rows="2"
@@ -596,7 +1100,7 @@ function DeliveryNotePage() {
                         type="number"
                         value={item.quantity}
                         onChange={(e) =>
-                          handleItemChange(index, "quantity", e.target.value)
+                          handleItemChange(idx, "quantity", e.target.value)
                         }
                         className="input-field text-sm"
                         min="1"
@@ -607,29 +1111,29 @@ function DeliveryNotePage() {
                         Unit
                       </label>
                       <div
-                        className="flex rounded-lg border-2 border-slate-300 overflow-hidden w-full"
+                        className="flex rounded-lg border-2 border-slate-300 overflow-hidden"
                         style={{ height: "38px" }}
                       >
                         <button
                           type="button"
-                          onClick={() => setUnit(index, "pcs")}
-                          className="flex-1 text-xs font-bold transition-colors duration-150 focus:outline-none"
+                          onClick={() => setUnit(idx, "pcs")}
+                          className="flex-1 text-xs font-bold focus:outline-none transition-colors"
                           style={{
                             backgroundColor:
                               item.unit === "pcs" ? "#0f172a" : "transparent",
-                            color: item.unit === "pcs" ? "#ffffff" : "#94a3b8",
+                            color: item.unit === "pcs" ? "#fff" : "#94a3b8",
                           }}
                         >
                           pcs
                         </button>
                         <button
                           type="button"
-                          onClick={() => setUnit(index, "kgs")}
-                          className="flex-1 text-xs font-bold transition-colors duration-150 focus:outline-none border-l-2 border-slate-300"
+                          onClick={() => setUnit(idx, "kgs")}
+                          className="flex-1 text-xs font-bold focus:outline-none border-l-2 border-slate-300 transition-colors"
                           style={{
                             backgroundColor:
                               item.unit === "kgs" ? "#b45309" : "transparent",
-                            color: item.unit === "kgs" ? "#ffffff" : "#94a3b8",
+                            color: item.unit === "kgs" ? "#fff" : "#94a3b8",
                           }}
                         >
                           kgs
@@ -645,7 +1149,7 @@ function DeliveryNotePage() {
                       type="text"
                       value={item.remarks}
                       onChange={(e) =>
-                        handleItemChange(index, "remarks", e.target.value)
+                        handleItemChange(idx, "remarks", e.target.value)
                       }
                       className="input-field text-sm"
                       placeholder="e.g. Fragile, Handle with care"
@@ -673,7 +1177,7 @@ function DeliveryNotePage() {
           </div>
         </div>
 
-        {/* ════ RIGHT PREVIEW ════ */}
+        {/* RIGHT PREVIEW */}
         <div className="lg:col-span-2 animate-scale-in">
           <div className="p-0 sm:card sm:p-6 sticky top-8">
             <div className="mb-6">
@@ -698,7 +1202,7 @@ function DeliveryNotePage() {
               }}
             >
               <div className="p-0 sm:p-6 md:p-10">
-                {/* ── HEADER ── */}
+                {/* HEADER */}
                 <div className="mb-6 sm:mb-8 pb-4 sm:pb-6 border-b-2 border-slate-300">
                   {/* Mobile */}
                   <div className="sm:hidden space-y-4">
@@ -723,39 +1227,42 @@ function DeliveryNotePage() {
                         <span className="font-bold text-slate-700">
                           Delivery#
                         </span>
-                        <span className="font-semibold text-slate-900">
+                        <span className="font-semibold">
                           {formData.deliveryNoteNumber}
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span className="font-bold text-slate-700">Date:</span>
-                        <span className="font-semibold text-slate-900">
-                          {formData.date}
-                        </span>
+                        <span className="font-semibold">{formData.date}</span>
                       </div>
                     </div>
                     <div className="space-y-1.5 text-xs text-slate-700">
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-500">📍</span>
-                        <span>{selectedCompany.address}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-500">📞</span>
-                        <span>{selectedCompany.phone}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-500">✉️</span>
-                        <span>{selectedCompany.email}</span>
-                      </div>
+                      {selectedCompany.address && (
+                        <div className="flex gap-2">
+                          <span>📍</span>
+                          <span>{selectedCompany.address}</span>
+                        </div>
+                      )}
+                      {selectedCompany.phone && (
+                        <div className="flex gap-2">
+                          <span>📞</span>
+                          <span>{selectedCompany.phone}</span>
+                        </div>
+                      )}
+                      {selectedCompany.email && (
+                        <div className="flex gap-2">
+                          <span>✉️</span>
+                          <span>{selectedCompany.email}</span>
+                        </div>
+                      )}
                       {selectedCompany.pvt && (
-                        <p className="text-xs font-mono text-slate-400 ml-5">
+                        <p className="font-mono text-slate-400 ml-5">
                           {selectedCompany.pvt}
                         </p>
                       )}
                     </div>
                   </div>
-
-                  {/* Desktop — mirrors QuotationPage exactly */}
+                  {/* Desktop */}
                   <div className="hidden sm:flex justify-between items-start gap-6">
                     <div className="flex items-start gap-4">
                       <CompanyLogo company={selectedCompany} size="lg" />
@@ -767,30 +1274,28 @@ function DeliveryNotePage() {
                           {selectedCompany.shortName}
                         </p>
                         <div className="space-y-1.5 text-sm text-slate-700">
-                          <div className="flex items-center gap-2">
-                            <span className="flex-shrink-0 text-slate-500">
-                              📍
-                            </span>
-                            <span className="leading-none">
-                              {selectedCompany.address}
-                            </span>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="flex-shrink-0 text-slate-500">
-                              📞
-                            </span>
-                            <span className="break-words leading-relaxed">
-                              {selectedCompany.phone}
-                            </span>
-                          </div>
-                          <div className="flex items-start gap-2">
-                            <span className="flex-shrink-0 text-slate-500">
-                              ✉️
-                            </span>
-                            <span className="break-words leading-relaxed">
-                              {selectedCompany.email}
-                            </span>
-                          </div>
+                          {selectedCompany.address && (
+                            <div className="flex items-center gap-2">
+                              <span className="shrink-0">📍</span>
+                              <span>{selectedCompany.address}</span>
+                            </div>
+                          )}
+                          {selectedCompany.phone && (
+                            <div className="flex items-start gap-2">
+                              <span className="shrink-0">📞</span>
+                              <span className="break-words">
+                                {selectedCompany.phone}
+                              </span>
+                            </div>
+                          )}
+                          {selectedCompany.email && (
+                            <div className="flex items-start gap-2">
+                              <span className="shrink-0">✉️</span>
+                              <span className="break-words">
+                                {selectedCompany.email}
+                              </span>
+                            </div>
+                          )}
                         </div>
                         {selectedCompany.pvt && (
                           <p className="text-xs font-mono text-slate-500 mt-2 ml-6">
@@ -806,71 +1311,67 @@ function DeliveryNotePage() {
                         </h2>
                       </div>
                       <div className="space-y-2 text-sm bg-slate-50 p-4 rounded-lg">
-                        <div className="flex justify-between gap-8 items-center">
+                        <div className="flex justify-between gap-8">
                           <span className="font-bold text-slate-700">
                             Delivery#
                           </span>
-                          <span className="font-semibold text-slate-900">
+                          <span className="font-semibold">
                             {formData.deliveryNoteNumber}
                           </span>
                         </div>
-                        <div className="flex justify-between gap-8 items-center">
+                        <div className="flex justify-between gap-8">
                           <span className="font-bold text-slate-700">
                             Date:
                           </span>
-                          <span className="font-semibold text-slate-900">
-                            {formData.date}
-                          </span>
+                          <span className="font-semibold">{formData.date}</span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* ── BILL TO / SHIP TO side by side ── */}
-                <div className="mb-4 sm:mb-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="bg-slate-50 p-3 sm:p-4 rounded-lg">
-                      <p className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
-                        Bill To
+                {/* BILL TO / SHIP TO */}
+                <div className="mb-4 sm:mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="bg-slate-50 p-3 sm:p-4 rounded-lg">
+                    <p className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
+                      Bill To
+                    </p>
+                    <p className="font-bold text-slate-900 text-sm sm:text-base mb-1">
+                      {formData.clientInfo.name || "Client Name"}
+                    </p>
+                    {formData.clientInfo.address && (
+                      <p className="text-slate-700 text-xs sm:text-sm leading-relaxed mb-2">
+                        {formData.clientInfo.address}
                       </p>
-                      <p className="font-bold text-slate-900 text-sm sm:text-base mb-1">
-                        {formData.clientInfo.name || "Client Name"}
-                      </p>
-                      {formData.clientInfo.address && (
-                        <p className="text-slate-700 text-xs sm:text-sm leading-relaxed mb-2">
-                          {formData.clientInfo.address}
-                        </p>
+                    )}
+                    <div className="space-y-1.5 text-xs sm:text-sm text-slate-700">
+                      {formData.clientInfo.phone && (
+                        <div className="flex items-center gap-2">
+                          <span>📞</span>
+                          <span>{formData.clientInfo.phone}</span>
+                        </div>
                       )}
-                      <div className="space-y-1.5 text-xs sm:text-sm text-slate-700">
-                        {formData.clientInfo.phone && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500">📞</span>
-                            <span>{formData.clientInfo.phone}</span>
-                          </div>
-                        )}
-                        {formData.clientInfo.email && (
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-500">✉️</span>
-                            <span>{formData.clientInfo.email}</span>
-                          </div>
-                        )}
-                      </div>
+                      {formData.clientInfo.email && (
+                        <div className="flex items-center gap-2">
+                          <span>✉️</span>
+                          <span>{formData.clientInfo.email}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="bg-slate-50 p-3 sm:p-4 rounded-lg">
-                      <p className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
-                        Ship To
-                      </p>
-                      <p className="text-slate-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
-                        {formData.shipTo ||
-                          formData.clientInfo.address ||
-                          "Delivery address"}
-                      </p>
-                    </div>
+                  </div>
+                  <div className="bg-slate-50 p-3 sm:p-4 rounded-lg">
+                    <p className="text-[10px] sm:text-xs font-black text-slate-500 uppercase tracking-widest mb-2">
+                      Ship To
+                    </p>
+                    <p className="text-slate-700 text-xs sm:text-sm leading-relaxed whitespace-pre-line">
+                      {formData.shipTo ||
+                        formData.clientInfo.address ||
+                        "Delivery address"}
+                    </p>
                   </div>
                 </div>
 
-                {/* ── ITEMS TABLE ── */}
+                {/* ITEMS TABLE */}
                 <div
                   className="mb-6 sm:mb-8 sm:-mx-4"
                   style={{ overflowX: "auto", overflowY: "visible" }}
@@ -879,7 +1380,6 @@ function DeliveryNotePage() {
                     style={{
                       display: "inline-block",
                       minWidth: "100%",
-                      verticalAlign: "middle",
                       overflow: "visible",
                     }}
                   >
@@ -888,34 +1388,34 @@ function DeliveryNotePage() {
                       style={{ tableLayout: "auto" }}
                     >
                       <thead>
-                        <tr className="bg-slate-800 text-white border-b-2 border-slate-900">
-                          <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
+                        <tr className="bg-slate-800 text-white">
+                          <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase">
                             #
                           </th>
                           <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase min-w-[140px]">
                             DESCRIPTION
                           </th>
                           <th
-                            className="text-center p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap"
+                            className="text-center p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase"
                             style={{ minWidth: "100px" }}
                           >
                             QTY
                           </th>
-                          <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
+                          <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase">
                             REMARKS
                           </th>
                         </tr>
                       </thead>
                       <tbody>
-                        {formData.items.map((item, index) => (
+                        {formData.items.map((item, idx) => (
                           <tr
-                            key={index}
-                            className={`border-b border-slate-200 hover:bg-slate-50 ${
-                              index % 2 === 0 ? "bg-white" : "bg-slate-50/50"
+                            key={idx}
+                            className={`border-b border-slate-200 ${
+                              idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"
                             }`}
                           >
                             <td className="p-2 sm:p-3 font-medium text-slate-700 text-[10px] sm:text-xs">
-                              {index + 1}
+                              {idx + 1}
                             </td>
                             <td className="p-2 sm:p-3">
                               <p className="font-medium text-slate-900 text-xs sm:text-sm leading-relaxed">
@@ -935,7 +1435,6 @@ function DeliveryNotePage() {
                   </div>
                 </div>
 
-                {/* ── Notes ── */}
                 {formData.notes && (
                   <div className="mb-6 sm:mb-8 bg-amber-50 border border-amber-200 rounded-lg p-4">
                     <p className="text-xs font-bold text-amber-800 mb-1 uppercase tracking-wide">
@@ -947,67 +1446,56 @@ function DeliveryNotePage() {
                   </div>
                 )}
 
-                {/* ── TERMS & CONDITIONS ── */}
+                {/* Terms */}
                 <div className="border-t-2 border-slate-300 pt-4 sm:pt-6 mb-4 sm:mb-6">
                   <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-2 sm:mb-3">
                     Terms & Conditions:
                   </h3>
-                  <div className="text-[10px] sm:text-xs text-slate-700 space-y-1.5 sm:space-y-2 leading-relaxed">
+                  <div className="text-[10px] sm:text-xs text-slate-700 space-y-1.5 leading-relaxed">
                     <p>
                       <span className="font-bold">•</span> 1. Payment Terms:
-                      Payment must be made in full within the agreed-upon period
-                      stated on the invoice. Late payments may incur additional
-                      charges.
+                      Payment must be made in full within the agreed-upon
+                      period. Late payments may incur additional charges.
                     </p>
                     <p>
                       <span className="font-bold">•</span> 2. Pricing & Taxes:
                       All prices are exclusive of applicable taxes unless stated
-                      otherwise. The buyer is responsible for any taxes, duties,
-                      or additional charges.
+                      otherwise.
                     </p>
                     <p>
                       <span className="font-bold">•</span> 3. Returns & Claims:
                       Claims for defective or incorrect items must be reported
-                      within 48 hours of receipt. Returns are subject to
-                      approval as per our return policy.
+                      within 48 hours of receipt.
                     </p>
-                    <p className="pt-1 sm:pt-2">
+                    <p className="pt-1">
                       By making a purchase, the buyer agrees to these terms. For
                       inquiries, contact {selectedCompany.email}.
                     </p>
                   </div>
                 </div>
 
-                {/* ── SIGNATURE BLOCK — matches DN-23 sample ── */}
+                {/* Signature */}
                 <div className="border-t-2 border-slate-300 pt-4 sm:pt-6">
                   <div className="grid grid-cols-2 gap-8 sm:gap-16">
-                    {/* Received By */}
                     <div>
                       <p className="text-xs sm:text-sm font-bold text-slate-800 mb-5">
                         Received By:
                       </p>
-                      <div className="space-y-5">
-                        <div>
-                          <p className="text-xs text-slate-600 mb-2">
-                            Name:{" "}
-                            <span className="inline-block w-32 border-b border-slate-400" />
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-600 mb-2">
-                            Date:{" "}
-                            <span className="inline-block w-32 border-b border-slate-400 ml-1" />
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-slate-600 mb-2">
-                            Signature:{" "}
-                            <span className="inline-block w-28 border-b border-slate-400 ml-1" />
-                          </p>
-                        </div>
+                      <div className="space-y-5 text-xs text-slate-600">
+                        <p>
+                          Name:{" "}
+                          <span className="inline-block w-32 border-b border-slate-400" />
+                        </p>
+                        <p>
+                          Date:{" "}
+                          <span className="inline-block w-32 border-b border-slate-400 ml-1" />
+                        </p>
+                        <p>
+                          Signature:{" "}
+                          <span className="inline-block w-28 border-b border-slate-400 ml-1" />
+                        </p>
                       </div>
                     </div>
-                    {/*-- Authorized Signature --*/}
                     <div className="text-right">
                       <p className="text-xs sm:text-sm font-bold text-slate-800 mb-2">
                         For, {selectedCompany.name.toUpperCase()}
@@ -1027,5 +1515,3 @@ function DeliveryNotePage() {
     </div>
   );
 }
-
-export default DeliveryNotePage;

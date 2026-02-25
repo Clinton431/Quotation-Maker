@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 /* ───────────────── DATA ───────────────── */
 
 const faqs = [
@@ -126,25 +125,25 @@ const steps = [
     num: "01",
     title: "Open the Quotation Maker",
     desc: "Click 'Create Quotation' from this page to go straight to the form.",
-    icon: "🚀",
+    icon: "📝",
   },
   {
     num: "02",
     title: "Fill in client & item details",
     desc: "Add the client name, address, and as many line items as needed.",
-    icon: "✏️",
+    icon: "👤",
   },
   {
     num: "03",
     title: "Preview in real time",
     desc: "The right panel updates live so you can see the final document before exporting.",
-    icon: "👁️",
+    icon: "🖥️",
   },
   {
     num: "04",
     title: "Download or Save",
     desc: "Export a PDF instantly or save the quotation to the database for future reference.",
-    icon: "✅",
+    icon: "📥",
   },
 ];
 
@@ -513,19 +512,24 @@ export default function HomePage() {
       </section>
 
       {/* ════════════════════ STATS ════════════════════ */}
-      <section className="bg-white border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-6 py-9 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+      <section className="bg-white border-b border-slate-100">
+        <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-100">
           {[
-            { val: "2 min", label: "Avg. time to create a quote" },
-            { val: "PDF", label: "Instant export, print-ready" },
-            { val: "100%", label: "Free — no subscription" },
-            { val: "∞", label: "Quotations saved to cloud" },
+            { val: "2 min", label: "Avg. quote time" },
+            { val: "PDF", label: "Instant export" },
+            { val: "100%", label: "Free forever" },
+            { val: "∞", label: "Cloud storage" },
           ].map((s) => (
-            <div key={s.label} className="py-3">
-              <p className="text-[2rem] font-black text-orange-500 m-0 mb-1.5 leading-none">
+            <div
+              key={s.label}
+              className="flex flex-col items-center py-7 px-4 text-center"
+            >
+              <p className="text-[2rem] font-black text-orange-500 leading-none mb-1.5">
                 {s.val}
               </p>
-              <p className="text-slate-500 text-[13px] m-0">{s.label}</p>
+              <p className="text-slate-400 text-[11px] font-semibold tracking-widest uppercase">
+                {s.label}
+              </p>
             </div>
           ))}
         </div>
@@ -579,22 +583,24 @@ export default function HomePage() {
                   {String(i + 1).padStart(2, "0")}
                 </span>
 
-                {/* Icon */}
-                <div
-                  className={`
-                    w-[52px] h-[52px] rounded-xl ${a.iconBg} ring-1 ${a.iconRing}
-                    flex items-center justify-center text-[26px] mb-5
-                    transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3
-                  `}
-                >
-                  {f.icon}
+                {/* Icon — centered at top */}
+                <div className="flex justify-center mb-5">
+                  <div
+                    className={`
+                      w-[52px] h-[52px] rounded-xl ${a.iconBg} ring-1 ${a.iconRing}
+                      flex items-center justify-center text-[26px]
+                      transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3
+                    `}
+                  >
+                    {f.icon}
+                  </div>
                 </div>
 
                 {/* Text */}
-                <h3 className="font-bold text-slate-900 text-[15px] tracking-tight leading-snug mb-2.5">
+                <h3 className="font-bold text-slate-900 text-[15px] tracking-tight leading-snug mb-2.5 text-center">
                   {f.title}
                 </h3>
-                <p className="text-slate-500 text-sm leading-relaxed flex-1">
+                <p className="text-slate-500 text-sm leading-relaxed flex-1 text-center">
                   {f.desc}
                 </p>
 
@@ -638,45 +644,54 @@ export default function HomePage() {
       {/* ════════════════════ HOW IT WORKS ════════════════════ */}
       <section
         id="how-it-works"
-        className="bg-white border-y border-slate-200 py-[90px] px-6"
+        className="bg-slate-50 border-y border-slate-100 py-24 px-6"
       >
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-16">
             <SectionPill>Process</SectionPill>
             <h2 className="text-[2.5rem] font-black text-slate-900 m-0 mb-3 -tracking-[0.02em]">
               How it works
             </h2>
-            <p className="text-slate-500 text-lg">
-              Four simple steps from blank page to finished quotation.
+            <p className="text-slate-500 text-base max-w-sm mx-auto">
+              From blank page to finished quotation in four steps.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {steps.map((s) => (
+          {/* Steps */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative">
+            {/* Connector line — desktop only */}
+            <div className="hidden lg:block absolute top-9 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-orange-200 to-transparent z-0" />
+
+            {steps.map((s, i) => (
               <div
                 key={s.num}
-                className="bg-gradient-to-tr from-white/80 to-slate-50/80 border border-slate-200 rounded-[20px] px-6 py-8 text-center cursor-pointer shadow-lg hover:shadow-xl hover:-translate-y-2 transition-all duration-300"
+                className="group relative flex flex-col items-center text-center bg-white rounded-2xl px-6 py-8 border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-100 hover:-translate-y-1 transition-all duration-300 z-10"
               >
-                <div className="w-[60px] h-[60px] rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white font-extrabold text-lg flex items-center justify-center mx-auto mb-5 shadow-[0_8px_24px_rgba(249,115,22,0.25)]">
-                  {s.num}
+                {/* Step circle */}
+                <div className="relative mb-5">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white font-black text-base flex items-center justify-center shadow-[0_6px_20px_rgba(249,115,22,0.3)] group-hover:shadow-[0_8px_28px_rgba(249,115,22,0.45)] transition-shadow duration-300">
+                    {s.num}
+                  </div>
+                  {/* Step icon badge */}
+                  <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border border-slate-100 flex items-center justify-center text-sm shadow-sm">
+                    {s.icon}
+                  </div>
                 </div>
-                <div className="text-[28px] mb-3 hover:scale-125 transition-transform duration-300">
-                  {s.icon}
-                </div>
-                <h3 className="font-extrabold text-slate-900 text-base m-0 mb-2">
+
+                <h3 className="font-bold text-slate-900 text-[14px] leading-snug mb-2 tracking-tight">
                   {s.title}
                 </h3>
-                <p className="text-slate-500 text-[14px] leading-relaxed m-0">
+                <p className="text-slate-400 text-[13px] leading-relaxed">
                   {s.desc}
                 </p>
               </div>
             ))}
           </div>
 
-          <div className="text-center mt-12">
+          <div className="text-center mt-10">
             <button
               onClick={() => navigate("/quotation")}
-              className="bg-gradient-to-br from-orange-400 to-orange-600 text-white font-bold text-[15px] px-10 py-4 rounded-xl border-none cursor-pointer shadow-[0_6px_24px_rgba(249,115,22,0.3)] transition-transform duration-200 hover:scale-105 active:scale-95"
+              className="bg-gradient-to-br from-orange-400 to-orange-600 text-white font-bold text-[14px] px-8 py-3.5 rounded-xl border-none cursor-pointer shadow-[0_6px_24px_rgba(249,115,22,0.3)] transition-all duration-200 hover:shadow-[0_8px_32px_rgba(249,115,22,0.45)] hover:-translate-y-0.5 active:scale-95"
             >
               Try it now — it's free →
             </button>
@@ -685,34 +700,36 @@ export default function HomePage() {
       </section>
 
       {/* ════════════════════ ABOUT ════════════════════ */}
-      <section className="py-[110px] px-6 max-w-7xl mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-stretch">
+      <section className="py-24 px-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
           {/* LEFT CARD */}
-          <div className="relative rounded-3xl p-10 bg-slate-900 border border-white/10 overflow-hidden shadow-[0_25px_80px_rgba(15,23,42,0.45)] h-full flex flex-col justify-between">
-            <div>
-              <div className="absolute -top-32 -right-32 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
-              <span className="inline-block bg-white/5 text-orange-400 text-[10px] font-semibold tracking-widest uppercase px-4 py-1.5 rounded-full border border-orange-400/20 mb-6">
+          <div className="relative rounded-3xl p-10 bg-slate-900 border border-white/10 overflow-hidden shadow-[0_20px_60px_rgba(15,23,42,0.35)] flex flex-col justify-between">
+            <div className="absolute -top-32 -right-32 w-96 h-96 bg-orange-500/8 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative z-10">
+              <span className="inline-flex items-center gap-1.5 bg-white/5 text-orange-400 text-[10px] font-bold tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-orange-400/20 mb-6">
+                <span className="w-1 h-1 rounded-full bg-orange-400 inline-block" />
                 About the Tool
               </span>
-              <h2 className="text-[1.9rem] font-extrabold text-white mb-5 leading-tight">
+              <h2 className="text-[1.85rem] font-extrabold text-white mb-4 leading-tight tracking-tight">
                 Simplify your billing with the Wimwa Tech Quotation Maker
               </h2>
-              <p className="text-slate-400 text-sm leading-[1.8] mb-8 max-w-lg">
-                Wimwa Tech General Supplies Limited built this tool to eliminate
-                slow, error-prone Excel quotations. Create polished, branded
-                documents in under two minutes.
+              <p className="text-slate-400 text-sm leading-[1.8] mb-8 max-w-md">
+                Built to eliminate slow, error-prone Excel quotations. Create
+                polished, branded documents in under two minutes.
               </p>
             </div>
-            <ul className="flex flex-col gap-4 mt-6">
+            <ul className="relative z-10 flex flex-col gap-3">
               {[
                 "Auto-calculated totals and grand total",
                 "Supports pcs and kgs units",
                 "Company branding built-in",
                 "One-click PDF download",
               ].map((item) => (
-                <li key={item} className="flex items-start gap-3">
-                  <div className="w-6 h-6 rounded-full bg-orange-500/10 border border-orange-400/30 flex items-center justify-center shrink-0 mt-0.5">
-                    <span className="text-orange-400 text-xs font-bold">✓</span>
+                <li key={item} className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-orange-500/15 border border-orange-400/30 flex items-center justify-center shrink-0">
+                    <span className="text-orange-400 text-[10px] font-black">
+                      ✓
+                    </span>
                   </div>
                   <span className="text-sm text-slate-300">{item}</span>
                 </li>
@@ -721,7 +738,7 @@ export default function HomePage() {
           </div>
 
           {/* RIGHT GRID */}
-          <div className="grid grid-cols-2 gap-6 h-full">
+          <div className="grid grid-cols-2 gap-4">
             {[
               { icon: "⏱", val: "< 2 min", label: "Average time to complete" },
               {
@@ -738,19 +755,19 @@ export default function HomePage() {
             ].map((c) => (
               <div
                 key={c.label}
-                className="rounded-2xl p-6 bg-white border border-slate-200 shadow-[0_8px_30px_rgba(0,0,0,0.05)] transition-all duration-300 hover:-translate-y-2 hover:shadow-[0_15px_50px_rgba(0,0,0,0.1)] flex flex-col justify-between"
+                className="group rounded-2xl p-6 bg-white border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-100 hover:-translate-y-1 transition-all duration-300 flex flex-col gap-3"
               >
+                <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center text-lg">
+                  {c.icon}
+                </div>
                 <div>
-                  <div className="w-11 h-11 rounded-xl bg-slate-100 flex items-center justify-center text-xl mb-4">
-                    {c.icon}
-                  </div>
-                  <p className="font-extrabold text-slate-900 text-[1.35rem] mb-2">
+                  <p className="font-black text-slate-900 text-[1.25rem] leading-none mb-1">
                     {c.val}
                   </p>
+                  <p className="text-slate-400 text-xs leading-relaxed">
+                    {c.label}
+                  </p>
                 </div>
-                <p className="text-slate-500 text-xs leading-relaxed mt-4">
-                  {c.label}
-                </p>
               </div>
             ))}
           </div>
@@ -760,15 +777,15 @@ export default function HomePage() {
       {/* ════════════════════ TESTIMONIALS ════════════════════ */}
       <section
         id="testimonials"
-        className="bg-gradient-to-b from-slate-50 to-white border-y border-slate-200 py-[90px] px-6"
+        className="bg-white border-y border-slate-100 py-24 px-6"
       >
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="text-center mb-14">
             <SectionPill>Testimonials</SectionPill>
             <h2 className="text-[2.4rem] font-black text-slate-900 m-0 mb-3 -tracking-[0.02em]">
               What our clients say
             </h2>
-            <p className="text-slate-500 m-0">
+            <p className="text-slate-400 m-0 text-sm">
               Real feedback from people using the tool daily.
             </p>
           </div>
@@ -777,24 +794,34 @@ export default function HomePage() {
             {testimonials.map((t) => (
               <div
                 key={t.name}
-                className="bg-white border border-slate-200 rounded-[20px] p-7 shadow-[0_2px_12px_rgba(0,0,0,0.05)] cursor-default transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(0,0,0,0.1)]"
+                className="group relative bg-slate-50 border border-slate-100 rounded-2xl p-7 hover:bg-white hover:border-orange-100 hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col"
               >
-                <div className="flex gap-1 mb-4">
+                {/* Large decorative quote mark */}
+                <span className="text-[64px] leading-none text-orange-100 font-black select-none absolute top-4 right-6 group-hover:text-orange-200 transition-colors duration-300">
+                  "
+                </span>
+
+                {/* Stars */}
+                <div className="flex gap-0.5 mb-4">
                   {Array.from({ length: t.rating }).map((_, i) => (
                     <span key={i} className="text-orange-400 text-sm">
                       ★
                     </span>
                   ))}
                 </div>
-                <p className="text-slate-600 text-[15px] leading-[1.7] m-0 mb-6 italic">
-                  "{t.text}"
+
+                {/* Quote */}
+                <p className="text-slate-600 text-[14px] leading-[1.75] flex-1 relative z-10">
+                  {t.text}
                 </p>
-                <div className="flex items-center gap-3 border-t border-slate-100 pt-[18px]">
-                  <div className="w-[42px] h-[42px] rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-extrabold text-sm shrink-0 shadow-[0_4px_10px_rgba(249,115,22,0.25)]">
+
+                {/* Author */}
+                <div className="flex items-center gap-3 mt-6 pt-5 border-t border-slate-100">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
                     {t.initials}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900 text-sm m-0">
+                    <p className="font-bold text-slate-900 text-sm m-0 leading-tight">
                       {t.name}
                     </p>
                     <p className="text-slate-400 text-xs m-0 mt-0.5">

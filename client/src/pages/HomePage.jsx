@@ -149,21 +149,21 @@ const steps = [
 
 const testimonials = [
   {
-    name: "James Kariuki",
+    name: "Ken Mwangi",
     role: "Procurement Manager",
     text: "Before this tool I was spending 20 minutes per quotation in Excel. Now it takes me under 2 minutes and looks far more professional.",
     rating: 5,
     initials: "JK",
   },
   {
-    name: "Amina Odhiambo",
+    name: "Clinton Nyakoe",
     role: "Small Business Owner",
     text: "My clients are always impressed by how clean and fast I send quotations. The PDF looks like it came from a big company.",
     rating: 5,
     initials: "AO",
   },
   {
-    name: "Peter Mwangi",
+    name: "Janet Odhiambo",
     role: "Contractor",
     text: "The pcs/kgs unit toggle is exactly what I needed. I deal in both and every other tool forced me to pick one.",
     rating: 5,

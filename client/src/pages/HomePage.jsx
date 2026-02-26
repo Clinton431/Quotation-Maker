@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-/* ───────────────── DATA ───────────────── */
 
+/* ═══════════════════════════════════════
+   DATA
+═══════════════════════════════════════ */
 const faqs = [
   {
     q: "What is a quotation?",
@@ -68,7 +70,6 @@ const features = [
   },
 ];
 
-// Tailwind-safe static class maps — no dynamic class generation
 const accentMap = {
   orange: {
     bar: "from-orange-400 to-orange-300",
@@ -153,26 +154,399 @@ const testimonials = [
     role: "Procurement Manager",
     text: "Before this tool I was spending 20 minutes per quotation in Excel. Now it takes me under 2 minutes and looks far more professional.",
     rating: 5,
-    initials: "JK",
+    initials: "KM",
   },
   {
     name: "Clinton Nyakoe",
     role: "Small Business Owner",
     text: "My clients are always impressed by how clean and fast I send quotations. The PDF looks like it came from a big company.",
     rating: 5,
-    initials: "AO",
+    initials: "CN",
   },
   {
     name: "Janet Odhiambo",
     role: "Contractor",
     text: "The pcs/kgs unit toggle is exactly what I needed. I deal in both and every other tool forced me to pick one.",
     rating: 5,
-    initials: "PM",
+    initials: "JO",
   },
 ];
 
-/* ───────────────── REUSABLE ───────────────── */
+/* ═══════════════════════════════════════
+   HERO PREVIEW CARD
+═══════════════════════════════════════ */
+const INVOICE_ROWS = [
+  { desc: "Cement (50 kg bags)", qty: "120", unit: "pcs", total: "72,000" },
+  { desc: "Steel Rods 16 mm", qty: "50", unit: "kgs", total: "45,500" },
+  { desc: "River Sand (tonne)", qty: "8", unit: "pcs", total: "16,000" },
+  { desc: "Binding Wire rolls", qty: "24", unit: "pcs", total: "8,400" },
+];
 
+function HeroPreviewCard() {
+  const [activeRow, setActiveRow] = useState(0);
+  const [typed, setTyped] = useState("");
+  const [showCursor, setShowCursor] = useState(true);
+
+  // Cycle active row every 2 s
+  useEffect(() => {
+    const t = setInterval(
+      () => setActiveRow((r) => (r + 1) % INVOICE_ROWS.length),
+      2200
+    );
+    return () => clearInterval(t);
+  }, []);
+
+  // Blinking cursor
+  useEffect(() => {
+    const t = setInterval(() => setShowCursor((c) => !c), 530);
+    return () => clearInterval(t);
+  }, []);
+
+  // Typing effect when active row changes
+  useEffect(() => {
+    const full = INVOICE_ROWS[activeRow].desc;
+    setTyped("");
+    let i = 0;
+    const t = setInterval(() => {
+      i++;
+      setTyped(full.slice(0, i));
+      if (i >= full.length) clearInterval(t);
+    }, 40);
+    return () => clearInterval(t);
+  }, [activeRow]);
+
+  return (
+    <div className="relative w-full select-none">
+      {/* Outer glow halo */}
+      <div
+        className="absolute -inset-3 rounded-[28px] pointer-events-none"
+        style={{
+          background:
+            "radial-gradient(ellipse at 60% 40%,rgba(249,115,22,0.22) 0%,transparent 70%)",
+          filter: "blur(16px)",
+        }}
+      />
+
+      {/* Glass shell */}
+      <div
+        className="relative rounded-[20px] overflow-hidden"
+        style={{
+          background:
+            "linear-gradient(160deg,rgba(36,52,80,0.98) 0%,rgba(22,34,58,0.99) 100%)",
+          border: "1px solid rgba(255,255,255,0.18)",
+          boxShadow:
+            "0 28px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(249,115,22,0.14), inset 0 1px 0 rgba(255,255,255,0.12)",
+        }}
+      >
+        {/* ── Window chrome ── */}
+        <div
+          className="flex items-center justify-between px-4 pt-3.5 pb-3 border-b border-white/[0.12]"
+          style={{ background: "rgba(255,255,255,0.07)" }}
+        >
+          <div className="flex items-center gap-3">
+            {/* macOS traffic lights */}
+            <div className="flex gap-1.5">
+              <div
+                className="w-[11px] h-[11px] rounded-full"
+                style={{ background: "#ff5f56" }}
+              />
+              <div
+                className="w-[11px] h-[11px] rounded-full"
+                style={{ background: "#ffbd2e" }}
+              />
+              <div
+                className="w-[11px] h-[11px] rounded-full"
+                style={{ background: "#27c93f" }}
+              />
+            </div>
+            {/* Mini address bar */}
+            <div
+              className="hidden sm:flex items-center gap-1.5 rounded-md px-2.5 py-1"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.09)",
+              }}
+            >
+              <svg
+                className="w-2.5 h-2.5 text-emerald-400 shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="text-[10px] font-mono text-white/30 tracking-tight">
+                wimwatech.co.ke/quotation
+              </span>
+            </div>
+          </div>
+          {/* Live badge */}
+          <div
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+            style={{
+              background: "rgba(16,185,129,0.1)",
+              border: "1px solid rgba(16,185,129,0.25)",
+            }}
+          >
+            <span className="relative flex w-2 h-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-55" />
+              <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-400" />
+            </span>
+            <span className="text-[10px] font-bold text-emerald-400 tracking-wider">
+              LIVE
+            </span>
+          </div>
+        </div>
+
+        {/* ── Document body ── */}
+        <div className="p-4 space-y-3">
+          {/* Doc header */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                style={{
+                  background: "linear-gradient(135deg,#fb923c,#ea580c)",
+                  boxShadow: "0 4px 14px rgba(249,115,22,0.5)",
+                }}
+              >
+                <span className="text-white font-black text-xs">W</span>
+              </div>
+              <div>
+                <div className="text-[11px] font-bold text-white/90 leading-tight">
+                  Wimwa Tech
+                </div>
+                <div className="text-[9px] text-white/55 mt-0.5">
+                  General Supplies Ltd
+                </div>
+              </div>
+            </div>
+            <div className="text-right shrink-0">
+              <div className="text-[11px] font-black tracking-[2.5px] text-white/80 mb-0.5">
+                QUOTATION
+              </div>
+              <div className="text-[9px] text-white/50 font-mono">
+                #QT-2025-0148
+              </div>
+              <div className="text-[9px] text-white/50 mt-0.5">25 Feb 2026</div>
+            </div>
+          </div>
+
+          {/* Bill to */}
+          <div
+            className="rounded-xl px-3.5 py-2.5"
+            style={{
+              background: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.12)",
+            }}
+          >
+            <div
+              className="text-[8px] font-bold uppercase tracking-widest mb-1"
+              style={{ color: "rgba(251,146,60,0.75)" }}
+            >
+              Bill To
+            </div>
+            <div className="text-[11px] font-semibold text-white/90">
+              Nairobi Hardware Ltd
+            </div>
+            <div className="text-[9px] text-white/50 mt-0.5">
+              Industrial Area, Nairobi · +254 700 000 123
+            </div>
+          </div>
+
+          {/* Items table */}
+          <div
+            className="rounded-xl overflow-hidden"
+            style={{ border: "1px solid rgba(255,255,255,0.12)" }}
+          >
+            {/* Head */}
+            <div
+              className="grid px-3 py-2 gap-2 text-[8px] font-bold uppercase tracking-wider text-white/55"
+              style={{
+                gridTemplateColumns: "1fr 34px 34px 56px",
+                background: "rgba(255,255,255,0.07)",
+                borderBottom: "1px solid rgba(255,255,255,0.10)",
+              }}
+            >
+              <span>Description</span>
+              <span className="text-center">Qty</span>
+              <span className="text-center">Unit</span>
+              <span className="text-right">Ksh</span>
+            </div>
+
+            {/* Rows */}
+            {INVOICE_ROWS.map((row, i) => {
+              const isActive = i === activeRow;
+              return (
+                <div
+                  key={i}
+                  className="grid px-3 py-2.5 gap-2 transition-colors duration-500"
+                  style={{
+                    gridTemplateColumns: "1fr 34px 34px 56px",
+                    background: isActive
+                      ? "rgba(249,115,22,0.14)"
+                      : i % 2 === 0
+                      ? "rgba(255,255,255,0.04)"
+                      : "rgba(255,255,255,0.07)",
+                    borderBottom: "1px solid rgba(255,255,255,0.07)",
+                  }}
+                >
+                  {/* Description with typing cursor */}
+                  <div
+                    className={`text-[10px] font-medium truncate transition-colors duration-400 ${
+                      isActive ? "text-white" : "text-white/65"
+                    }`}
+                  >
+                    {isActive ? (
+                      <>
+                        {typed}
+                        <span
+                          className={`inline-block w-[2px] h-[10px] ml-px align-middle bg-white transition-opacity ${
+                            showCursor ? "opacity-100" : "opacity-0"
+                          }`}
+                        />
+                      </>
+                    ) : (
+                      row.desc
+                    )}
+                  </div>
+                  <div
+                    className={`text-[10px] font-mono font-bold text-center transition-colors duration-400 ${
+                      isActive ? "text-white" : "text-white/60"
+                    }`}
+                  >
+                    {row.qty}
+                  </div>
+                  <div className="flex justify-center">
+                    <span
+                      className={`text-[8px] font-bold px-1.5 py-0.5 rounded transition-all duration-400 ${
+                        isActive ? "text-white" : "text-white/50"
+                      }`}
+                      style={
+                        isActive
+                          ? {
+                              background: "rgba(249,115,22,0.3)",
+                              boxShadow: "0 0 0 1px rgba(249,115,22,0.4)",
+                            }
+                          : { background: "rgba(255,255,255,0.08)" }
+                      }
+                    >
+                      {row.unit}
+                    </span>
+                  </div>
+                  <div
+                    className={`text-[10px] font-mono font-bold text-right transition-colors duration-400 ${
+                      isActive ? "text-white" : "text-white/60"
+                    }`}
+                  >
+                    {row.total}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Grand total */}
+          <div
+            className="rounded-xl px-4 py-3 flex items-center justify-between"
+            style={{
+              background:
+                "linear-gradient(135deg,rgba(249,115,22,0.18) 0%,rgba(234,88,12,0.12) 100%)",
+              border: "1px solid rgba(249,115,22,0.35)",
+            }}
+          >
+            <div>
+              <div
+                className="text-[8px] font-bold uppercase tracking-widest mb-0.5"
+                style={{ color: "rgba(251,146,60,0.7)" }}
+              >
+                Grand Total
+              </div>
+              <div className="text-xl font-black font-mono text-white">
+                Ksh 141,900
+              </div>
+            </div>
+            <div className="flex flex-col gap-1.5 items-end">
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-[9px] font-semibold text-emerald-400">
+                  Auto-calculated
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
+                <span className="text-[9px] font-semibold text-sky-400">
+                  PDF ready
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Action bar */}
+          <div className="flex gap-2 pt-0.5">
+            {/* Download */}
+            <div
+              className="flex-1 py-2.5 rounded-xl flex items-center justify-center gap-1.5 cursor-default"
+              style={{
+                background: "linear-gradient(135deg,#fb923c,#ea580c)",
+                boxShadow: "0 4px 18px rgba(249,115,22,0.42)",
+              }}
+            >
+              <svg
+                className="w-3.5 h-3.5 text-white"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 11l5 5 5-5M12 4v12"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="text-[11px] font-bold text-white tracking-wide">
+                Download PDF
+              </span>
+            </div>
+            {/* Save */}
+            <div
+              className="px-4 py-2.5 rounded-xl flex items-center justify-center gap-1.5 cursor-default"
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+              }}
+            >
+              <svg
+                className="w-3.5 h-3.5 text-white/40"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1-4H9m0 0a2 2 0 00-2 2v4m2-6a2 2 0 012 2v4"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              <span className="text-[11px] font-semibold text-white/35">
+                Save
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════════════════════════════════
+   SHARED COMPONENTS
+═══════════════════════════════════════ */
 function SectionPill({ children }) {
   return (
     <span className="inline-flex items-center gap-1.5 bg-orange-50 text-orange-600 text-[11px] font-bold tracking-widest uppercase px-3.5 py-1 rounded-full border border-orange-200 mb-4">
@@ -211,16 +585,93 @@ function FAQItem({ q, a }) {
   );
 }
 
-/* ══════════════════════════════════════════════════
+/* ═══════════════════════════════════════
    MAIN PAGE
-══════════════════════════════════════════════════ */
-
+═══════════════════════════════════════ */
 export default function HomePage() {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Trigger entrance animations after first paint
+  useEffect(() => {
+    const t = setTimeout(() => setMounted(true), 60);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
+      {/* ══════════ GLOBAL KEYFRAMES ══════════ */}
+      <style>{`
+        @keyframes heroFadeUp {
+          from { opacity:0; transform:translateY(24px); }
+          to   { opacity:1; transform:translateY(0);    }
+        }
+        @keyframes heroBadgeDrop {
+          from { opacity:0; transform:translateY(-12px) scale(0.94); }
+          to   { opacity:1; transform:translateY(0)     scale(1);    }
+        }
+        @keyframes heroSlideIn {
+          from { opacity:0; transform:translateX(-26px); }
+          to   { opacity:1; transform:translateX(0);     }
+        }
+        @keyframes heroCardRise {
+          from { opacity:0; transform:translateY(36px) scale(0.96); }
+          to   { opacity:1; transform:translateY(0)    scale(1);    }
+        }
+        @keyframes floatY {
+          0%,100% { transform:translateY(0)    rotate(0.3deg);  }
+          50%      { transform:translateY(-10px) rotate(-0.3deg); }
+        }
+        @keyframes shimmerText {
+          0%   { background-position:-200% center; }
+          100% { background-position: 200% center; }
+        }
+        @keyframes scanLine {
+          0%   { top:-2px;   opacity:0.25; }
+          90%  { opacity:0.25; }
+          100% { top:100%;   opacity:0;    }
+        }
+        @keyframes fadeUpSection {
+          from { opacity:0; transform:translateY(20px); }
+          to   { opacity:1; transform:translateY(0);    }
+        }
+
+        /* hero staggered entrances */
+        .h-badge  { animation: heroBadgeDrop 0.55s cubic-bezier(.22,1,.36,1) both 0.05s; }
+        .h-h1     { animation: heroSlideIn   0.65s cubic-bezier(.22,1,.36,1) both 0.18s; }
+        .h-sub    { animation: heroFadeUp    0.55s cubic-bezier(.22,1,.36,1) both 0.30s; }
+        .h-ctas   { animation: heroFadeUp    0.55s cubic-bezier(.22,1,.36,1) both 0.42s; }
+        .h-chips  { animation: heroFadeUp    0.55s cubic-bezier(.22,1,.36,1) both 0.54s; }
+        .h-card   { animation: heroCardRise  0.75s cubic-bezier(.22,1,.36,1) both 0.22s; }
+        .h-badge,.h-h1,.h-sub,.h-ctas,.h-chips,.h-card { opacity:0; animation-fill-mode:forwards; }
+
+        /* shimmer orange text */
+        .shimmer-orange {
+          background: linear-gradient(90deg, #fbbf24 0%, #f97316 25%, #fb923c 50%, #f97316 75%, #fbbf24 100%);
+          background-size: 250% auto;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: shimmerText 3.8s linear infinite;
+        }
+
+        /* card float */
+        .card-float { animation: floatY 7s ease-in-out infinite; }
+
+        /* scan line overlay inside hero */
+        .hero-scan::before {
+          content: '';
+          position: absolute; left:0; right:0; height:2px;
+          background: linear-gradient(90deg,transparent,rgba(249,115,22,0.3),transparent);
+          animation: scanLine 7s ease-in-out infinite;
+          pointer-events: none; z-index:1;
+        }
+
+        /* section card fadeUp */
+        @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
+
       {/* ════════════════════ NAV ════════════════════ */}
       <nav className="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50 shadow-[0_1px_12px_rgba(0,0,0,0.06)]">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -239,7 +690,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Desktop nav links */}
+          {/* Desktop links */}
           <div className="hidden md:flex items-center gap-9 text-sm font-medium">
             {[
               ["#features", "Features"],
@@ -257,7 +708,7 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Desktop CTA */}
+          {/* Desktop CTAs */}
           <div className="hidden md:flex items-center gap-2">
             <button
               onClick={() => navigate("/delivery-note")}
@@ -297,7 +748,7 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* Mobile dropdown */}
+        {/* Mobile menu */}
         <div
           className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
             menuOpen ? "max-h-96 border-t border-slate-100" : "max-h-0"
@@ -334,7 +785,7 @@ export default function HomePage() {
                   setMenuOpen(false);
                   navigate("/quotation");
                 }}
-                className="w-full bg-gradient-to-br from-orange-400 to-orange-600 text-white font-bold text-sm py-3 rounded-xl border-none cursor-pointer shadow-[0_4px_14px_rgba(249,115,22,0.3)] transition-all duration-150 hover:opacity-90"
+                className="w-full bg-gradient-to-br from-orange-400 to-orange-600 text-white font-bold text-sm py-3 rounded-xl border-none cursor-pointer shadow-[0_4px_14px_rgba(249,115,22,0.3)]"
               >
                 Create Quotation →
               </button>
@@ -343,176 +794,319 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* ════════════════════ HERO ════════════════════ */}
-      <section className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 overflow-hidden">
-        {/* Subtle grid overlay */}
+      {/* ═══════════════════════════════════════════════════
+          HERO — complete redesign
+      ═══════════════════════════════════════════════════ */}
+      <section
+        className="relative overflow-hidden hero-scan"
+        style={{
+          background:
+            "linear-gradient(155deg,#080e1a 0%,#0d1525 50%,#0a1120 100%)",
+          minHeight: "93vh",
+        }}
+      >
+        {/* ── Atmosphere layers ── */}
+
+        {/* 1. Dot grid — fine, subtle */}
         <div
-          className="absolute inset-0 pointer-events-none opacity-[0.04]"
+          className="absolute inset-0 pointer-events-none"
           style={{
             backgroundImage:
-              "linear-gradient(#f97316 1px,transparent 1px),linear-gradient(90deg,#f97316 1px,transparent 1px)",
-            backgroundSize: "60px 60px",
+              "radial-gradient(rgba(249,115,22,0.16) 1px,transparent 1px)",
+            backgroundSize: "30px 30px",
+            opacity: 0.4,
           }}
         />
-        {/* Glow blobs */}
+
+        {/* 2. Diagonal hatch — bottom-right for asymmetry */}
         <div
-          className="absolute -top-20 -right-20 w-[500px] h-[500px] rounded-full pointer-events-none"
+          className="absolute inset-0 pointer-events-none opacity-[0.022]"
+          style={{
+            backgroundImage:
+              "repeating-linear-gradient(130deg,#f97316 0px,#f97316 1px,transparent 0px,transparent 50%)",
+            backgroundSize: "22px 22px",
+            maskImage:
+              "radial-gradient(ellipse 80% 80% at 80% 60%,black 0%,transparent 70%)",
+          }}
+        />
+
+        {/* 3. Colour blobs */}
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: "-12%",
+            right: "-6%",
+            width: 560,
+            height: 560,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle,rgba(249,115,22,0.18) 0%,transparent 65%)",
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            bottom: "-18%",
+            left: "-10%",
+            width: 480,
+            height: 480,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle,rgba(249,115,22,0.09) 0%,transparent 65%)",
+          }}
+        />
+        <div
+          className="absolute pointer-events-none"
+          style={{
+            top: "40%",
+            left: "42%",
+            width: 360,
+            height: 360,
+            borderRadius: "50%",
+            background:
+              "radial-gradient(circle,rgba(249,115,22,0.05) 0%,transparent 65%)",
+          }}
+        />
+
+        {/* 4. Top edge accent */}
+        <div
+          className="absolute top-0 inset-x-0 h-[1px] pointer-events-none"
           style={{
             background:
-              "radial-gradient(circle,rgba(249,115,22,0.18) 0%,transparent 70%)",
+              "linear-gradient(90deg,transparent 0%,rgba(249,115,22,0.7) 35%,rgba(251,146,60,0.5) 65%,transparent 100%)",
           }}
         />
+
+        {/* 5. Bottom left corner tag — decorative */}
+        <div className="absolute bottom-8 left-6 hidden lg:flex items-center gap-2 pointer-events-none">
+          <span
+            className="w-1.5 h-1.5 rounded-full"
+            style={{ background: "rgba(249,115,22,0.4)" }}
+          />
+          <span className="text-[10px] font-mono text-white/15 tracking-widest uppercase">
+            v2.1.0 · Kiserian, Kenya
+          </span>
+        </div>
+
+        {/* ── Content ── */}
         <div
-          className="absolute bottom-10 -left-24 w-[400px] h-[400px] rounded-full pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(circle,rgba(249,115,22,0.10) 0%,transparent 70%)",
-          }}
-        />
-
-        <div className="max-w-7xl mx-auto px-6 py-20 flex flex-col lg:flex-row items-center gap-8 lg:gap-7">
-          {/* LEFT: copy */}
-          <div className="flex-1 min-w-0">
-            <span className="inline-flex items-center gap-2 bg-orange-500/10 border border-orange-500/30 text-orange-400 text-[11px] font-bold tracking-widest uppercase px-3.5 py-1.5 rounded-full mb-6">
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 inline-block" />
-              Wimwa Tech General Supplies Limited
-            </span>
-
-            <h1 className="text-[3.2rem] max-sm:text-[2.2rem] font-black text-white leading-[1.05] -tracking-[0.02em] mb-5">
-              Create Professional
-              <br />
-              <span className="text-orange-400">Quotations</span>
-            </h1>
-
-            <p className="text-slate-400 text-base leading-relaxed mb-9 max-w-[460px]">
-              Fill in client details, add items, preview live, and download a
-              polished PDF — all in your browser.
-            </p>
-
-            <div className="flex flex-wrap gap-3 mb-8">
-              <button
-                onClick={() => navigate("/quotation")}
-                className="bg-gradient-to-br from-orange-400 to-orange-600 text-white font-bold px-7 py-3.5 rounded-2xl border-none cursor-pointer shadow-[0_10px_40px_rgba(249,115,22,0.45)] hover:-translate-y-0.5 transition-all duration-150"
+          className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8"
+          style={{ minHeight: "93vh", display: "flex", alignItems: "center" }}
+        >
+          <div className="w-full grid grid-cols-1 lg:grid-cols-[1.15fr_0.85fr] gap-10 lg:gap-14 py-20 lg:py-0">
+            {/* ════ LEFT COPY ════ */}
+            <div className="flex flex-col items-start">
+              {/* Pulsing badge */}
+              <div
+                className={`${
+                  mounted ? "h-badge" : ""
+                } flex items-center gap-2.5 mb-8`}
               >
-                Create a quotation now →
-              </button>
-              <a
-                href="#how-it-works"
-                className="flex items-center justify-center border border-white/20 text-slate-300 px-7 py-3.5 rounded-2xl no-underline hover:text-orange-400 hover:border-orange-400 transition-colors duration-150"
-              >
-                Preview how it works
-              </a>
-            </div>
-
-            {/* Trust chips */}
-            <div className="flex flex-wrap gap-2">
-              {[
-                "✓ Free to use",
-                "✓ No sign-up",
-                "✓ Instant PDF",
-                "✓ Cloud saved",
-              ].map((t) => (
-                <span
-                  key={t}
-                  className="text-slate-500 text-xs font-medium bg-white/[0.05] border border-white/10 px-3 py-1 rounded-full"
-                >
-                  {t}
+                <span className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-55" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-400" />
                 </span>
-              ))}
-            </div>
-          </div>
+                <span className="text-[11px] font-semibold tracking-[0.14em] uppercase text-orange-400/65">
+                  Wimwa Tech General Supplies Limited
+                </span>
+                <span className="hidden sm:inline-block w-px h-3.5 bg-white/12" />
+                <span className="hidden sm:inline text-[10px] text-white/22 tracking-wide">
+                  Kiserian, Kenya
+                </span>
+              </div>
 
-          {/* RIGHT: preview card */}
-          <div className="hidden lg:flex flex-1 min-w-0 items-end justify-center">
-            <div className="relative w-full max-w-[400px]">
-              <div className="absolute -inset-2 bg-gradient-to-br from-orange-400/20 via-transparent to-orange-600/20 blur-2xl rounded-3xl" />
-              <div className="relative rounded-3xl bg-white/80 backdrop-blur-xl border border-white/30 shadow-[0_30px_80px_rgba(0,0,0,0.45)] overflow-hidden transition-all duration-500 hover:scale-[1.015]">
-                {/* App header */}
-                <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 bg-gradient-to-r from-white to-orange-50">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-extrabold text-xs shadow-[0_6px_16px_rgba(249,115,22,0.45)]">
-                      W
-                    </div>
-                    <span className="font-semibold text-slate-700 text-sm">
-                      Quotation Preview
+              {/* Headline — stacked, very large */}
+              <h1
+                className={`${mounted ? "h-h1" : ""}  mb-7`}
+                style={{ lineHeight: 1.0, letterSpacing: "-0.03em" }}
+              >
+                {/* Label line */}
+                <span className="block text-white/35 text-[12px] sm:text-[13px] font-bold tracking-[0.2em] uppercase mb-4">
+                  Quotations &amp; Delivery Notes
+                </span>
+                {/* Word 1 */}
+                <span
+                  className="block text-white font-black"
+                  style={{ fontSize: "clamp(2.6rem,6vw,4.4rem)" }}
+                >
+                  Create
+                </span>
+                {/* Word 2 — shimmer */}
+                <span
+                  className="block font-black shimmer-orange"
+                  style={{ fontSize: "clamp(2.6rem,6vw,4.4rem)" }}
+                >
+                  Professional
+                </span>
+                {/* Word 3 */}
+                <span
+                  className="block text-white font-black"
+                  style={{ fontSize: "clamp(2.6rem,6vw,4.4rem)" }}
+                >
+                  Documents
+                </span>
+                {/* Tagline */}
+                <span
+                  className="block font-bold text-white/60 mt-3"
+                  style={{
+                    fontSize: "clamp(1.3rem,3vw,1.7rem)",
+                    letterSpacing: "-0.01em",
+                  }}
+                >
+                  in under 2 minutes.
+                </span>
+              </h1>
+
+              {/* Sub-text */}
+              <p
+                className={`${mounted ? "h-sub" : ""} mb-9 max-w-[430px]`}
+                style={{ color: "#94a3b8", fontSize: "15px", lineHeight: 1.8 }}
+              >
+                Fill in client details, add line items, watch the live preview
+                update, then export a polished A4 PDF — all in your browser,
+                free, forever.
+              </p>
+
+              {/* CTA row */}
+              <div
+                className={`${
+                  mounted ? "h-ctas" : ""
+                } flex flex-col sm:flex-row gap-3 w-full sm:w-auto mb-8`}
+              >
+                {/* Primary — orange gradient with shine sweep */}
+                <button
+                  onClick={() => navigate("/quotation")}
+                  className="group relative overflow-hidden flex items-center justify-center gap-2.5 font-bold text-white text-[15px] px-8 py-4 rounded-2xl border-none cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
+                  style={{
+                    background:
+                      "linear-gradient(135deg,#fb923c 0%,#ea580c 100%)",
+                    boxShadow:
+                      "0 8px 32px rgba(249,115,22,0.44), inset 0 1px 0 rgba(255,255,255,0.18)",
+                  }}
+                >
+                  <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none" />
+                  <svg
+                    className="w-4 h-4 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Create a Quotation — Free
+                </button>
+
+                {/* Secondary */}
+                <button
+                  onClick={() => navigate("/delivery-note")}
+                  className="flex items-center justify-center gap-2 font-semibold text-slate-300 text-[15px] px-8 py-4 rounded-2xl cursor-pointer transition-all duration-200 hover:text-white hover:-translate-y-0.5 active:scale-[0.98]"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.11)",
+                    boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <svg
+                    className="w-4 h-4 shrink-0"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                  Delivery Note
+                </button>
+              </div>
+
+              {/* Trust chips */}
+              <div
+                className={`${mounted ? "h-chips" : ""} flex flex-wrap gap-2`}
+              >
+                {[
+                  { icon: "✓", t: "Free forever" },
+                  { icon: "✓", t: "No sign-up needed" },
+                  { icon: "✓", t: "Instant PDF export" },
+                  { icon: "✓", t: "Cloud-saved records" },
+                  { icon: "✓", t: "Works on mobile" },
+                ].map(({ icon, t }) => (
+                  <span
+                    key={t}
+                    className="inline-flex items-center gap-1.5 text-[12px] font-medium text-slate-500 px-3 py-1.5 rounded-full transition-colors duration-150 hover:text-slate-300"
+                    style={{
+                      background: "rgba(255,255,255,0.04)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                    }}
+                  >
+                    <span className="text-orange-500 font-bold text-[10px]">
+                      {icon}
                     </span>
-                  </div>
-                  <span className="relative text-[11px] font-semibold text-orange-600 bg-orange-50 px-2.5 py-1 rounded-full border border-orange-100">
-                    <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-2 h-2 bg-orange-500 rounded-full animate-pulse" />
-                    Live
+                    {t}
                   </span>
-                </div>
+                ))}
+              </div>
+            </div>
 
-                {/* Body */}
-                <div className="p-5 space-y-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="h-2.5 w-28 rounded-full bg-gradient-to-r from-slate-200 via-slate-100 to-slate-200 animate-pulse mb-1.5" />
-                      <div className="h-1.5 w-20 bg-slate-100 rounded-full" />
-                    </div>
-                    <div className="text-right">
-                      <div className="text-[11px] font-black tracking-[3px] text-slate-800 mb-1">
-                        QUOTATION
-                      </div>
-                      <div className="h-1.5 w-16 bg-slate-100 rounded-full ml-auto mb-1" />
-                      <div className="h-1.5 w-12 bg-slate-100 rounded-full ml-auto" />
-                    </div>
-                  </div>
+            {/* ════ RIGHT PREVIEW ════ */}
+            <div
+              className={`${
+                mounted ? "h-card" : ""
+              } flex justify-center lg:justify-end`}
+            >
+              <div className="card-float w-full max-w-[390px] sm:max-w-[420px] lg:max-w-none lg:w-full">
+                <HeroPreviewCard />
 
-                  <div className="bg-slate-50/80 backdrop-blur rounded-2xl p-3 border border-slate-100">
-                    <div className="h-2 w-14 bg-slate-300 rounded-full mb-2" />
-                    <div className="h-1.5 w-32 bg-slate-200 rounded-full mb-1.5" />
-                    <div className="h-1.5 w-24 bg-slate-200 rounded-full" />
-                  </div>
+                {/* Reflection */}
+                <div
+                  className="mt-1 mx-6 h-6 rounded-b-2xl blur-sm opacity-25"
+                  style={{
+                    background:
+                      "linear-gradient(to bottom,rgba(249,115,22,0.1),transparent)",
+                  }}
+                />
 
-                  <div className="rounded-2xl overflow-hidden border border-slate-200">
-                    <div className="grid grid-cols-4 bg-gradient-to-r from-slate-900 to-slate-800 text-white text-[10px] font-semibold px-3 py-2.5 gap-2">
-                      <div>Description</div>
-                      <div>Qty</div>
-                      <div>Unit</div>
-                      <div className="text-right">Total</div>
-                    </div>
-                    {[1, 2, 3].map((i) => (
-                      <div
-                        key={i}
-                        className={`grid grid-cols-4 px-3 py-2.5 gap-2 transition-colors hover:bg-orange-50 ${
-                          i % 2 === 0 ? "bg-slate-50" : "bg-white"
-                        }`}
-                      >
-                        <div className="h-1.5 bg-slate-200 rounded-full" />
-                        <div className="h-1.5 bg-slate-100 rounded-full" />
-                        <div className="h-1.5 bg-slate-100 rounded-full" />
-                        <div className="h-1.5 bg-orange-200 rounded-full ml-auto w-3/4" />
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="flex justify-end">
-                    <div className="bg-gradient-to-br from-orange-100 to-orange-200 border border-orange-300 rounded-2xl px-5 py-3 flex items-center gap-6 shadow-[0_10px_30px_rgba(249,115,22,0.35)]">
-                      <span className="text-[10px] font-bold text-orange-900 tracking-wide">
-                        GRAND TOTAL
-                      </span>
-                      <span className="font-black text-orange-700 text-xl">
-                        Ksh 12,500
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="absolute top-4 right-6 bg-slate-900 text-white text-[10px] font-semibold px-3 py-1 rounded-full">
-                  Auto totals
-                </div>
-                <div className="absolute bottom-4 left-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-[10px] font-semibold px-3 py-1 rounded-full shadow-[0_6px_16px_rgba(249,115,22,0.45)]">
-                  PDF ready ✓
+                {/* Caption */}
+                <div className="hidden lg:flex items-center justify-center gap-2 mt-4">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-[11px] text-white/20 font-medium tracking-wide">
+                    Live preview — updates as you type
+                  </span>
                 </div>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Wave divider into stats */}
+        <div
+          className="absolute bottom-0 inset-x-0 pointer-events-none overflow-hidden leading-none"
+          style={{ lineHeight: 0 }}
+        >
+          <svg
+            viewBox="0 0 1440 52"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            style={{ display: "block", width: "100%" }}
+          >
+            <path
+              d="M0 52L80 44.3C160 37 320 21 480 18.3C640 16 800 26 960 32C1120 38 1280 40 1360 41L1440 42V52H0Z"
+              fill="#f8fafc"
+            />
+          </svg>
+        </div>
       </section>
 
       {/* ════════════════════ STATS ════════════════════ */}
-      <section className="bg-white border-b border-slate-100">
+      <section className="bg-slate-50 border-b border-slate-100">
         <div className="max-w-5xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 divide-x divide-slate-100">
           {[
             { val: "2 min", label: "Avg. quote time" },
@@ -522,7 +1116,7 @@ export default function HomePage() {
           ].map((s) => (
             <div
               key={s.label}
-              className="flex flex-col items-center py-7 px-4 text-center"
+              className="flex flex-col items-center py-8 px-4 text-center"
             >
               <p className="text-[2rem] font-black text-orange-500 leading-none mb-1.5">
                 {s.val}
@@ -540,11 +1134,9 @@ export default function HomePage() {
         id="features"
         className="relative py-28 px-6 max-w-6xl mx-auto overflow-hidden"
       >
-        {/* Background glows */}
         <div className="absolute -top-24 left-1/3 w-[500px] h-[500px] bg-orange-400/5 blur-3xl rounded-full pointer-events-none" />
         <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-blue-400/5 blur-3xl rounded-full pointer-events-none" />
 
-        {/* Header */}
         <div className="relative z-10 text-center mb-16">
           <SectionPill>Features</SectionPill>
           <h2 className="text-4xl sm:text-[2.75rem] font-extrabold text-slate-900 tracking-tight leading-tight mb-4">
@@ -557,62 +1149,36 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Cards Grid */}
         <div className="relative z-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {features.map((f, i) => {
             const a = accentMap[f.accent];
             return (
               <div
                 key={f.title}
-                className={`
-                  group relative flex flex-col rounded-2xl p-7 bg-white overflow-hidden
-                  border border-slate-100 ${a.hoverBorder}
-                  shadow-sm hover:shadow-lg ${a.hoverShadow}
-                  transition-all duration-300 ease-out hover:-translate-y-1.5
-                  animate-[fadeUp_0.5s_ease_both]
-                `}
+                className={`group relative flex flex-col rounded-2xl p-7 bg-white overflow-hidden border border-slate-100 ${a.hoverBorder} shadow-sm hover:shadow-lg ${a.hoverShadow} transition-all duration-300 ease-out hover:-translate-y-1.5 animate-[fadeUp_0.5s_ease_both]`}
                 style={{ animationDelay: `${i * 75}ms` }}
               >
-                {/* Top accent bar */}
                 <div
                   className={`absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r ${a.bar} opacity-40 group-hover:opacity-100 transition-opacity duration-300`}
                 />
-
-                {/* Index number */}
                 <span className="absolute top-5 right-5 text-[11px] font-bold tracking-widest text-slate-200 select-none">
                   {String(i + 1).padStart(2, "0")}
                 </span>
-
-                {/* Icon — centered at top */}
                 <div className="flex justify-center mb-5">
                   <div
-                    className={`
-                      w-[52px] h-[52px] rounded-xl ${a.iconBg} ring-1 ${a.iconRing}
-                      flex items-center justify-center text-[26px]
-                      transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3
-                    `}
+                    className={`w-[52px] h-[52px] rounded-xl ${a.iconBg} ring-1 ${a.iconRing} flex items-center justify-center text-[26px] transition-transform duration-300 group-hover:scale-110 group-hover:-rotate-3`}
                   >
                     {f.icon}
                   </div>
                 </div>
-
-                {/* Text */}
                 <h3 className="font-bold text-slate-900 text-[15px] tracking-tight leading-snug mb-2.5 text-center">
                   {f.title}
                 </h3>
                 <p className="text-slate-500 text-sm leading-relaxed flex-1 text-center">
                   {f.desc}
                 </p>
-
-                {/* Learn more — slides in on hover */}
                 <div
-                  className={`
-                    flex items-center gap-1.5 mt-5 pt-4 border-t border-slate-100
-                    ${a.text} text-[13px] font-semibold
-                    opacity-0 -translate-x-2
-                    group-hover:opacity-100 group-hover:translate-x-0
-                    transition-all duration-200
-                  `}
+                  className={`flex items-center gap-1.5 mt-5 pt-4 border-t border-slate-100 ${a.text} text-[13px] font-semibold opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-200`}
                 >
                   Learn more
                   <svg
@@ -632,13 +1198,6 @@ export default function HomePage() {
             );
           })}
         </div>
-
-        <style>{`
-          @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
-          }
-        `}</style>
       </section>
 
       {/* ════════════════════ HOW IT WORKS ════════════════════ */}
@@ -656,28 +1215,21 @@ export default function HomePage() {
               From blank page to finished quotation in four steps.
             </p>
           </div>
-
-          {/* Steps */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative">
-            {/* Connector line — desktop only */}
             <div className="hidden lg:block absolute top-9 left-[12.5%] right-[12.5%] h-px bg-gradient-to-r from-transparent via-orange-200 to-transparent z-0" />
-
-            {steps.map((s, i) => (
+            {steps.map((s) => (
               <div
                 key={s.num}
                 className="group relative flex flex-col items-center text-center bg-white rounded-2xl px-6 py-8 border border-slate-100 shadow-sm hover:shadow-md hover:border-orange-100 hover:-translate-y-1 transition-all duration-300 z-10"
               >
-                {/* Step circle */}
                 <div className="relative mb-5">
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 text-white font-black text-base flex items-center justify-center shadow-[0_6px_20px_rgba(249,115,22,0.3)] group-hover:shadow-[0_8px_28px_rgba(249,115,22,0.45)] transition-shadow duration-300">
                     {s.num}
                   </div>
-                  {/* Step icon badge */}
                   <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-white border border-slate-100 flex items-center justify-center text-sm shadow-sm">
                     {s.icon}
                   </div>
                 </div>
-
                 <h3 className="font-bold text-slate-900 text-[14px] leading-snug mb-2 tracking-tight">
                   {s.title}
                 </h3>
@@ -687,7 +1239,6 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-
           <div className="text-center mt-10">
             <button
               onClick={() => navigate("/quotation")}
@@ -702,7 +1253,6 @@ export default function HomePage() {
       {/* ════════════════════ ABOUT ════════════════════ */}
       <section className="py-24 px-6 max-w-6xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-stretch">
-          {/* LEFT CARD */}
           <div className="relative rounded-3xl p-10 bg-slate-900 border border-white/10 overflow-hidden shadow-[0_20px_60px_rgba(15,23,42,0.35)] flex flex-col justify-between">
             <div className="absolute -top-32 -right-32 w-96 h-96 bg-orange-500/8 rounded-full blur-3xl pointer-events-none" />
             <div className="relative z-10">
@@ -736,8 +1286,6 @@ export default function HomePage() {
               ))}
             </ul>
           </div>
-
-          {/* RIGHT GRID */}
           <div className="grid grid-cols-2 gap-4">
             {[
               { icon: "⏱", val: "< 2 min", label: "Average time to complete" },
@@ -789,19 +1337,15 @@ export default function HomePage() {
               Real feedback from people using the tool daily.
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {testimonials.map((t) => (
               <div
                 key={t.name}
                 className="group relative bg-slate-50 border border-slate-100 rounded-2xl p-7 hover:bg-white hover:border-orange-100 hover:shadow-md transition-all duration-300 hover:-translate-y-1 flex flex-col"
               >
-                {/* Large decorative quote mark */}
                 <span className="text-[64px] leading-none text-orange-100 font-black select-none absolute top-4 right-6 group-hover:text-orange-200 transition-colors duration-300">
                   "
                 </span>
-
-                {/* Stars */}
                 <div className="flex gap-0.5 mb-4">
                   {Array.from({ length: t.rating }).map((_, i) => (
                     <span key={i} className="text-orange-400 text-sm">
@@ -809,13 +1353,9 @@ export default function HomePage() {
                     </span>
                   ))}
                 </div>
-
-                {/* Quote */}
                 <p className="text-slate-600 text-[14px] leading-[1.75] flex-1 relative z-10">
                   {t.text}
                 </p>
-
-                {/* Author */}
                 <div className="flex items-center gap-3 mt-6 pt-5 border-t border-slate-100">
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
                     {t.initials}
@@ -880,7 +1420,6 @@ export default function HomePage() {
               transform: "translate(-30%,30%)",
             }}
           />
-
           <span className="inline-block bg-orange-500/15 text-orange-400 text-[11px] font-bold tracking-widest uppercase px-3.5 py-1.5 rounded-full border border-orange-500/30 mb-5">
             Ready to start?
           </span>
@@ -902,14 +1441,9 @@ export default function HomePage() {
 
       {/* ════════════════════ FOOTER ════════════════════ */}
       <footer className="relative bg-slate-950 text-slate-400 px-6 pt-24 pb-10 overflow-hidden">
-        <div
-          className="absolute top-0 left-0 w-full h-px 
-          bg-[repeating-linear-gradient(to_right,rgba(255,255,255,0.2)_0px,rgba(255,255,255,0.2)_6px,transparent_6px,transparent_14px)]"
-        />
-
+        <div className="absolute top-0 left-0 w-full h-px bg-[repeating-linear-gradient(to_right,rgba(255,255,255,0.2)_0px,rgba(255,255,255,0.2)_6px,transparent_6px,transparent_14px)]" />
         <div className="max-w-7xl mx-auto relative z-10">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-14 pb-16">
-            {/* Brand */}
             <div className="space-y-6">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-2xl bg-slate-900 border border-white/10 flex items-center justify-center">
@@ -927,8 +1461,6 @@ export default function HomePage() {
                 businesses create clean, branded documents in minutes.
               </p>
             </div>
-
-            {/* Product */}
             <div className="relative space-y-6">
               <div className="hidden lg:block absolute -left-7 top-0 h-full w-px bg-[repeating-linear-gradient(to_bottom,rgba(255,255,255,0.2)_0px,rgba(255,255,255,0.2)_6px,transparent_6px,transparent_14px)]" />
               <p className="text-white text-sm font-semibold tracking-wide">
@@ -957,8 +1489,6 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
-
-            {/* Tools */}
             <div className="relative space-y-6">
               <div className="hidden lg:block absolute -left-7 top-0 h-full w-px bg-[repeating-linear-gradient(to_bottom,rgba(255,255,255,0.2)_0px,rgba(255,255,255,0.2)_6px,transparent_6px,transparent_14px)]" />
               <p className="text-white text-sm font-semibold tracking-wide">
@@ -993,8 +1523,6 @@ export default function HomePage() {
                 ))}
               </div>
             </div>
-
-            {/* Contact */}
             <div className="relative space-y-6">
               <div className="hidden lg:block absolute -left-7 top-0 h-full w-px bg-[repeating-linear-gradient(to_bottom,rgba(255,255,255,0.2)_0px,rgba(255,255,255,0.2)_6px,transparent_6px,transparent_14px)]" />
               <p className="text-white text-sm font-semibold tracking-wide">
@@ -1007,9 +1535,7 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
           <div className="h-px w-full bg-[repeating-linear-gradient(to_right,rgba(255,255,255,0.2)_0px,rgba(255,255,255,0.2)_6px,transparent_6px,transparent_14px)] mb-6" />
-
           <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-slate-600">
             <div>
               © {new Date().getFullYear()} Wimwa Tech General Supplies Limited

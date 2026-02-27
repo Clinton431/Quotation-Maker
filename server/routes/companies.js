@@ -17,13 +17,11 @@ router.get("/", async (req, res) => {
     const companies = await Company.find().sort({ createdAt: -1 });
     res.json(companies);
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to fetch companies",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch companies",
+      error: err.message,
+    });
   }
 });
 
@@ -37,13 +35,11 @@ router.get("/:id", async (req, res) => {
         .json({ success: false, message: "Company not found" });
     res.json({ success: true, data: company });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to fetch company",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch company",
+      error: err.message,
+    });
   }
 });
 
@@ -73,22 +69,18 @@ router.post("/", upload.single("logo"), async (req, res) => {
     });
 
     await company.save();
-    res
-      .status(201)
-      .json({
-        success: true,
-        message: "Company created successfully",
-        data: company,
-      });
+    res.status(201).json({
+      success: true,
+      message: "Company created successfully",
+      data: company,
+    });
   } catch (err) {
     console.error("Error creating company:", err);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to create company",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to create company",
+      error: err.message,
+    });
   }
 });
 
@@ -128,13 +120,11 @@ router.put("/:id", upload.single("logo"), async (req, res) => {
       data: company,
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to update company",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to update company",
+      error: err.message,
+    });
   }
 });
 
@@ -153,13 +143,11 @@ router.delete("/:id", async (req, res) => {
 
     res.json({ success: true, message: "Company deleted successfully" });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to delete company",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete company",
+      error: err.message,
+    });
   }
 });
 

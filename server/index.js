@@ -44,12 +44,30 @@ const connectDB = async () => {
     console.log("✅ MongoDB Connected");
   } catch (err) {
     console.error("❌ MongoDB Connection Error:", err.message);
-    // Retry after 5 seconds instead of crashing
     setTimeout(connectDB, 5000);
   }
 };
 
-// Auto-reconnect if connection drops mid-session
+mongoose.connection.once("open", async () => {
+  // ── One-time cleanup: drop the stale quotationNumber_1 index ──────────────
+  // This index was created by an older version of the schema that used
+  // `quotationNumber` instead of `quoteNumber`. Because it is unique, any
+  // document saved without that field collides on null and throws E11000.
+  // Safe to run on every boot — if the index is already gone it just no-ops.
+  try {
+    await mongoose.connection
+      .collection("quotations")
+      .dropIndex("quotationNumber_1");
+    console.log("🧹 Dropped stale quotationNumber_1 index from quotations");
+  } catch (e) {
+    if (e.codeName === "IndexNotFound" || e.code === 27) {
+      // Already gone — nothing to do
+    } else {
+      console.warn("[index-cleanup] Unexpected error:", e.message);
+    }
+  }
+});
+
 mongoose.connection.on("disconnected", () => {
   console.warn("⚠️  MongoDB disconnected — retrying in 5s...");
   setTimeout(connectDB, 5000);
@@ -62,6 +80,9 @@ mongoose.connection.on("error", (err) => {
 connectDB();
 
 // ── Routes ──
+app.use("/api/auth", require("./routes/auth"));
+app.use("/api/users", require("./routes/users"));
+app.use("/api/products", require("./routes/products"));
 app.use("/api/companies", require("./routes/companies"));
 app.use("/api/quotations", require("./routes/quotations"));
 app.use("/api/delivery-notes", require("./routes/deliveryNotes"));
@@ -92,16 +113,12 @@ app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`🌍 Allowed origins: ${allowedOrigins.join(", ")}`);
 
-  // ── Keep-alive self-ping (prevents Render free tier from sleeping) ──
-  // Add RENDER_EXTERNAL_URL to your Render dashboard env vars to enable.
-  // Example: https://your-app-name.onrender.com
   if (
     process.env.NODE_ENV === "production" &&
     process.env.RENDER_EXTERNAL_URL
   ) {
-    const PING_INTERVAL = 10 * 60 * 1000; // every 10 minutes
+    const PING_INTERVAL = 10 * 60 * 1000;
     const https = require("https");
-
     setInterval(() => {
       const url = `${process.env.RENDER_EXTERNAL_URL}/api/health`;
       https
@@ -112,7 +129,6 @@ app.listen(PORT, () => {
           console.warn("[Keep-alive] Ping failed:", e.message);
         });
     }, PING_INTERVAL);
-
     console.log("🔁 Keep-alive ping enabled (every 10 min)");
   }
 });

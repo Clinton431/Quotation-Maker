@@ -126,13 +126,13 @@ export default function AuthPromptModal({ onClose, onAuthSuccess, cartTotal }) {
                 onClick={() => setMode("login")}
                 className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-sm rounded-2xl shadow-[0_4px_16px_rgba(249,115,22,0.3)] hover:opacity-95 transition-all flex items-center justify-center gap-2"
               >
-                🔑 Sign In to My Account
+                Sign In to My Account
               </button>
               <button
                 onClick={() => setMode("register")}
                 className="w-full py-3.5 border-2 border-slate-200 text-slate-700 font-bold text-sm rounded-2xl hover:border-orange-300 hover:bg-orange-50 transition-all flex items-center justify-center gap-2"
               >
-                ✨ Create Free Account
+                Create Free Account
               </button>
               <div className="relative flex items-center gap-3 my-2">
                 <div className="flex-1 h-px bg-slate-100" />

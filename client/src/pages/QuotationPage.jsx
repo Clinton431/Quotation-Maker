@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FileText, Plus, Trash2, Download, Save, User } from "lucide-react";
+import {
+  FileText,
+  Plus,
+  Trash2,
+  Download,
+  Save,
+  User,
+  Wrench,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
@@ -9,6 +17,16 @@ import AddBillingModal from "../components/AddBillingModal";
 import BillingSelector from "../components/BillingSelector";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+// ── Default charge categories ─────────────────────────────────────────────────
+const CHARGE_CATEGORIES = [
+  "Labour",
+  "Transport",
+  "Installation",
+  "Consultation",
+  "Delivery",
+  "Other",
+];
 
 function QuotationPage() {
   const navigate = useNavigate();
@@ -29,8 +47,9 @@ function QuotationPage() {
       phone: "",
       email: "",
     },
-    // unit defaults to "pcs" for every new item
     items: [{ description: "", quantity: 1, unit: "pcs", price: 0, total: 0 }],
+    // ── NEW: additional charges (labour, transport, etc.) ──────────────────
+    additionalCharges: [],
   };
 
   const [formData, setFormData] = useState(initialFormState);
@@ -48,10 +67,13 @@ function QuotationPage() {
   const [showAddBilling, setShowAddBilling] = useState(false);
   const quotationRef = useRef(null);
 
+  // ── Totals ────────────────────────────────────────────────────────────────
   const calculateTotal = (quantity, price) => quantity * price;
-
   const getSubtotal = () =>
     formData.items.reduce((sum, item) => sum + item.total, 0);
+  const getAdditionalTotal = () =>
+    formData.additionalCharges.reduce((sum, c) => sum + (c.total || 0), 0);
+  const getGrandTotal = () => getSubtotal() + getAdditionalTotal();
 
   const showNotification = (message, type = "success") => {
     setNotification({ show: true, message, type });
@@ -61,6 +83,7 @@ function QuotationPage() {
     );
   };
 
+  // ── Items handlers ────────────────────────────────────────────────────────
   const handleItemChange = (index, field, value) => {
     const newItems = [...formData.items];
     newItems[index][field] = value;
@@ -73,7 +96,6 @@ function QuotationPage() {
     setFormData({ ...formData, items: newItems });
   };
 
-  // Set a specific item's unit to either "pcs" or "kgs"
   const setUnit = (index, unit) => {
     const newItems = [...formData.items];
     newItems[index].unit = unit;
@@ -97,12 +119,46 @@ function QuotationPage() {
     }
   };
 
+  // ── Additional Charges handlers ───────────────────────────────────────────
+  const addCharge = () => {
+    setFormData({
+      ...formData,
+      additionalCharges: [
+        ...formData.additionalCharges,
+        {
+          category: "Labour",
+          description: "",
+          quantity: 1,
+          price: 0,
+          total: 0,
+        },
+      ],
+    });
+  };
+
+  const removeCharge = (index) => {
+    const updated = formData.additionalCharges.filter((_, i) => i !== index);
+    setFormData({ ...formData, additionalCharges: updated });
+  };
+
+  const handleChargeChange = (index, field, value) => {
+    const updated = [...formData.additionalCharges];
+    updated[index][field] = value;
+    if (field === "quantity" || field === "price") {
+      updated[index].total =
+        Number(updated[index].quantity) * Number(updated[index].price);
+    }
+    setFormData({ ...formData, additionalCharges: updated });
+  };
+
+  // ── Client handlers ───────────────────────────────────────────────────────
   const handleClientChange = (field, value) => {
     setFormData({
       ...formData,
       clientInfo: { ...formData.clientInfo, [field]: value },
     });
   };
+
   const applyBillingCompany = (company) => {
     setSelectedBilling(company);
     setFormData((prev) => ({
@@ -123,6 +179,7 @@ function QuotationPage() {
       date: format(new Date(), "dd/MM/yyyy"),
     });
   };
+
   useEffect(() => {
     const fetchCompanies = async () => {
       try {
@@ -143,10 +200,10 @@ function QuotationPage() {
         setBillingLoading(false);
       }
     };
-
     fetchCompanies();
   }, []);
 
+  // ── Save ──────────────────────────────────────────────────────────────────
   const saveQuotation = async () => {
     try {
       if (!formData.clientInfo.name.trim()) {
@@ -165,7 +222,8 @@ function QuotationPage() {
         {
           ...formData,
           subtotal: getSubtotal(),
-          grandTotal: getSubtotal(),
+          additionalTotal: getAdditionalTotal(),
+          grandTotal: getGrandTotal(),
           createdAt: new Date(),
         },
         { timeout: 5000 }
@@ -188,9 +246,7 @@ function QuotationPage() {
     }
   };
 
-  // ─────────────────────────────────────────────────────────────────────────
-  // downloadPDF — clones the node off-screen so html2canvas captures every
-  // ─────────────────────────────────────────────────────────────────────────
+  // ── PDF ───────────────────────────────────────────────────────────────────
   const downloadPDF = async () => {
     try {
       setIsGeneratingPDF(true);
@@ -199,11 +255,8 @@ function QuotationPage() {
       await new Promise((resolve) => setTimeout(resolve, 100));
 
       const element = quotationRef.current;
-
-      // 1. Deep-clone the preview node
       const clone = element.cloneNode(true);
 
-      // 2. Mount it off-screen with NO overflow restrictions at any level
       const offscreen = document.createElement("div");
       const A4_WIDTH_PX = 794;
       offscreen.style.cssText = [
@@ -231,7 +284,6 @@ function QuotationPage() {
           el.style.overflowY = "visible";
       });
 
-      // 4. Let the browser fully paint the clone
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       const canvas = await html2canvas(clone, {
@@ -244,7 +296,6 @@ function QuotationPage() {
         windowWidth: A4_WIDTH_PX,
       });
 
-      // 5. Clean up the temporary node
       document.body.removeChild(offscreen);
 
       const imgData = canvas.toDataURL("image/jpeg", 0.7);
@@ -259,7 +310,7 @@ function QuotationPage() {
       const pageHeight = 297;
       const imgRatio = canvas.width / canvas.height;
 
-      let imgWidth = pageWidth - 2; // 2mm margin each side
+      let imgWidth = pageWidth - 2;
       let imgHeight = imgWidth / imgRatio;
 
       if (imgHeight > pageHeight - 2) {
@@ -281,16 +332,14 @@ function QuotationPage() {
       setIsGeneratingPDF(false);
     }
   };
+
   const formatAddressLines = (address, wordsPerLine = 3) => {
     if (!address) return [];
-
     const words = address.split(" ");
     const lines = [];
-
     for (let i = 0; i < words.length; i += wordsPerLine) {
       lines.push(words.slice(i, i + wordsPerLine).join(" "));
     }
-
     return lines;
   };
 
@@ -320,7 +369,6 @@ function QuotationPage() {
       )}
 
       <div className="max-w-7xl mx-auto mb-8 animate-fade-in">
-        {/* ── Top bar with back button ── */}
         <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => navigate("/")}
@@ -413,14 +461,12 @@ function QuotationPage() {
                     <label className="block text-sm font-semibold text-slate-700 mb-2">
                       Select Saved Company
                     </label>
-
                     <BillingSelector
                       contacts={billingCompanies}
                       selected={selectedBilling}
                       onSelect={applyBillingCompany}
                       onAddNew={() => setShowAddBilling(true)}
                     />
-
                     {billingLoading && (
                       <p className="text-xs text-slate-500 mt-1">
                         Loading companies…
@@ -555,7 +601,6 @@ function QuotationPage() {
                       />
                     </div>
 
-                    {/* ── Unit selector ── */}
                     <div>
                       <label className="block text-xs font-semibold text-slate-600 mb-1">
                         Unit
@@ -624,6 +669,202 @@ function QuotationPage() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* ── Additional Charges (Labour, Transport, etc.) ── */}
+          <div className="card border-2 border-amber-200 bg-amber-50/30">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <Wrench className="w-5 h-5 text-amber-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-display font-bold text-slate-800">
+                    Additional Charges
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Labour, transport, installation & more
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={addCharge}
+                className="p-2 bg-amber-100 hover:bg-amber-200 text-amber-700 rounded-lg transition-colors"
+                title="Add Charge"
+              >
+                <Plus className="w-5 h-5" />
+              </button>
+            </div>
+
+            {formData.additionalCharges.length === 0 ? (
+              <div className="text-center py-8 text-slate-400">
+                <Wrench className="w-10 h-10 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No additional charges yet.</p>
+                <button
+                  onClick={addCharge}
+                  className="mt-3 text-xs font-semibold text-amber-600 hover:text-amber-800 underline"
+                >
+                  + Add Labour / Transport / Other
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                {formData.additionalCharges.map((charge, index) => (
+                  <div
+                    key={index}
+                    className="p-4 bg-white rounded-xl border-2 border-amber-200 space-y-3"
+                  >
+                    <div className="flex justify-between items-start">
+                      <span className="text-sm font-bold text-amber-600">
+                        Charge {index + 1}
+                      </span>
+                      <button
+                        onClick={() => removeCharge(index)}
+                        className="text-red-500 hover:text-red-700 transition-colors"
+                        title="Remove Charge"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    {/* Category */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">
+                        Category
+                      </label>
+                      <select
+                        value={
+                          CHARGE_CATEGORIES.includes(charge.category)
+                            ? charge.category
+                            : "Other"
+                        }
+                        onChange={(e) => {
+                          // If they pick a real category, set it directly.
+                          // If they pick "Other", clear to empty so the input is blank.
+                          const val = e.target.value;
+                          handleChargeChange(
+                            index,
+                            "category",
+                            val === "Other" ? "" : val
+                          );
+                        }}
+                        className="input-field text-sm"
+                      >
+                        {CHARGE_CATEGORIES.map((cat) => (
+                          <option key={cat} value={cat}>
+                            {cat}
+                          </option>
+                        ))}
+                      </select>
+                      {/* Show custom input when "Other" is active (not a preset category) */}
+                      {!CHARGE_CATEGORIES.filter((c) => c !== "Other").includes(
+                        charge.category
+                      ) && (
+                        <input
+                          type="text"
+                          value={charge.category}
+                          onChange={(e) =>
+                            handleChargeChange(
+                              index,
+                              "category",
+                              e.target.value
+                            )
+                          }
+                          className="input-field text-sm mt-2"
+                          placeholder="Enter custom charge type…"
+                          autoFocus
+                        />
+                      )}
+                    </div>
+
+                    {/* Description */}
+                    <div>
+                      <label className="block text-xs font-semibold text-slate-600 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        value={charge.description}
+                        onChange={(e) =>
+                          handleChargeChange(
+                            index,
+                            "description",
+                            e.target.value
+                          )
+                        }
+                        className="input-field text-sm"
+                        rows="2"
+                        placeholder={`e.g. ${charge.category} charges for installation`}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">
+                          Quantity
+                        </label>
+                        <input
+                          type="number"
+                          value={charge.quantity}
+                          onChange={(e) =>
+                            handleChargeChange(
+                              index,
+                              "quantity",
+                              e.target.value
+                            )
+                          }
+                          className="input-field text-sm"
+                          min="1"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-semibold text-slate-600 mb-1">
+                          Rate (KSh)
+                        </label>
+                        <input
+                          type="number"
+                          value={charge.price}
+                          onChange={(e) =>
+                            handleChargeChange(index, "price", e.target.value)
+                          }
+                          className="input-field text-sm"
+                          min="0"
+                          step="0.01"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2 border-t border-amber-200">
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-semibold text-slate-600">
+                          Total:
+                        </span>
+                        <span className="text-lg font-bold text-amber-600">
+                          KSh{" "}
+                          {(charge.total || 0).toLocaleString("en-KE", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Additional charges subtotal */}
+            {formData.additionalCharges.length > 0 && (
+              <div className="mt-4 pt-3 border-t-2 border-amber-200 flex justify-between items-center">
+                <span className="text-sm font-bold text-slate-700">
+                  Additional Charges Total:
+                </span>
+                <span className="text-base font-bold text-amber-700">
+                  KSh{" "}
+                  {getAdditionalTotal().toLocaleString("en-KE", {
+                    minimumFractionDigits: 2,
+                  })}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -698,7 +939,6 @@ function QuotationPage() {
                       </span>
                     </div>
                   </div>
-                  {/* Mobile: company contact info — Unicode icons for pdf compat */}
                   <div className="space-y-1.5 text-xs text-slate-700">
                     <div className="flex items-center gap-2">
                       <span className="flex-shrink-0 text-slate-500">📍</span>
@@ -742,7 +982,6 @@ function QuotationPage() {
                         {formData.companyInfo.name}
                       </h1>
                       <p className="text-sm text-slate-600 mb-3">Wimwa Tech</p>
-                      {/* Desktop: company contact info — Unicode icons for pdf compat */}
                       <div className="space-y-1.5 text-sm text-slate-700">
                         <div className="flex items-center gap-2">
                           <span className="flex-shrink-0 text-slate-500">
@@ -824,7 +1063,6 @@ function QuotationPage() {
                       )}
                     </div>
                   )}
-                  {/* Client contact info — Unicode icons for pdf compat */}
                   <div className="space-y-2 text-xs sm:text-sm text-slate-700">
                     {formData.clientInfo.phone && (
                       <div className="flex items-start gap-2">
@@ -854,9 +1092,9 @@ function QuotationPage() {
                 below:
               </p>
 
-              {/* Items Table */}
+              {/* ── Items Table ── */}
               <div
-                className="mb-6 sm:mb-8 sm:-mx-4"
+                className="mb-4 sm:mb-6 sm:-mx-4"
                 style={{ overflowX: "auto", overflowY: "visible" }}
               >
                 <div
@@ -939,16 +1177,150 @@ function QuotationPage() {
                 </div>
               </div>
 
-              {/* Total Section */}
+              {/* Items subtotal row (only shown when there are additional charges) */}
+              {formData.additionalCharges.length > 0 && (
+                <div className="flex justify-end mb-3">
+                  <div className="flex items-center gap-8 text-sm text-slate-600 pr-1">
+                    <span className="font-semibold">Items Subtotal:</span>
+                    <span className="font-bold text-slate-800 min-w-[120px] text-right">
+                      Ksh{" "}
+                      {getSubtotal().toLocaleString("en-KE", {
+                        minimumFractionDigits: 2,
+                      })}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Additional Charges Table (only rendered when charges exist) ── */}
+              {formData.additionalCharges.length > 0 && (
+                <div
+                  className="mb-6 sm:mb-8 sm:-mx-4"
+                  style={{ overflowX: "auto", overflowY: "visible" }}
+                >
+                  <div
+                    style={{
+                      display: "inline-block",
+                      minWidth: "100%",
+                      verticalAlign: "middle",
+                      overflow: "visible",
+                    }}
+                  >
+                    <table
+                      className="min-w-full text-xs sm:text-sm border-collapse"
+                      style={{ tableLayout: "auto" }}
+                    >
+                      <thead>
+                        <tr className="bg-amber-700 text-white border-b-2 border-amber-900">
+                          <th className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
+                            #
+                          </th>
+                          <th
+                            className="text-left p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase"
+                            colSpan={2}
+                          >
+                            ADDITIONAL CHARGES
+                          </th>
+                          <th
+                            className="text-center font-bold text-[10px] sm:text-xs uppercase"
+                            style={{ minWidth: "80px", padding: "8px 12px" }}
+                          >
+                            QTY
+                          </th>
+                          <th className="text-right p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
+                            RATE
+                          </th>
+                          <th className="text-right p-2 sm:p-3 font-bold text-[10px] sm:text-xs uppercase whitespace-nowrap">
+                            TOTAL
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {formData.additionalCharges.map((charge, index) => (
+                          <tr
+                            key={index}
+                            className="border-b border-amber-100 hover:bg-amber-50/40"
+                          >
+                            <td className="p-2 sm:p-3 font-medium text-slate-700 text-[10px] sm:text-xs">
+                              {index + 1}
+                            </td>
+                            <td className="p-2 sm:p-3" colSpan={2}>
+                              <p className="font-semibold text-amber-800 text-[10px] sm:text-xs uppercase tracking-wide mb-0.5">
+                                {charge.category}
+                              </p>
+                              <p className="font-medium text-slate-900 text-xs sm:text-sm leading-relaxed">
+                                {charge.description ||
+                                  `${charge.category} charges`}
+                              </p>
+                            </td>
+                            <td
+                              style={{
+                                padding: "10px 12px",
+                                textAlign: "center",
+                                verticalAlign: "middle",
+                                whiteSpace: "nowrap",
+                                fontWeight: 600,
+                                color: "#1e293b",
+                                fontSize: "0.9rem",
+                              }}
+                            >
+                              {charge.quantity}
+                            </td>
+                            <td className="p-2 sm:p-3 text-right text-slate-800 text-xs sm:text-sm whitespace-nowrap">
+                              Ksh{" "}
+                              {Number(charge.price).toLocaleString("en-KE", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                            <td className="p-2 sm:p-3 text-right font-semibold text-slate-900 text-xs sm:text-sm whitespace-nowrap">
+                              Ksh{" "}
+                              {(charge.total || 0).toLocaleString("en-KE", {
+                                minimumFractionDigits: 2,
+                              })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ── Grand Total Section ── */}
               <div className="flex justify-end mb-6 sm:mb-8">
-                <div className="bg-slate-100 px-4 sm:px-8 py-3 sm:py-4 rounded-lg border-2 border-slate-300 w-full sm:w-auto">
+                <div className="bg-slate-100 px-4 sm:px-8 py-3 sm:py-4 rounded-lg border-2 border-slate-300 w-full sm:w-auto space-y-2">
+                  {formData.additionalCharges.length > 0 && (
+                    <>
+                      <div className="flex items-center justify-between sm:gap-6 text-sm text-slate-600">
+                        <span className="font-semibold">Items Subtotal:</span>
+                        <span className="font-bold text-slate-800">
+                          Ksh{" "}
+                          {getSubtotal().toLocaleString("en-KE", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between sm:gap-6 text-sm text-amber-700">
+                        <span className="font-semibold">
+                          Additional Charges:
+                        </span>
+                        <span className="font-bold">
+                          Ksh{" "}
+                          {getAdditionalTotal().toLocaleString("en-KE", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                      </div>
+                      <div className="border-t border-slate-300 pt-2" />
+                    </>
+                  )}
                   <div className="flex items-center justify-between sm:gap-6">
                     <span className="text-sm sm:text-base font-bold text-slate-800">
                       Grand Total:
                     </span>
                     <span className="text-xl sm:text-2xl font-bold text-slate-900">
                       Ksh{" "}
-                      {getSubtotal().toLocaleString("en-KE", {
+                      {getGrandTotal().toLocaleString("en-KE", {
                         minimumFractionDigits: 2,
                       })}
                     </span>

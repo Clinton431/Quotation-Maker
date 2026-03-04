@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import QuotationRequestPage from "./pages/QuotationRequestPage";
+import ContactPage from "./pages/ContactPage";
 
 // ── Spinner ────────────────────────────────────────────────────────────────────
 function Spinner() {
@@ -28,9 +29,6 @@ function Spinner() {
 }
 
 // ── PrivateRoute: any logged-in user ───────────────────────────────────────────
-// Waits for AuthContext to finish restoring the session before deciding
-// whether to redirect. Without the `loading` check, a refresh causes a
-// brief null-user state that immediately redirects to /login.
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <Spinner />;
@@ -52,15 +50,14 @@ function AppRoutes() {
     <Routes>
       {/* Public — no auth required */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/contact" element={<ContactPage />} /> {/* ← NEW */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<Terms />} />
-
       {/* Quotation request — open to all visitors */}
       <Route path="/request-quotation" element={<QuotationRequestPage />} />
-
       {/* Logged-in users only */}
       <Route
         path="/my-orders"
@@ -70,7 +67,6 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
-
       {/* Admin only */}
       <Route
         path="/admin"
@@ -96,7 +92,6 @@ function AppRoutes() {
           </AdminRoute>
         }
       />
-
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

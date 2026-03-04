@@ -5,7 +5,6 @@ const { protect, adminOnly } = require("../middleware/auth");
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helper: try to extract userId from Bearer token without hard-failing.
-// Used on the public POST route so guests and logged-in users share one endpoint.
 // ─────────────────────────────────────────────────────────────────────────────
 function resolveUserIdFromToken(req) {
   try {
@@ -20,9 +19,23 @@ function resolveUserIdFromToken(req) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Helper: sanitise a single additional charge entry.
+// Ensures every field is present and numeric totals are correct.
+// ─────────────────────────────────────────────────────────────────────────────
+function sanitiseCharge(charge) {
+  const qty = Number(charge.quantity) || 1;
+  const price = Number(charge.price) || 0;
+  return {
+    category: (charge.category || "Labour").trim(),
+    description: (charge.description || "").trim(),
+    quantity: qty,
+    price,
+    total: charge.total !== undefined ? Number(charge.total) : qty * price,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/quotations/my
-// Logged-in user sees only their own quotations (ordered newest first).
-// MUST be declared before any /:id route.
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/my", protect, async (req, res) => {
   try {
@@ -32,18 +45,16 @@ router.get("/my", protect, async (req, res) => {
     res.json({ success: true, quotations });
   } catch (err) {
     console.error("[GET /quotations/my]", err.message);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to fetch your quotations",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch your quotations",
+      error: err.message,
+    });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/quotations/search/:clientName  (must come before /:id)
+// GET /api/quotations/search/:clientName
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/search/:clientName", async (req, res) => {
   try {
@@ -52,18 +63,16 @@ router.get("/search/:clientName", async (req, res) => {
     }).sort({ createdAt: -1 });
     res.json({ success: true, count: quotations.length, data: quotations });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to search quotations",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to search quotations",
+      error: err.message,
+    });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/quotations/number/:quoteNumber  (must come before /:id)
+// GET /api/quotations/number/:quoteNumber
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/number/:quoteNumber", async (req, res) => {
   try {
@@ -76,24 +85,22 @@ router.get("/number/:quoteNumber", async (req, res) => {
         .json({ success: false, message: "Quotation not found" });
     res.json({ success: true, data: quotation });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to fetch quotation",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch quotation",
+      error: err.message,
+    });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/quotations  — admin only, returns all with populated user info
+// GET /api/quotations  — admin only
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/", protect, adminOnly, async (req, res) => {
   try {
     const quotations = await Quotation.find()
       .sort({ createdAt: -1 })
-      .populate("userId", "name email phone") // attach account info for admin view
+      .populate("userId", "name email phone")
       .lean();
     res.json({
       success: true,
@@ -102,18 +109,16 @@ router.get("/", protect, adminOnly, async (req, res) => {
       data: quotations,
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to fetch quotations",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch quotations",
+      error: err.message,
+    });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /api/quotations/:id  — admin or the owner
+// GET /api/quotations/:id  — admin or owner
 // ─────────────────────────────────────────────────────────────────────────────
 router.get("/:id", protect, async (req, res) => {
   try {
@@ -135,25 +140,29 @@ router.get("/:id", protect, async (req, res) => {
 
     res.json({ success: true, data: quotation });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to fetch quotation",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch quotation",
+      error: err.message,
+    });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /api/quotations  — public (guests and logged-in users share this)
-// quoteNumber is generated by the Quotation model pre-save hook — never set here.
+// POST /api/quotations  — public (guests and logged-in users)
 // ─────────────────────────────────────────────────────────────────────────────
 router.post("/", async (req, res) => {
   try {
-    const { customer, items, total, notes, userId: bodyUserId } = req.body;
+    const {
+      customer,
+      items,
+      additionalCharges, // ← NEW
+      total,
+      notes,
+      userId: bodyUserId,
+    } = req.body;
 
-    // Validation (kept identical to your original)
+    // ── Validation ────────────────────────────────────────────────────────────
     if (!customer?.companyName || !customer?.contactName || !customer?.email) {
       return res.status(400).json({
         success: false,
@@ -162,12 +171,10 @@ router.post("/", async (req, res) => {
       });
     }
     if (!Array.isArray(items) || items.length === 0) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "items array is required and must not be empty",
-        });
+      return res.status(400).json({
+        success: false,
+        message: "items array is required and must not be empty",
+      });
     }
     if (total === undefined || total === null) {
       return res
@@ -175,7 +182,7 @@ router.post("/", async (req, res) => {
         .json({ success: false, message: "total is required" });
     }
 
-    // Sanitise items (identical to your original)
+    // ── Sanitise product items ────────────────────────────────────────────────
     const sanitisedItems = items.map((item) => ({
       productId: item._id || item.productId || undefined,
       name: item.name,
@@ -186,16 +193,27 @@ router.post("/", async (req, res) => {
       unit: item.unit || "pcs",
     }));
 
-    // Resolve userId: body field first, then Bearer token, then null (guest)
+    // ── Sanitise additional charges (labour, transport, etc.) ─────────────────
+    const sanitisedCharges = Array.isArray(additionalCharges)
+      ? additionalCharges.map(sanitiseCharge)
+      : [];
+
+    // ── Derive stored totals ──────────────────────────────────────────────────
+    const itemsSubtotal = sanitisedItems.reduce((s, i) => s + i.subtotal, 0);
+    const additionalTotal = sanitisedCharges.reduce((s, c) => s + c.total, 0);
+
+    // ── Resolve userId ────────────────────────────────────────────────────────
     const resolvedUserId = bodyUserId || resolveUserIdFromToken(req) || null;
 
     const quotation = new Quotation({
       customer,
       items: sanitisedItems,
+      additionalCharges: sanitisedCharges, // ← NEW
       total: Number(total),
+      itemsSubtotal, // ← NEW (stored for admin reporting)
+      additionalTotal, // ← NEW
       notes: notes || "",
-      userId: resolvedUserId, // ← new field; null for guests
-      // quoteNumber intentionally omitted — model hook sets it
+      userId: resolvedUserId,
     });
 
     await quotation.save();
@@ -207,18 +225,16 @@ router.post("/", async (req, res) => {
     });
   } catch (err) {
     console.error("[POST /api/quotations]", err);
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to save quotation",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to save quotation",
+      error: err.message,
+    });
   }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PATCH /api/quotations/:id  — admin only (status + adminNotes update)
+// PATCH /api/quotations/:id  — admin only (status + adminNotes)
 // ─────────────────────────────────────────────────────────────────────────────
 router.patch("/:id", protect, adminOnly, async (req, res) => {
   try {
@@ -240,13 +256,11 @@ router.patch("/:id", protect, adminOnly, async (req, res) => {
 
     res.json({ success: true, message: "Quotation updated", data: quotation });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to update quotation",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to update quotation",
+      error: err.message,
+    });
   }
 });
 
@@ -273,13 +287,11 @@ router.put("/:id", protect, adminOnly, async (req, res) => {
       data: quotation,
     });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to update quotation",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to update quotation",
+      error: err.message,
+    });
   }
 });
 
@@ -295,13 +307,11 @@ router.delete("/:id", protect, adminOnly, async (req, res) => {
         .json({ success: false, message: "Quotation not found" });
     res.json({ success: true, message: "Quotation deleted successfully" });
   } catch (err) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to delete quotation",
-        error: err.message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete quotation",
+      error: err.message,
+    });
   }
 });
 

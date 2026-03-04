@@ -401,7 +401,6 @@ function QuotationModal({
         </div>
 
         <div className="p-6 space-y-5">
-          {/* Customer info */}
           <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-2xl">
             {[
               {
@@ -445,7 +444,6 @@ function QuotationModal({
             </div>
           </div>
 
-          {/* Items */}
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
               Order Items
@@ -501,7 +499,6 @@ function QuotationModal({
             </div>
           )}
 
-          {/* Documents */}
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
               Documents
@@ -528,7 +525,6 @@ function QuotationModal({
             </div>
           </div>
 
-          {/* Status update */}
           <div>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
               Update Status
@@ -823,8 +819,6 @@ const TABS = [
 
 // ── MAIN ──────────────────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  // Rename auth `loading` to `authLoading` to avoid collision with
-  // the dashboard's own `loading` state for data fetching.
   const { user, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
@@ -842,15 +836,10 @@ export default function AdminDashboard() {
   const [productSearch, setProductSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  // ── Guard: wait for AuthContext to finish restoring session ─────────────────
-  // Without the authLoading check, on page refresh user is briefly null and
-  // the dashboard immediately navigates away before the token is read from
-  // localStorage — causing the logout-on-refresh bug.
-  // We use a ref to ensure fetchAll is only called once after auth is ready.
   const hasFetched = useRef(false);
 
   useEffect(() => {
-    if (authLoading) return; // session restore still in progress
+    if (authLoading) return;
     if (user?.role !== "admin") {
       navigate("/");
       return;
@@ -866,9 +855,6 @@ export default function AdminDashboard() {
     setFetchError("");
     try {
       const api = authAxios();
-
-      // Each request has its own .catch() so one failure never blocks
-      // the others and the dashboard never gets stuck on the spinner.
       const [qRes, pRes, cRes] = await Promise.all([
         api.get("/api/quotations").catch((err) => {
           console.error("[Admin] /api/quotations failed:", err.message);
@@ -887,7 +873,6 @@ export default function AdminDashboard() {
           return { data: [] };
         }),
       ]);
-
       setQuotations(unwrapList(qRes.data, "quotations"));
       setProducts(unwrapList(pRes.data, "products"));
       setCustomers(unwrapList(cRes.data, "users", "customers"));
@@ -976,8 +961,6 @@ export default function AdminDashboard() {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
-  // Show a minimal spinner while auth session is being restored —
-  // this prevents any content flash or premature redirect.
   if (authLoading) {
     return (
       <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center">
@@ -1065,6 +1048,37 @@ export default function AdminDashboard() {
               )}
             </button>
           ))}
+
+          {/* ── Document shortcuts in sidebar ── */}
+          <div className="pt-3 mt-3 border-t border-white/8 space-y-1">
+            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2">
+              Documents
+            </p>
+            <button
+              onClick={() => {
+                navigate("/quotation");
+                setSidebarOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-500 hover:text-orange-400 hover:bg-orange-500/10 transition-all"
+            >
+              <span className="text-base w-5 text-center">📄</span>
+              <span className="text-xs font-semibold flex-1">
+                Quotation Maker
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                navigate("/delivery-note");
+                setSidebarOpen(false);
+              }}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all"
+            >
+              <span className="text-base w-5 text-center">🚚</span>
+              <span className="text-xs font-semibold flex-1">
+                Delivery Note
+              </span>
+            </button>
+          </div>
         </nav>
 
         <div className="px-3 pb-4 pt-3 border-t border-white/8 space-y-1">
@@ -1102,11 +1116,12 @@ export default function AdminDashboard() {
 
       {/* ── Main ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top bar */}
-        <header className="bg-white border-b border-slate-100 px-4 sm:px-6 py-3.5 flex items-center gap-4 sticky top-0 z-10 shadow-sm">
+        {/* ── Top bar ── */}
+        <header className="bg-white border-b border-slate-100 px-4 sm:px-6 py-3.5 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
+          {/* Mobile hamburger */}
           <button
             onClick={() => setSidebarOpen((o) => !o)}
-            className="lg:hidden w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center"
+            className="lg:hidden w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0"
           >
             <svg
               width="15"
@@ -1122,7 +1137,8 @@ export default function AdminDashboard() {
             </svg>
           </button>
 
-          <div className="flex items-center gap-2">
+          {/* Page title */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xl">
               {TABS.find((t) => t.id === activeTab)?.icon}
             </span>
@@ -1136,7 +1152,9 @@ export default function AdminDashboard() {
             </div>
           </div>
 
+          {/* ── RIGHT SIDE of navbar ── */}
           <div className="ml-auto flex items-center gap-2">
+            {/* Pending badge */}
             {stats.pending > 0 && (
               <button
                 onClick={() => setActiveTab("quotations")}
@@ -1149,12 +1167,64 @@ export default function AdminDashboard() {
                 {stats.pending} pending
               </button>
             )}
+
+            {/* ── Quotation Maker button ── */}
+            <button
+              onClick={() => navigate("/quotation")}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100 hover:border-orange-300"
+              title="Open Quotation Maker"
+            >
+              {/* document icon */}
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+              </svg>
+              <span className="hidden sm:inline">Quotation</span>
+            </button>
+
+            {/* ── Delivery Note button ── */}
+            <button
+              onClick={() => navigate("/delivery-note")}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 hover:border-slate-300"
+              title="Open Delivery Note"
+            >
+              {/* truck icon */}
+              <svg
+                width="13"
+                height="13"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="1" y="3" width="15" height="13" rx="1" />
+                <path d="M16 8h4l3 5v3h-7V8z" />
+                <circle cx="5.5" cy="18.5" r="2.5" />
+                <circle cx="18.5" cy="18.5" r="2.5" />
+              </svg>
+              <span className="hidden sm:inline">Delivery Note</span>
+            </button>
+
+            {/* Refresh */}
             <button
               onClick={() => {
                 hasFetched.current = false;
                 fetchAll();
               }}
-              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors flex-shrink-0"
               title="Refresh"
             >
               <svg
@@ -1173,7 +1243,7 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* Content */}
+        {/* Content — unchanged below */}
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -1769,18 +1839,12 @@ export default function AdminDashboard() {
                     {
                       title: "Quotation Settings",
                       fields: [
-                        {
-                          label: "Quote Validity (days)",
-                          defaultValue: "14",
-                        },
+                        { label: "Quote Validity (days)", defaultValue: "14" },
                         {
                           label: "Reply-to Email",
                           defaultValue: "wimwatech@gmail.com",
                         },
-                        {
-                          label: "Quote Number Prefix",
-                          defaultValue: "WTQ",
-                        },
+                        { label: "Quote Number Prefix", defaultValue: "WTQ" },
                       ],
                     },
                   ].map((section) => (

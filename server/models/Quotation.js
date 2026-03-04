@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
 // ── Atomic counter — guarantees gap-free, collision-free quote numbers ─────────
-// Uses findOneAndUpdate with $inc so concurrent requests never get the same seq.
 const counterSchema = new mongoose.Schema({
   _id: { type: String, required: true },
   seq: { type: Number, default: 0 },
@@ -23,6 +22,19 @@ const quotationItemSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// ── Additional Charge sub-schema (labour, transport, installation, etc.) ───────
+const additionalChargeSchema = new mongoose.Schema(
+  {
+    // e.g. "Labour", "Transport", "Installation", "Consultation", "Other"
+    category: { type: String, required: true, trim: true, default: "Labour" },
+    description: { type: String, trim: true, default: "" },
+    quantity: { type: Number, required: true, min: 0, default: 1 },
+    price: { type: Number, required: true, min: 0, default: 0 },
+    total: { type: Number, required: true, min: 0, default: 0 },
+  },
+  { _id: false }
+);
+
 // ── Customer sub-schema ────────────────────────────────────────────────────────
 const customerSchema = new mongoose.Schema(
   {
@@ -40,8 +52,6 @@ const customerSchema = new mongoose.Schema(
 const quotationSchema = new mongoose.Schema(
   {
     // ── Quote reference  e.g. "WTQ-0001" ─────────────────────────────────────
-    // Generated once in the pre-save hook via atomic Counter.
-    // sparse: true so existing documents without it don't violate the unique index.
     quoteNumber: {
       type: String,
       unique: true,
@@ -50,7 +60,6 @@ const quotationSchema = new mongoose.Schema(
     },
 
     // ── Linked account (null for guests) ─────────────────────────────────────
-    // Set by the route when a Bearer token is present.
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
@@ -59,13 +68,25 @@ const quotationSchema = new mongoose.Schema(
     },
 
     customer: { type: customerSchema, required: true },
+
     items: {
       type: [quotationItemSchema],
       required: true,
       validate: [(v) => v.length > 0, "At least one item is required"],
     },
 
+    // ── NEW: non-product charges (labour, transport, installation, etc.) ──────
+    additionalCharges: {
+      type: [additionalChargeSchema],
+      default: [],
+    },
+
     total: { type: Number, required: true, min: 0 },
+
+    // ── Derived totals (stored for quick reporting / admin views) ─────────────
+    itemsSubtotal: { type: Number, min: 0, default: 0 },
+    additionalTotal: { type: Number, min: 0, default: 0 },
+
     notes: { type: String, trim: true, default: "" },
 
     status: {
@@ -80,9 +101,6 @@ const quotationSchema = new mongoose.Schema(
 );
 
 // ── Auto-generate quoteNumber via atomic counter ──────────────────────────────
-// Only runs once (when quoteNumber is not yet set).
-// Using Counter instead of countDocuments() prevents duplicate numbers when
-// multiple requests arrive simultaneously or documents are deleted.
 quotationSchema.pre("save", async function (next) {
   if (this.quoteNumber) return next();
   try {
@@ -93,7 +111,6 @@ quotationSchema.pre("save", async function (next) {
     );
     this.quoteNumber = `WTQ-${String(counter.seq).padStart(4, "0")}`;
   } catch (err) {
-    // Non-fatal — quoteNumber is sparse so save still succeeds
     console.error("[Quotation] quoteNumber generation failed:", err.message);
   }
   next();

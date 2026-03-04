@@ -1196,6 +1196,7 @@ function Navbar({ cartCount, onCartOpen }) {
 
 // ── HERO ──────────────────────────────────────────────────────────────────────
 function Hero({ onShopNow }) {
+  const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setTimeout(() => setMounted(true), 60);
@@ -1374,17 +1375,17 @@ function Hero({ onShopNow }) {
                 </svg>
                 Browse Products
               </button>
-              <a
-                href="tel:+254712953780"
-                className="flex items-center justify-center gap-2 font-semibold text-slate-300 text-[15px] px-8 py-4 rounded-2xl cursor-pointer transition-all duration-200 hover:text-white hover:-translate-y-0.5 no-underline"
+              <button
+                onClick={() => navigate("/contact")}
+                className="flex items-center justify-center gap-2 font-semibold text-slate-300 text-[15px] px-8 py-4 rounded-2xl cursor-pointer transition-all duration-200 hover:text-white hover:-translate-y-0.5 border-none"
                 style={{
                   background: "rgba(255,255,255,.04)",
                   border: "1px solid rgba(255,255,255,.11)",
                   boxShadow: "inset 0 1px 0 rgba(255,255,255,.06)",
                 }}
               >
-                📞 +254 712 953 780
-              </a>
+                📞 Contact us
+              </button>
             </div>
 
             <div className="flex flex-wrap gap-2 mt-8 pt-7 border-t border-white/8">
@@ -1842,7 +1843,7 @@ export default function HomePage() {
                     icon: "📍",
                     text: "P.O Box 273-00206\nKiserian, Kajiado County",
                   },
-                  { icon: "📞", text: "+254 712 953 780" },
+                  { icon: "📞", text: "+254 70000000" },
                   { icon: "✉️", text: "wimwatech@gmail.com" },
                   { icon: "🕐", text: "Mon–Sat: 8AM – 6PM" },
                 ].map((c) => (

@@ -1,10 +1,12 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FileText, Plus, Trash2, Download, Save, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import axios from "axios";
+import AddBillingModal from "../components/AddBillingModal";
+import BillingSelector from "../components/BillingSelector";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -39,6 +41,11 @@ function QuotationPage() {
     type: "",
   });
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [billingCompanies, setBillingCompanies] = useState([]);
+  const [selectedBilling, setSelectedBilling] = useState(null);
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState(null);
+  const [showAddBilling, setShowAddBilling] = useState(false);
   const quotationRef = useRef(null);
 
   const calculateTotal = (quantity, price) => quantity * price;
@@ -96,6 +103,18 @@ function QuotationPage() {
       clientInfo: { ...formData.clientInfo, [field]: value },
     });
   };
+  const applyBillingCompany = (company) => {
+    setSelectedBilling(company);
+    setFormData((prev) => ({
+      ...prev,
+      clientInfo: {
+        name: company.name,
+        address: company.address,
+        phone: company.phone,
+        email: company.email,
+      },
+    }));
+  };
 
   const resetForm = () => {
     setFormData({
@@ -104,6 +123,29 @@ function QuotationPage() {
       date: format(new Date(), "dd/MM/yyyy"),
     });
   };
+  useEffect(() => {
+    const fetchCompanies = async () => {
+      try {
+        setBillingLoading(true);
+        const res = await axios.get(`${API_URL}/api/companies`);
+        setBillingCompanies(
+          res.data.map((c) => ({
+            id: c._id,
+            name: c.name,
+            address: c.address || "",
+            phone: c.phone || "",
+            email: c.email || "",
+          }))
+        );
+      } catch (err) {
+        setBillingError("Failed to load saved companies");
+      } finally {
+        setBillingLoading(false);
+      }
+    };
+
+    fetchCompanies();
+  }, []);
 
   const saveQuotation = async () => {
     try {
@@ -239,9 +281,30 @@ function QuotationPage() {
       setIsGeneratingPDF(false);
     }
   };
+  const formatAddressLines = (address, wordsPerLine = 3) => {
+    if (!address) return [];
+
+    const words = address.split(" ");
+    const lines = [];
+
+    for (let i = 0; i < words.length; i += wordsPerLine) {
+      lines.push(words.slice(i, i + wordsPerLine).join(" "));
+    }
+
+    return lines;
+  };
 
   return (
     <div className="min-h-screen py-8 px-0 sm:px-6 lg:px-8">
+      {showAddBilling && (
+        <AddBillingModal
+          onClose={() => setShowAddBilling(false)}
+          onSaved={(company) => {
+            setBillingCompanies((prev) => [...prev, company]);
+            applyBillingCompany(company);
+          }}
+        />
+      )}
       {notification.show && (
         <div
           className={`fixed top-4 right-4 z-50 px-6 py-4 rounded-xl shadow-2xl animate-slide-up ${
@@ -345,6 +408,31 @@ function QuotationPage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Client Name *
                 </label>
+                {billingCompanies.length > 0 && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Select Saved Company
+                    </label>
+
+                    <BillingSelector
+                      contacts={billingCompanies}
+                      selected={selectedBilling}
+                      onSelect={applyBillingCompany}
+                      onAddNew={() => setShowAddBilling(true)}
+                    />
+
+                    {billingLoading && (
+                      <p className="text-xs text-slate-500 mt-1">
+                        Loading companies…
+                      </p>
+                    )}
+                    {billingError && (
+                      <p className="text-xs text-red-500 mt-1">
+                        {billingError}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <input
                   type="text"
                   value={formData.clientInfo.name}
@@ -728,9 +816,13 @@ function QuotationPage() {
                     {formData.clientInfo.name || "Client Name"}
                   </p>
                   {formData.clientInfo.address && (
-                    <p className="text-slate-700 text-xs sm:text-sm leading-relaxed mb-2">
-                      {formData.clientInfo.address}
-                    </p>
+                    <div className="text-slate-700 text-xs sm:text-sm leading-relaxed mb-2 space-y-0.5">
+                      {formatAddressLines(formData.clientInfo.address, 3).map(
+                        (line, idx) => (
+                          <p key={idx}>{line}</p>
+                        )
+                      )}
+                    </div>
                   )}
                   {/* Client contact info — Unicode icons for pdf compat */}
                   <div className="space-y-2 text-xs sm:text-sm text-slate-700">

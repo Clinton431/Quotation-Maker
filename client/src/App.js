@@ -50,7 +50,7 @@ function AppRoutes() {
     <Routes>
       {/* Public — no auth required */}
       <Route path="/" element={<HomePage />} />
-      <Route path="/contact" element={<ContactPage />} /> {/* ← NEW */}
+      <Route path="/contact" element={<ContactPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />

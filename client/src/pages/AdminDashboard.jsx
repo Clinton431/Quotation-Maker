@@ -3,6 +3,51 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
+// ── TOAST STACK ───────────────────────────────────────────────────────────────
+// Lives at root level, completely independent. Gets toasts[] from AdminDashboard.
+function ToastStack({ toasts }) {
+  return (
+    <div
+      style={{
+        position: "fixed",
+        bottom: 24,
+        right: 24,
+        zIndex: 2147483647,
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+        pointerEvents: "none",
+      }}
+    >
+      {toasts.map((t) => (
+        <div
+          key={t.id}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "13px 18px",
+            borderRadius: 14,
+            background: t.type === "success" ? "#10b981" : "#f43f5e",
+            color: "#fff",
+            fontWeight: 700,
+            fontSize: 13,
+            fontFamily: "inherit",
+            boxShadow: "0 8px 30px rgba(0,0,0,0.25)",
+            minWidth: 220,
+            maxWidth: 340,
+          }}
+        >
+          <span style={{ fontSize: 16, flexShrink: 0 }}>
+            {t.type === "success" ? "✅" : "❌"}
+          </span>
+          <span>{t.msg}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 function authAxios() {
@@ -11,6 +56,100 @@ function authAxios() {
     baseURL: API_URL,
     headers: token ? { Authorization: `Bearer ${token}` } : {},
   });
+}
+
+// ── CONFIRM DIALOG ────────────────────────────────────────────────────────────
+function ConfirmDialog({
+  open,
+  title,
+  message,
+  confirmLabel = "Confirm",
+  confirmStyle = "danger",
+  onConfirm,
+  onCancel,
+}) {
+  if (!open) return null;
+  const isRed = confirmStyle === "danger";
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <div
+          className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${
+            isRed ? "bg-rose-50" : "bg-orange-50"
+          }`}
+        >
+          <span className="text-2xl">{isRed ? "⚠️" : "💬"}</span>
+        </div>
+        <h3 className="font-black text-slate-900 text-base mb-1">{title}</h3>
+        <p className="text-sm text-slate-500 mb-6 leading-relaxed">{message}</p>
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className={`flex-1 py-2.5 rounded-xl font-bold text-sm text-white transition-all ${
+              isRed
+                ? "bg-rose-500 hover:bg-rose-600"
+                : "bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95"
+            }`}
+          >
+            {confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function useConfirm() {
+  const [state, setState] = useState({
+    open: false,
+    resolve: null,
+    title: "",
+    message: "",
+    confirmLabel: "Confirm",
+    confirmStyle: "danger",
+  });
+  const confirm = ({
+    title,
+    message,
+    confirmLabel = "Confirm",
+    confirmStyle = "danger",
+  }) =>
+    new Promise((resolve) =>
+      setState({
+        open: true,
+        resolve,
+        title,
+        message,
+        confirmLabel,
+        confirmStyle,
+      })
+    );
+  const handleConfirm = () => {
+    state.resolve(true);
+    setState((s) => ({ ...s, open: false }));
+  };
+  const handleCancel = () => {
+    state.resolve(false);
+    setState((s) => ({ ...s, open: false }));
+  };
+  const Dialog = () => (
+    <ConfirmDialog
+      open={state.open}
+      title={state.title}
+      message={state.message}
+      confirmLabel={state.confirmLabel}
+      confirmStyle={state.confirmStyle}
+      onConfirm={handleConfirm}
+      onCancel={handleCancel}
+    />
+  );
+  return { confirm, Dialog };
 }
 
 // ── STATUS CONFIG ─────────────────────────────────────────────────────────────
@@ -161,13 +300,12 @@ function StatCard({ icon, label, value, sub, accent = "orange" }) {
   );
 }
 
-// ── IMAGE UPLOAD COMPONENT ────────────────────────────────────────────────────
+// ── IMAGE UPLOAD ──────────────────────────────────────────────────────────────
 function ImageUploader({ value, onChange }) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [preview, setPreview] = useState(value || "");
   const fileRef = useRef();
-
   useEffect(() => {
     setPreview(value || "");
   }, [value]);
@@ -200,13 +338,6 @@ function ImageUploader({ value, onChange }) {
     } finally {
       setUploading(false);
     }
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    if (file) uploadFile(file);
   };
 
   return (
@@ -243,7 +374,12 @@ function ImageUploader({ value, onChange }) {
         </div>
       ) : (
         <div
-          onDrop={handleDrop}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            const f = e.dataTransfer.files[0];
+            if (f) uploadFile(f);
+          }}
           onDragOver={(e) => {
             e.preventDefault();
             setDragOver(true);
@@ -318,18 +454,21 @@ function ImageUploader({ value, onChange }) {
   );
 }
 
-// ── QUOTATION DETAIL MODAL ────────────────────────────────────────────────────
+// ── QUOTATION MODAL ───────────────────────────────────────────────────────────
+// onSave(msg, type) — calls back to parent with toast message so parent fires it AFTER modal closes
 function QuotationModal({
   quotation,
   onClose,
   onStatusUpdate,
   onDelete,
   navigate,
+  onToast,
 }) {
   const [status, setStatus] = useState(quotation.status);
   const [adminNotes, setAdminNotes] = useState(quotation.adminNotes || "");
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { confirm, Dialog } = useConfirm();
 
   const handleSave = async () => {
     setSaving(true);
@@ -340,249 +479,265 @@ function QuotationModal({
       });
       onStatusUpdate(quotation._id, status, adminNotes);
       onClose();
+      onToast("Quotation updated successfully!", "success");
     } catch (err) {
       console.error(err);
+      onClose();
+      onToast("Failed to update quotation.", "error");
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Delete this quotation permanently?")) return;
+    const ok = await confirm({
+      title: "Delete Quotation",
+      message: `Permanently delete quotation #${
+        quotation.quoteNumber || quotation._id?.slice(-6).toUpperCase()
+      }? This cannot be undone.`,
+      confirmLabel: "Delete",
+      confirmStyle: "danger",
+    });
+    if (!ok) return;
     setDeleting(true);
     try {
       await authAxios().delete(`/api/quotations/${quotation._id}`);
       onDelete(quotation._id);
       onClose();
+      onToast("Quotation deleted.", "success");
     } catch (err) {
       console.error(err);
+      onClose();
+      onToast("Failed to delete quotation.", "error");
     } finally {
       setDeleting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white/95 backdrop-blur px-6 py-4 border-b border-slate-100 flex items-center justify-between z-10 rounded-t-3xl">
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Quotation
-            </p>
-            <h2 className="font-black text-slate-900">
-              #{quotation.quoteNumber || quotation._id?.slice(-6).toUpperCase()}
-            </h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleDelete}
-              disabled={deleting}
-              className="text-xs font-bold text-rose-400 hover:text-rose-600 px-3 py-1.5 rounded-lg hover:bg-rose-50 border border-rose-100 transition-colors disabled:opacity-50"
-            >
-              {deleting ? "Deleting…" : "Delete"}
-            </button>
-            <button
-              onClick={onClose}
-              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
-            >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
+    <>
+      <Dialog />
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
+        <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto">
+          <div className="sticky top-0 bg-white/95 backdrop-blur px-6 py-4 border-b border-slate-100 flex items-center justify-between z-10 rounded-t-3xl">
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Quotation
+              </p>
+              <h2 className="font-black text-slate-900">
+                #
+                {quotation.quoteNumber ||
+                  quotation._id?.slice(-6).toUpperCase()}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="text-xs font-bold text-rose-400 hover:text-rose-600 px-3 py-1.5 rounded-lg hover:bg-rose-50 border border-rose-100 transition-colors disabled:opacity-50"
               >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <div className="p-6 space-y-5">
-          <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-2xl">
-            {[
-              {
-                label: "Company",
-                value: quotation.customer?.companyName,
-                bold: true,
-              },
-              { label: "Contact", value: quotation.customer?.contactName },
-              {
-                label: "Email",
-                value: quotation.customer?.email,
-                orange: true,
-              },
-              { label: "Phone", value: quotation.customer?.phone || "—" },
-            ].map((f) => (
-              <div key={f.label}>
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-                  {f.label}
-                </p>
-                <p
-                  className={`text-xs ${
-                    f.bold
-                      ? "font-bold text-slate-900"
-                      : f.orange
-                      ? "text-orange-500 font-medium"
-                      : "text-slate-700"
-                  }`}
+                {deleting ? "Deleting…" : "Delete"}
+              </button>
+              <button
+                onClick={onClose}
+                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+              >
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
                 >
-                  {f.value}
-                </p>
-              </div>
-            ))}
-            <div className="col-span-2">
-              <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
-                Delivery Address
-              </p>
-              <p className="text-xs text-slate-700">
-                {quotation.customer?.deliveryAddress}
-                {quotation.customer?.city ? `, ${quotation.customer.city}` : ""}
-              </p>
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
             </div>
           </div>
-
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-              Order Items
-            </p>
-            <div className="space-y-2">
-              {quotation.items?.map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 overflow-hidden flex-shrink-0">
-                    {item.imageUrl ? (
-                      <img
-                        src={item.imageUrl}
-                        alt={item.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-lg">
-                        📦
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-slate-800 truncate">
-                      {item.name}
-                    </p>
-                    <p className="text-[10px] text-slate-400">
-                      Qty: {item.qty} × Ksh{" "}
-                      {item.price?.toLocaleString("en-KE")}
-                    </p>
-                  </div>
-                  <p className="text-xs font-bold text-orange-500 shrink-0">
-                    Ksh {item.subtotal?.toLocaleString("en-KE")}
+          <div className="p-6 space-y-5">
+            <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-2xl">
+              {[
+                {
+                  label: "Company",
+                  value: quotation.customer?.companyName,
+                  bold: true,
+                },
+                { label: "Contact", value: quotation.customer?.contactName },
+                {
+                  label: "Email",
+                  value: quotation.customer?.email,
+                  orange: true,
+                },
+                { label: "Phone", value: quotation.customer?.phone || "—" },
+              ].map((f) => (
+                <div key={f.label}>
+                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                    {f.label}
+                  </p>
+                  <p
+                    className={`text-xs ${
+                      f.bold
+                        ? "font-bold text-slate-900"
+                        : f.orange
+                        ? "text-orange-500 font-medium"
+                        : "text-slate-700"
+                    }`}
+                  >
+                    {f.value}
                   </p>
                 </div>
               ))}
+              <div className="col-span-2">
+                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                  Delivery Address
+                </p>
+                <p className="text-xs text-slate-700">
+                  {quotation.customer?.deliveryAddress}
+                  {quotation.customer?.city
+                    ? `, ${quotation.customer.city}`
+                    : ""}
+                </p>
+              </div>
             </div>
-            <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
-              <p className="text-sm font-bold text-slate-900">Total</p>
-              <p className="text-xl font-black text-orange-500">
-                Ksh {quotation.total?.toLocaleString("en-KE")}
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                Order Items
               </p>
+              <div className="space-y-2">
+                {quotation.items?.map((item, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 overflow-hidden flex-shrink-0">
+                      {item.imageUrl ? (
+                        <img
+                          src={item.imageUrl}
+                          alt={item.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-lg">
+                          📦
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-slate-800 truncate">
+                        {item.name}
+                      </p>
+                      <p className="text-[10px] text-slate-400">
+                        Qty: {item.qty} × Ksh{" "}
+                        {item.price?.toLocaleString("en-KE")}
+                      </p>
+                    </div>
+                    <p className="text-xs font-bold text-orange-500 shrink-0">
+                      Ksh {item.subtotal?.toLocaleString("en-KE")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
+                <p className="text-sm font-bold text-slate-900">Total</p>
+                <p className="text-xl font-black text-orange-500">
+                  Ksh {quotation.total?.toLocaleString("en-KE")}
+                </p>
+              </div>
             </div>
-          </div>
-
-          {quotation.notes && (
-            <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
-              <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1">
-                Customer Notes
+            {quotation.notes && (
+              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
+                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1">
+                  Customer Notes
+                </p>
+                <p className="text-xs text-blue-800">{quotation.notes}</p>
+              </div>
+            )}
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                Documents
               </p>
-              <p className="text-xs text-blue-800">{quotation.notes}</p>
-            </div>
-          )}
-
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-              Documents
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  onClose();
-                  navigate("/quotation", { state: { quotation } });
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-bold rounded-xl hover:bg-orange-600 transition-colors"
-              >
-                📄 Quotation PDF
-              </button>
-              <button
-                onClick={() => {
-                  onClose();
-                  navigate("/delivery-note", { state: { quotation } });
-                }}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition-colors"
-              >
-                🚚 Delivery Note
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-              Update Status
-            </p>
-            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
-              {QUOTATION_STATUSES.map((s) => (
+              <div className="flex gap-2">
                 <button
-                  key={s.value}
-                  onClick={() => setStatus(s.value)}
-                  className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border text-[10px] font-bold transition-all ${
-                    status === s.value
-                      ? `${s.bg} ${s.text} ${s.border} shadow-sm`
-                      : "bg-white border-slate-200 text-slate-400 hover:border-slate-300"
-                  }`}
+                  onClick={() => {
+                    onClose();
+                    navigate("/quotation", { state: { quotation } });
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-bold rounded-xl hover:bg-orange-600 transition-colors"
                 >
-                  <span className={`w-2 h-2 rounded-full ${s.dot}`} />
-                  {s.label}
+                  📄 Quotation PDF
                 </button>
-              ))}
+                <button
+                  onClick={() => {
+                    onClose();
+                    navigate("/delivery-note", { state: { quotation } });
+                  }}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition-colors"
+                >
+                  🚚 Delivery Note
+                </button>
+              </div>
             </div>
-            <textarea
-              value={adminNotes}
-              onChange={(e) => setAdminNotes(e.target.value)}
-              rows={2}
-              placeholder="Internal notes…"
-              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-orange-300 placeholder-slate-300 resize-none"
-            />
-          </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-sm rounded-xl hover:opacity-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {saving ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Saving…
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </button>
+            <div>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+                Update Status
+              </p>
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+                {QUOTATION_STATUSES.map((s) => (
+                  <button
+                    key={s.value}
+                    onClick={() => setStatus(s.value)}
+                    className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border text-[10px] font-bold transition-all ${
+                      status === s.value
+                        ? `${s.bg} ${s.text} ${s.border} shadow-sm`
+                        : "bg-white border-slate-200 text-slate-400 hover:border-slate-300"
+                    }`}
+                  >
+                    <span className={`w-2 h-2 rounded-full ${s.dot}`} />
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                rows={2}
+                placeholder="Internal notes…"
+                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-orange-300 placeholder-slate-300 resize-none"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-sm rounded-xl hover:opacity-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              >
+                {saving ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Saving…
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
-// ── PRODUCT FORM MODAL ────────────────────────────────────────────────────────
+// ── PRODUCT MODAL ─────────────────────────────────────────────────────────────
+// onSave(msg, type) — returns toast message to parent so it fires AFTER modal unmounts
 function ProductModal({ product, onClose, onSave }) {
   const isEdit = !!product?._id;
   const [form, setForm] = useState({
@@ -597,7 +752,6 @@ function ProductModal({ product, onClose, onSave }) {
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-
   const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
   const handleSave = async () => {
@@ -618,10 +772,15 @@ function ProductModal({ product, onClose, onSave }) {
       if (isEdit)
         await authAxios().put(`/api/products/${product._id}`, payload);
       else await authAxios().post(`/api/products`, payload);
-      onSave();
+      // Pass message UP to parent — parent will show toast after this modal unmounts
+      onSave(
+        isEdit
+          ? `"${form.name}" updated successfully!`
+          : `"${form.name}" added to products!`,
+        "success"
+      );
     } catch (err) {
       setError(err?.response?.data?.message || "Failed to save product.");
-    } finally {
       setSaving(false);
     }
   };
@@ -655,13 +814,11 @@ function ProductModal({ product, onClose, onSave }) {
             </svg>
           </button>
         </div>
-
         <div className="p-6 space-y-4">
           <ImageUploader
             value={form.imageUrl}
             onChange={(url) => set("imageUrl", url)}
           />
-
           <div className="grid grid-cols-2 gap-3">
             <div className="col-span-2">
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -761,13 +918,11 @@ function ProductModal({ product, onClose, onSave }) {
               />
             </div>
           </div>
-
           {error && (
             <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 text-rose-500 text-xs px-3 py-2.5 rounded-xl">
               ⚠️ {error}
             </div>
           )}
-
           <div className="flex gap-3 pt-1">
             <button
               onClick={onClose}
@@ -808,7 +963,6 @@ function unwrapList(data, ...keys) {
   return [];
 }
 
-// ── TABS ──────────────────────────────────────────────────────────────────────
 const TABS = [
   { id: "overview", label: "Overview", icon: "📊" },
   { id: "quotations", label: "Quotations", icon: "📋" },
@@ -817,10 +971,11 @@ const TABS = [
   { id: "settings", label: "Settings", icon: "⚙️" },
 ];
 
-// ── MAIN ──────────────────────────────────────────────────────────────────────
+// ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const { user, logout, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { confirm, Dialog: ConfirmGlobal } = useConfirm();
 
   const [activeTab, setActiveTab] = useState("overview");
   const [quotations, setQuotations] = useState([]);
@@ -835,6 +990,17 @@ export default function AdminDashboard() {
   const [searchQ, setSearchQ] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  // ── Toast state lives here, at the top ──
+  const [toasts, setToasts] = useState([]);
+  const addToast = (msg, type = "success") => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [...prev, { id, msg, type }]);
+    setTimeout(
+      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
+      3500
+    );
+  };
 
   const hasFetched = useRef(false);
 
@@ -891,36 +1057,60 @@ export default function AdminDashboard() {
   const handleQuotationDelete = (id) =>
     setQuotations((p) => p.filter((q) => q._id !== id));
 
-  const handleDeleteProduct = async (id) => {
-    if (!window.confirm("Delete this product?")) return;
+  const handleDeleteProduct = async (p) => {
+    const ok = await confirm({
+      title: "Delete Product",
+      message: `Are you sure you want to delete "${p.name}"? This cannot be undone.`,
+      confirmLabel: "Delete Product",
+      confirmStyle: "danger",
+    });
+    if (!ok) return;
     try {
-      await authAxios().delete(`/api/products/${id}`);
-      setProducts((p) => p.filter((x) => x._id !== id));
+      await authAxios().delete(`/api/products/${p._id}`);
+      setProducts((prev) => prev.filter((x) => x._id !== p._id));
+      addToast(`"${p.name}" deleted.`, "success");
     } catch (err) {
       console.error(err);
+      addToast("Failed to delete product.", "error");
     }
   };
 
   const handleChangeRole = async (c) => {
     const newRole = c.role === "admin" ? "user" : "admin";
-    if (!window.confirm(`Change ${c.name}'s role to ${newRole}?`)) return;
+    const ok = await confirm({
+      title: "Change Role",
+      message: `Change ${c.name}'s role to "${newRole}"?`,
+      confirmLabel: "Change Role",
+      confirmStyle: "orange",
+    });
+    if (!ok) return;
     try {
       await authAxios().patch(`/api/users/${c._id}/role`, { role: newRole });
       setCustomers((p) =>
         p.map((x) => (x._id === c._id ? { ...x, role: newRole } : x))
       );
+      addToast(`${c.name} is now ${newRole}.`, "success");
     } catch (err) {
       console.error(err);
+      addToast("Failed to update role.", "error");
     }
   };
 
   const handleDeleteCustomer = async (c) => {
-    if (!window.confirm(`Delete ${c.name}? This cannot be undone.`)) return;
+    const ok = await confirm({
+      title: "Delete Customer",
+      message: `Permanently delete "${c.name}" (${c.email})? All their data will be lost.`,
+      confirmLabel: "Delete Customer",
+      confirmStyle: "danger",
+    });
+    if (!ok) return;
     try {
       await authAxios().delete(`/api/users/${c._id}`);
       setCustomers((p) => p.filter((x) => x._id !== c._id));
+      addToast(`${c.name} deleted.`, "success");
     } catch (err) {
       console.error(err);
+      addToast("Failed to delete customer.", "error");
     }
   };
 
@@ -956,7 +1146,6 @@ export default function AdminDashboard() {
       p.name?.toLowerCase().includes(productSearch.toLowerCase()) ||
       p.category?.toLowerCase().includes(productSearch.toLowerCase())
   );
-
   const recentQuotations = [...quotations]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
@@ -974,7 +1163,11 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-[#f8f9fc] flex font-sans">
-      {/* Modals */}
+      {/* ── TOASTS — rendered here, always visible, no z-index competition ── */}
+      <ToastStack toasts={toasts} />
+
+      <ConfirmGlobal />
+
       {selectedQuotation && (
         <QuotationModal
           quotation={selectedQuotation}
@@ -982,8 +1175,14 @@ export default function AdminDashboard() {
           onStatusUpdate={handleStatusUpdate}
           onDelete={handleQuotationDelete}
           navigate={navigate}
+          onToast={(msg, type) => {
+            setSelectedQuotation(null);
+            // Small delay so modal unmounts before toast renders
+            setTimeout(() => addToast(msg, type), 50);
+          }}
         />
       )}
+
       {showProductModal && (
         <ProductModal
           product={selectedProduct}
@@ -991,15 +1190,18 @@ export default function AdminDashboard() {
             setShowProductModal(false);
             setSelectedProduct(null);
           }}
-          onSave={() => {
+          onSave={(msg, type) => {
+            // 1. Close modal
             setShowProductModal(false);
             setSelectedProduct(null);
+            // 2. Refresh data
             fetchAll();
+            // 3. Show toast after modal is gone
+            setTimeout(() => addToast(msg, type), 50);
           }}
         />
       )}
 
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-10 lg:hidden"
@@ -1007,7 +1209,6 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* ── Sidebar ── */}
       <aside
         className={`fixed top-0 left-0 h-full bg-slate-950 z-20 flex flex-col transition-all duration-300 ${
           sidebarOpen ? "w-60" : "w-0 overflow-hidden"
@@ -1024,7 +1225,6 @@ export default function AdminDashboard() {
             <p className="text-slate-500 text-[10px] mt-0.5">Admin Panel</p>
           </div>
         </div>
-
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {TABS.map((tab) => (
             <button
@@ -1048,8 +1248,6 @@ export default function AdminDashboard() {
               )}
             </button>
           ))}
-
-          {/* ── Document shortcuts in sidebar ── */}
           <div className="pt-3 mt-3 border-t border-white/8 space-y-1">
             <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2">
               Documents
@@ -1080,7 +1278,6 @@ export default function AdminDashboard() {
             </button>
           </div>
         </nav>
-
         <div className="px-3 pb-4 pt-3 border-t border-white/8 space-y-1">
           <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
             <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center flex-shrink-0">
@@ -1114,11 +1311,8 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
-      {/* ── Main ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* ── Top bar ── */}
         <header className="bg-white border-b border-slate-100 px-4 sm:px-6 py-3.5 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
-          {/* Mobile hamburger */}
           <button
             onClick={() => setSidebarOpen((o) => !o)}
             className="lg:hidden w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0"
@@ -1136,8 +1330,6 @@ export default function AdminDashboard() {
               <line x1="3" y1="17" x2="21" y2="17" />
             </svg>
           </button>
-
-          {/* Page title */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xl">
               {TABS.find((t) => t.id === activeTab)?.icon}
@@ -1151,10 +1343,7 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-
-          {/* ── RIGHT SIDE of navbar ── */}
           <div className="ml-auto flex items-center gap-2">
-            {/* Pending badge */}
             {stats.pending > 0 && (
               <button
                 onClick={() => setActiveTab("quotations")}
@@ -1167,14 +1356,10 @@ export default function AdminDashboard() {
                 {stats.pending} pending
               </button>
             )}
-
-            {/* ── Quotation Maker button ── */}
             <button
               onClick={() => navigate("/quotation")}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100 hover:border-orange-300"
-              title="Open Quotation Maker"
             >
-              {/* document icon */}
               <svg
                 width="13"
                 height="13"
@@ -1192,14 +1377,10 @@ export default function AdminDashboard() {
               </svg>
               <span className="hidden sm:inline">Quotation</span>
             </button>
-
-            {/* ── Delivery Note button ── */}
             <button
               onClick={() => navigate("/delivery-note")}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 hover:border-slate-300"
-              title="Open Delivery Note"
             >
-              {/* truck icon */}
               <svg
                 width="13"
                 height="13"
@@ -1217,15 +1398,12 @@ export default function AdminDashboard() {
               </svg>
               <span className="hidden sm:inline">Delivery Note</span>
             </button>
-
-            {/* Refresh */}
             <button
               onClick={() => {
                 hasFetched.current = false;
                 fetchAll();
               }}
               className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors flex-shrink-0"
-              title="Refresh"
             >
               <svg
                 width="14"
@@ -1243,7 +1421,6 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* Content — unchanged below */}
         <main className="flex-1 p-4 sm:p-6 overflow-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -1268,7 +1445,6 @@ export default function AdminDashboard() {
             </div>
           ) : (
             <>
-              {/* ══ OVERVIEW ══ */}
               {activeTab === "overview" && (
                 <div className="space-y-6 max-w-6xl">
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1327,7 +1503,6 @@ export default function AdminDashboard() {
                       accent="violet"
                     />
                   </div>
-
                   <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                     {QUOTATION_STATUSES.map((s) => {
                       const count = quotations.filter(
@@ -1363,7 +1538,6 @@ export default function AdminDashboard() {
                       );
                     })}
                   </div>
-
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
                       <h3 className="font-black text-slate-900 text-sm">
@@ -1427,30 +1601,27 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* ══ QUOTATIONS ══ */}
               {activeTab === "quotations" && (
                 <div className="space-y-4 max-w-5xl">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <svg
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="M21 21l-4.35-4.35" />
-                      </svg>
-                      <input
-                        value={searchQ}
-                        onChange={(e) => setSearchQ(e.target.value)}
-                        placeholder="Search company, contact or email…"
-                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300"
-                      />
-                    </div>
+                  <div className="relative flex-1">
+                    <svg
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                      width="13"
+                      height="13"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="M21 21l-4.35-4.35" />
+                    </svg>
+                    <input
+                      value={searchQ}
+                      onChange={(e) => setSearchQ(e.target.value)}
+                      placeholder="Search company, contact or email…"
+                      className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300"
+                    />
                   </div>
                   <div className="flex gap-2 flex-wrap">
                     {["all", ...QUOTATION_STATUSES.map((s) => s.value)].map(
@@ -1480,7 +1651,6 @@ export default function AdminDashboard() {
                       }
                     )}
                   </div>
-
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     {filteredQuotations.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 gap-2">
@@ -1537,7 +1707,6 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* ══ PRODUCTS ══ */}
               {activeTab === "products" && (
                 <div className="space-y-4 max-w-5xl">
                   <div className="flex flex-col sm:flex-row gap-3">
@@ -1582,7 +1751,6 @@ export default function AdminDashboard() {
                       Add Product
                     </button>
                   </div>
-
                   <div className="flex items-center justify-between">
                     <p className="text-xs text-slate-400 font-medium">
                       {filteredProducts.length} product
@@ -1610,7 +1778,6 @@ export default function AdminDashboard() {
                       })}
                     </div>
                   </div>
-
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     {filteredProducts.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 gap-3">
@@ -1700,7 +1867,7 @@ export default function AdminDashboard() {
                                 </svg>
                               </button>
                               <button
-                                onClick={() => handleDeleteProduct(p._id)}
+                                onClick={() => handleDeleteProduct(p)}
                                 className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-400 hover:bg-rose-100 transition-colors"
                               >
                                 <svg
@@ -1724,15 +1891,12 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* ══ CUSTOMERS ══ */}
               {activeTab === "customers" && (
                 <div className="space-y-4 max-w-4xl">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-bold text-slate-700">
-                      {customers.length} registered customer
-                      {customers.length !== 1 ? "s" : ""}
-                    </p>
-                  </div>
+                  <p className="text-sm font-bold text-slate-700">
+                    {customers.length} registered customer
+                    {customers.length !== 1 ? "s" : ""}
+                  </p>
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                     {customers.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 gap-2">
@@ -1811,7 +1975,6 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-              {/* ══ SETTINGS ══ */}
               {activeTab === "settings" && (
                 <div className="space-y-5 max-w-2xl">
                   {[
@@ -1868,12 +2031,14 @@ export default function AdminDashboard() {
                           </div>
                         ))}
                       </div>
-                      <button className="mt-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold rounded-xl hover:opacity-95 transition-all">
+                      <button
+                        onClick={() => addToast("Settings saved!", "success")}
+                        className="mt-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold rounded-xl hover:opacity-95 transition-all"
+                      >
                         Save Changes
                       </button>
                     </div>
                   ))}
-
                   <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
                     <h3 className="font-black text-slate-900 text-sm mb-3">
                       Session
@@ -1913,7 +2078,6 @@ export default function AdminDashboard() {
                       🚪 Sign Out
                     </button>
                   </div>
-
                   <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-6">
                     <h3 className="font-black text-rose-600 text-sm mb-1">
                       Danger Zone
@@ -1923,10 +2087,14 @@ export default function AdminDashboard() {
                     </p>
                     <button
                       onClick={async () => {
-                        if (
-                          !window.confirm("Delete ALL quotations permanently?")
-                        )
-                          return;
+                        const ok = await confirm({
+                          title: "Clear All Quotations",
+                          message:
+                            "Permanently delete ALL quotations? This cannot be undone.",
+                          confirmLabel: "Delete All",
+                          confirmStyle: "danger",
+                        });
+                        if (!ok) return;
                         try {
                           await Promise.all(
                             quotations.map((q) =>
@@ -1934,9 +2102,13 @@ export default function AdminDashboard() {
                             )
                           );
                           setQuotations([]);
+                          addToast("All quotations deleted.", "success");
                         } catch (err) {
                           console.error(err);
-                          alert("Some quotations could not be deleted.");
+                          addToast(
+                            "Some quotations could not be deleted.",
+                            "error"
+                          );
                         }
                       }}
                       className="flex items-center gap-2 px-4 py-2.5 border border-rose-200 rounded-xl text-rose-500 text-xs font-bold hover:bg-rose-50 transition-colors"

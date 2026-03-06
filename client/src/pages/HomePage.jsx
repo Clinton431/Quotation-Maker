@@ -1889,7 +1889,7 @@ export default function HomePage() {
               All rights reserved.
             </p>
             <div className="flex items-center gap-4">
-              <p>Made with ❤️ in Kenya 🇰🇪</p>
+              <p>We Offer The Best Customer Experience</p>
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-emerald-600">

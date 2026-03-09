@@ -3,53 +3,391 @@ import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 
+// ── SVG ICON LIBRARY ──────────────────────────────────────────────────────────
+const Icon = {
+  Grid: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="7" height="7" rx="1.5" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" />
+    </svg>
+  ),
+  FileText: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <line x1="10" y1="9" x2="8" y2="9" />
+    </svg>
+  ),
+  Package: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12.89 1.45l8 4A2 2 0 0122 7.24v9.53a2 2 0 01-1.11 1.79l-8 4a2 2 0 01-1.78 0l-8-4A2 2 0 012 16.76V7.24a2 2 0 011.11-1.79l8-4a2 2 0 011.78 0z" />
+      <polyline points="2.32 6.16 12 11 21.68 6.16" />
+      <line x1="12" y1="22.76" x2="12" y2="11" />
+    </svg>
+  ),
+  Users: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M23 21v-2a4 4 0 00-3-3.87" />
+      <path d="M16 3.13a4 4 0 010 7.75" />
+    </svg>
+  ),
+  Settings: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
+    </svg>
+  ),
+  Truck: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="1" y="3" width="15" height="13" rx="1.5" />
+      <path d="M16 8h4l3 5v3h-7V8z" />
+      <circle cx="5.5" cy="18.5" r="2.5" />
+      <circle cx="18.5" cy="18.5" r="2.5" />
+    </svg>
+  ),
+  RefreshCw: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="23 4 23 10 17 10" />
+      <polyline points="1 20 1 14 7 14" />
+      <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+    </svg>
+  ),
+  ChevronRight: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  ),
+  X: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  ),
+  Plus: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+    >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  ),
+  Edit: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+    </svg>
+  ),
+  Trash: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M9 6V4h6v2" />
+    </svg>
+  ),
+  Search: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="11" cy="11" r="8" />
+      <path d="M21 21l-4.35-4.35" />
+    </svg>
+  ),
+  Shield: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    </svg>
+  ),
+  TrendingUp: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+      <polyline points="17 6 23 6 23 12" />
+    </svg>
+  ),
+  Clock: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  CheckCircle: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
+  ),
+  AlertTriangle: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+      <line x1="12" y1="9" x2="12" y2="13" />
+      <line x1="12" y1="17" x2="12.01" y2="17" />
+    </svg>
+  ),
+  LogOut: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
+  ),
+  Home: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
+      <polyline points="9 22 9 12 15 12 15 22" />
+    </svg>
+  ),
+  Image: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <polyline points="21 15 16 10 5 21" />
+    </svg>
+  ),
+  Check: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
+  Info: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  ),
+  Menu: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
+      <line x1="3" y1="7" x2="21" y2="7" />
+      <line x1="3" y1="12" x2="21" y2="12" />
+      <line x1="3" y1="17" x2="21" y2="17" />
+    </svg>
+  ),
+};
+
 // ── TOAST STACK ───────────────────────────────────────────────────────────────
-// Lives at root level, completely independent. Gets toasts[] from AdminDashboard.
 function ToastStack({ toasts }) {
   return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 24,
-        right: 24,
-        zIndex: 2147483647,
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-        pointerEvents: "none",
-      }}
-    >
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2.5 pointer-events-none">
       {toasts.map((t) => (
         <div
           key={t.id}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "13px 18px",
-            borderRadius: 14,
-            background: t.type === "success" ? "#10b981" : "#f43f5e",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 13,
-            fontFamily: "inherit",
-            boxShadow: "0 8px 30px rgba(0,0,0,0.25)",
-            minWidth: 220,
-            maxWidth: 340,
-          }}
+          className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-white font-bold text-sm shadow-2xl min-w-[240px] max-w-sm toast-in ${
+            t.type === "success"
+              ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
+              : "bg-gradient-to-r from-rose-500 to-rose-600"
+          }`}
         >
-          <span style={{ fontSize: 16, flexShrink: 0 }}>
-            {t.type === "success" ? "✅" : "❌"}
-          </span>
-          <span>{t.msg}</span>
+          <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+            {t.type === "success" ? (
+              <Icon.Check className="w-3.5 h-3.5" />
+            ) : (
+              <Icon.Info className="w-3.5 h-3.5" />
+            )}
+          </div>
+          <span className="leading-snug">{t.msg}</span>
         </div>
       ))}
+      <style>{`
+        @keyframes toast-in { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        .toast-in { animation: toast-in 0.3s cubic-bezier(.34,1.56,.64,1); }
+      `}</style>
     </div>
   );
 }
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
-
 function authAxios() {
   const token = localStorage.getItem("wt_token");
   return axios.create({
@@ -71,36 +409,44 @@ function ConfirmDialog({
   if (!open) return null;
   const isRed = confirmStyle === "danger";
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-sm p-7 shadow-2xl dialog-in">
         <div
           className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${
             isRed ? "bg-rose-50" : "bg-orange-50"
           }`}
         >
-          <span className="text-2xl">{isRed ? "⚠️" : "💬"}</span>
+          <Icon.AlertTriangle
+            className={`w-5 h-5 ${isRed ? "text-rose-500" : "text-orange-500"}`}
+          />
         </div>
-        <h3 className="font-black text-slate-900 text-base mb-1">{title}</h3>
-        <p className="text-sm text-slate-500 mb-6 leading-relaxed">{message}</p>
-        <div className="flex gap-3">
+        <h3 className="font-extrabold text-slate-900 text-base mb-1.5">
+          {title}
+        </h3>
+        <p className="text-sm text-slate-500 leading-relaxed mb-6">{message}</p>
+        <div className="flex gap-2.5">
           <button
             onClick={onCancel}
-            className="flex-1 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50 transition-colors"
+            className="flex-1 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-500 font-semibold text-sm cursor-pointer hover:bg-slate-50 transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={onConfirm}
-            className={`flex-1 py-2.5 rounded-xl font-bold text-sm text-white transition-all ${
+            className={`flex-1 py-2.5 rounded-xl text-white font-bold text-sm cursor-pointer transition-opacity hover:opacity-90 ${
               isRed
-                ? "bg-rose-500 hover:bg-rose-600"
-                : "bg-gradient-to-r from-orange-500 to-amber-500 hover:opacity-95"
+                ? "bg-gradient-to-r from-rose-500 to-rose-600"
+                : "bg-gradient-to-r from-orange-500 to-orange-600"
             }`}
           >
             {confirmLabel}
           </button>
         </div>
       </div>
+      <style>{`
+        @keyframes dialog-in { from { transform: scale(.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .dialog-in { animation: dialog-in .2s cubic-bezier(.34,1.56,.64,1); }
+      `}</style>
     </div>
   );
 }
@@ -157,56 +503,61 @@ const QUOTATION_STATUSES = [
   {
     value: "pending",
     label: "Pending",
-    bg: "bg-amber-100",
-    text: "text-amber-700",
-    border: "border-amber-200",
-    dot: "bg-amber-500",
-    glow: "shadow-amber-100",
+    dot: "bg-amber-400",
+    pill: "bg-amber-50 border-amber-200 text-amber-700",
+    activeBorder: "border-amber-300",
+    activeBg: "bg-amber-50",
+    activeText: "text-amber-700",
+    bar: "bg-amber-400",
   },
   {
     value: "processing",
     label: "Processing",
-    bg: "bg-sky-100",
-    text: "text-sky-700",
-    border: "border-sky-200",
-    dot: "bg-sky-500",
-    glow: "shadow-sky-100",
+    dot: "bg-blue-400",
+    pill: "bg-blue-50 border-blue-200 text-blue-700",
+    activeBorder: "border-blue-300",
+    activeBg: "bg-blue-50",
+    activeText: "text-blue-700",
+    bar: "bg-blue-400",
   },
   {
     value: "sent",
     label: "Sent",
-    bg: "bg-violet-100",
-    text: "text-violet-700",
-    border: "border-violet-200",
-    dot: "bg-violet-500",
-    glow: "shadow-violet-100",
+    dot: "bg-violet-400",
+    pill: "bg-violet-50 border-violet-200 text-violet-700",
+    activeBorder: "border-violet-300",
+    activeBg: "bg-violet-50",
+    activeText: "text-violet-700",
+    bar: "bg-violet-400",
   },
   {
     value: "approved",
     label: "Approved",
-    bg: "bg-emerald-100",
-    text: "text-emerald-700",
-    border: "border-emerald-200",
-    dot: "bg-emerald-500",
-    glow: "shadow-emerald-100",
+    dot: "bg-emerald-400",
+    pill: "bg-emerald-50 border-emerald-200 text-emerald-700",
+    activeBorder: "border-emerald-300",
+    activeBg: "bg-emerald-50",
+    activeText: "text-emerald-700",
+    bar: "bg-emerald-400",
   },
   {
     value: "rejected",
     label: "Declined",
-    bg: "bg-rose-100",
-    text: "text-rose-700",
-    border: "border-rose-200",
-    dot: "bg-rose-500",
-    glow: "shadow-rose-100",
+    dot: "bg-rose-400",
+    pill: "bg-rose-50 border-rose-200 text-rose-700",
+    activeBorder: "border-rose-300",
+    activeBg: "bg-rose-50",
+    activeText: "text-rose-700",
+    bar: "bg-rose-400",
   },
 ];
 
-function StatusBadge({ status }) {
+function StatusPill({ status }) {
   const s =
     QUOTATION_STATUSES.find((x) => x.value === status) || QUOTATION_STATUSES[0];
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${s.bg} ${s.text} ${s.border}`}
+      className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${s.pill}`}
     >
       <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
       {s.label}
@@ -214,88 +565,56 @@ function StatusBadge({ status }) {
   );
 }
 
-function StockBadge({ status }) {
+function StockPill({ status }) {
   const map = {
-    "In Stock": {
-      bg: "bg-emerald-100",
-      text: "text-emerald-700",
-      border: "border-emerald-200",
-      dot: "bg-emerald-500",
-    },
-    "Low Stock": {
-      bg: "bg-amber-100",
-      text: "text-amber-700",
-      border: "border-amber-200",
-      dot: "bg-amber-500",
-    },
-    "Out of Stock": {
-      bg: "bg-rose-100",
-      text: "text-rose-700",
-      border: "border-rose-200",
-      dot: "bg-rose-500",
-    },
+    "In Stock": "bg-emerald-50 border-emerald-200 text-emerald-700",
+    "Low Stock": "bg-amber-50 border-amber-200 text-amber-700",
+    "Out of Stock": "bg-rose-50 border-rose-200 text-rose-700",
   };
-  const s = map[status] || map["In Stock"];
+  const dot = {
+    "In Stock": "bg-emerald-400",
+    "Low Stock": "bg-amber-400",
+    "Out of Stock": "bg-rose-400",
+  };
   return (
     <span
-      className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1 rounded-full border ${s.bg} ${s.text} ${s.border}`}
+      className={`inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1 rounded-full border whitespace-nowrap ${
+        map[status] || map["In Stock"]
+      }`}
     >
-      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+      <span
+        className={`w-1.5 h-1.5 rounded-full ${dot[status] || dot["In Stock"]}`}
+      />
       {status || "In Stock"}
     </span>
   );
 }
 
 // ── STAT CARD ─────────────────────────────────────────────────────────────────
-function StatCard({ icon, label, value, sub, accent = "orange" }) {
-  const accents = {
-    orange: {
-      bg: "from-orange-500 to-amber-500",
-      light: "bg-orange-50",
-      text: "text-orange-600",
-      border: "border-orange-100",
-    },
-    blue: {
-      bg: "from-sky-500 to-blue-600",
-      light: "bg-sky-50",
-      text: "text-sky-600",
-      border: "border-sky-100",
-    },
-    emerald: {
-      bg: "from-emerald-500 to-teal-500",
-      light: "bg-emerald-50",
-      text: "text-emerald-600",
-      border: "border-emerald-100",
-    },
-    violet: {
-      bg: "from-violet-500 to-purple-600",
-      light: "bg-violet-50",
-      text: "text-violet-600",
-      border: "border-violet-100",
-    },
-    rose: {
-      bg: "from-rose-500 to-pink-600",
-      light: "bg-rose-50",
-      text: "text-rose-600",
-      border: "border-rose-100",
-    },
-  };
-  const a = accents[accent] || accents.orange;
+function StatCard({
+  icon: IconComp,
+  label,
+  value,
+  sub,
+  iconBg,
+  iconColor,
+  blobColor,
+}) {
   return (
-    <div
-      className={`relative bg-white rounded-2xl border ${a.border} p-5 overflow-hidden group hover:shadow-lg transition-all duration-300`}
-    >
+    <div className="relative bg-white rounded-2xl border border-slate-100 p-6 overflow-hidden group hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 cursor-default">
       <div
-        className={`absolute -top-6 -right-6 w-20 h-20 rounded-full bg-gradient-to-br ${a.bg} opacity-10 group-hover:opacity-20 transition-opacity`}
+        className={`absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-10 group-hover:opacity-20 transition-opacity ${blobColor}`}
       />
       <div
-        className={`w-10 h-10 rounded-xl ${a.light} flex items-center justify-center mb-3 text-lg`}
+        className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${iconBg}`}
       >
-        {icon}
+        <IconComp className={`w-5 h-5 ${iconColor}`} />
       </div>
-      <p className="text-2xl font-black text-slate-900 leading-none">{value}</p>
-      <p className={`text-xs font-bold ${a.text} mt-1`}>{label}</p>
-      {sub && <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>}
+      <div className="text-3xl font-black text-slate-900 leading-none tracking-tight">
+        {value}
+      </div>
+      <div className={`text-sm font-bold mt-1.5 ${iconColor}`}>{label}</div>
+      {sub && <div className="text-xs text-slate-400 mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -332,8 +651,7 @@ function ImageUploader({ value, onChange }) {
         setPreview(url);
         onChange(url);
       }
-    } catch (err) {
-      console.error("Upload failed:", err);
+    } catch {
       alert("Image upload failed. Please try again.");
     } finally {
       setUploading(false);
@@ -341,8 +659,8 @@ function ImageUploader({ value, onChange }) {
   };
 
   return (
-    <div className="space-y-2">
-      <label className="block text-xs font-bold text-slate-700 mb-1.5">
+    <div>
+      <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
         Product Image
       </label>
       {preview ? (
@@ -352,11 +670,11 @@ function ImageUploader({ value, onChange }) {
             alt="Product"
             className="w-full h-full object-contain"
           />
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+          <div className="absolute inset-0 bg-black/55 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
             <button
               type="button"
               onClick={() => fileRef.current?.click()}
-              className="px-3 py-1.5 bg-white text-slate-800 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors"
+              className="px-3 py-1.5 bg-white text-slate-800 text-xs font-bold rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
             >
               Change
             </button>
@@ -366,7 +684,7 @@ function ImageUploader({ value, onChange }) {
                 setPreview("");
                 onChange("");
               }}
-              className="px-3 py-1.5 bg-rose-500 text-white text-xs font-bold rounded-lg hover:bg-rose-600 transition-colors"
+              className="px-3 py-1.5 bg-rose-500 text-white text-xs font-bold rounded-lg hover:bg-rose-600 transition-colors cursor-pointer"
             >
               Remove
             </button>
@@ -395,29 +713,17 @@ function ImageUploader({ value, onChange }) {
           {uploading ? (
             <div className="flex flex-col items-center gap-2">
               <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs text-slate-400">Uploading…</p>
+              <span className="text-xs text-slate-400">Uploading…</span>
             </div>
           ) : (
             <>
-              <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center mb-2">
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#f97316"
-                  strokeWidth="2"
-                >
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="8.5" cy="8.5" r="1.5" />
-                  <polyline points="21 15 16 10 5 21" />
-                </svg>
+              <div className="w-10 h-10 rounded-xl bg-orange-100 flex items-center justify-center mb-2.5">
+                <Icon.Image className="w-5 h-5 text-orange-500" />
               </div>
-              <p className="text-xs font-semibold text-slate-500">
-                Drop image here or{" "}
-                <span className="text-orange-500">browse</span>
+              <p className="text-sm font-semibold text-slate-500">
+                Drop image or <span className="text-orange-500">browse</span>
               </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-400 mt-1">
                 JPG, PNG, WebP · Max 5MB
               </p>
             </>
@@ -435,9 +741,9 @@ function ImageUploader({ value, onChange }) {
           e.target.value = "";
         }}
       />
-      <div className="flex items-center gap-2 mt-1">
+      <div className="flex items-center gap-2 my-3">
         <div className="flex-1 h-px bg-slate-100" />
-        <span className="text-[10px] text-slate-400">or paste URL</span>
+        <span className="text-xs text-slate-400">or paste URL</span>
         <div className="flex-1 h-px bg-slate-100" />
       </div>
       <input
@@ -448,14 +754,13 @@ function ImageUploader({ value, onChange }) {
           onChange(e.target.value);
         }}
         placeholder="https://example.com/image.jpg"
-        className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-700 focus:outline-none focus:border-orange-300 bg-white placeholder-slate-300"
+        className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:border-orange-300 bg-white placeholder-slate-300 transition-colors"
       />
     </div>
   );
 }
 
 // ── QUOTATION MODAL ───────────────────────────────────────────────────────────
-// onSave(msg, type) — calls back to parent with toast message so parent fires it AFTER modal closes
 function QuotationModal({
   quotation,
   onClose,
@@ -480,8 +785,7 @@ function QuotationModal({
       onStatusUpdate(quotation._id, status, adminNotes);
       onClose();
       onToast("Quotation updated successfully!", "success");
-    } catch (err) {
-      console.error(err);
+    } catch {
       onClose();
       onToast("Failed to update quotation.", "error");
     } finally {
@@ -494,7 +798,7 @@ function QuotationModal({
       title: "Delete Quotation",
       message: `Permanently delete quotation #${
         quotation.quoteNumber || quotation._id?.slice(-6).toUpperCase()
-      }? This cannot be undone.`,
+      }?`,
       confirmLabel: "Delete",
       confirmStyle: "danger",
     });
@@ -505,8 +809,7 @@ function QuotationModal({
       onDelete(quotation._id);
       onClose();
       onToast("Quotation deleted.", "success");
-    } catch (err) {
-      console.error(err);
+    } catch {
       onClose();
       onToast("Failed to delete quotation.", "error");
     } finally {
@@ -517,14 +820,15 @@ function QuotationModal({
   return (
     <>
       <Dialog />
-      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-        <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto">
-          <div className="sticky top-0 bg-white/95 backdrop-blur px-6 py-4 border-b border-slate-100 flex items-center justify-between z-10 rounded-t-3xl">
+      <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-sm">
+        <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto">
+          {/* Header */}
+          <div className="sticky top-0 bg-white/95 backdrop-blur px-6 py-4 border-b border-slate-100 flex items-center justify-between z-10 rounded-t-3xl sm:rounded-t-3xl">
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                Quotation
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                Quotation Request
               </p>
-              <h2 className="font-black text-slate-900">
+              <h2 className="font-black text-slate-900 text-xl tracking-tight">
                 #
                 {quotation.quoteNumber ||
                   quotation._id?.slice(-6).toUpperCase()}
@@ -534,66 +838,56 @@ function QuotationModal({
               <button
                 onClick={handleDelete}
                 disabled={deleting}
-                className="text-xs font-bold text-rose-400 hover:text-rose-600 px-3 py-1.5 rounded-lg hover:bg-rose-50 border border-rose-100 transition-colors disabled:opacity-50"
+                className="text-xs font-bold px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 text-rose-500 hover:bg-rose-100 transition-colors disabled:opacity-50 cursor-pointer"
               >
                 {deleting ? "Deleting…" : "Delete"}
               </button>
               <button
                 onClick={onClose}
-                className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
+                className="w-9 h-9 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer"
               >
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" />
-                  <line x1="6" y1="6" x2="18" y2="18" />
-                </svg>
+                <Icon.X className="w-4 h-4 text-slate-500" />
               </button>
             </div>
           </div>
-          <div className="p-6 space-y-5">
-            <div className="grid grid-cols-2 gap-3 p-4 bg-slate-50 rounded-2xl">
+
+          <div className="p-6 flex flex-col gap-5">
+            {/* Customer grid */}
+            <div className="bg-slate-50 rounded-2xl p-5 grid grid-cols-2 gap-4">
               {[
                 {
                   label: "Company",
                   value: quotation.customer?.companyName,
-                  bold: true,
+                  cls: "text-sm font-extrabold text-slate-900",
                 },
-                { label: "Contact", value: quotation.customer?.contactName },
+                {
+                  label: "Contact",
+                  value: quotation.customer?.contactName,
+                  cls: "text-sm font-medium text-slate-700",
+                },
                 {
                   label: "Email",
                   value: quotation.customer?.email,
-                  orange: true,
+                  cls: "text-sm font-semibold text-orange-500",
                 },
-                { label: "Phone", value: quotation.customer?.phone || "—" },
+                {
+                  label: "Phone",
+                  value: quotation.customer?.phone || "—",
+                  cls: "text-sm text-slate-700",
+                },
               ].map((f) => (
                 <div key={f.label}>
-                  <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
                     {f.label}
                   </p>
-                  <p
-                    className={`text-xs ${
-                      f.bold
-                        ? "font-bold text-slate-900"
-                        : f.orange
-                        ? "text-orange-500 font-medium"
-                        : "text-slate-700"
-                    }`}
-                  >
-                    {f.value}
-                  </p>
+                  <p className={f.cls}>{f.value}</p>
                 </div>
               ))}
               <div className="col-span-2">
-                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
                   Delivery Address
                 </p>
-                <p className="text-xs text-slate-700">
+                <p className="text-sm text-slate-700">
                   {quotation.customer?.deliveryAddress}
                   {quotation.customer?.city
                     ? `, ${quotation.customer.city}`
@@ -601,17 +895,19 @@ function QuotationModal({
                 </p>
               </div>
             </div>
+
+            {/* Items */}
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Order Items
               </p>
-              <div className="space-y-2">
+              <div className="flex flex-col gap-2">
                 {quotation.items?.map((item, i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl"
+                    className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl border border-slate-100"
                   >
-                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 overflow-hidden flex-shrink-0">
+                    <div className="w-12 h-12 rounded-xl bg-white border border-slate-200 overflow-hidden shrink-0 flex items-center justify-center">
                       {item.imageUrl ? (
                         <img
                           src={item.imageUrl}
@@ -619,83 +915,91 @@ function QuotationModal({
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-lg">
-                          📦
-                        </div>
+                        <Icon.Package className="w-5 h-5 text-slate-300" />
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-slate-800 truncate">
+                      <p className="text-sm font-bold text-slate-900 truncate">
                         {item.name}
                       </p>
-                      <p className="text-[10px] text-slate-400">
+                      <p className="text-xs text-slate-400 mt-0.5">
                         Qty: {item.qty} × Ksh{" "}
                         {item.price?.toLocaleString("en-KE")}
                       </p>
                     </div>
-                    <p className="text-xs font-bold text-orange-500 shrink-0">
+                    <p className="text-sm font-extrabold text-orange-500 shrink-0">
                       Ksh {item.subtotal?.toLocaleString("en-KE")}
                     </p>
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between items-center mt-3 pt-3 border-t border-slate-100">
-                <p className="text-sm font-bold text-slate-900">Total</p>
-                <p className="text-xl font-black text-orange-500">
+              <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-100">
+                <span className="text-base font-bold text-slate-900">
+                  Total
+                </span>
+                <span className="text-2xl font-black text-orange-500 tracking-tight">
                   Ksh {quotation.total?.toLocaleString("en-KE")}
-                </p>
+                </span>
               </div>
             </div>
+
+            {/* Customer notes */}
             {quotation.notes && (
-              <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl">
-                <p className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-1">
+              <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">
                   Customer Notes
                 </p>
-                <p className="text-xs text-blue-800">{quotation.notes}</p>
+                <p className="text-sm text-blue-800 leading-relaxed">
+                  {quotation.notes}
+                </p>
               </div>
             )}
+
+            {/* Documents */}
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Documents
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-2.5">
                 <button
                   onClick={() => {
                     onClose();
                     navigate("/quotation", { state: { quotation } });
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-bold rounded-xl hover:bg-orange-600 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
                 >
-                  📄 Quotation PDF
+                  <Icon.FileText className="w-4 h-4" /> Quotation PDF
                 </button>
                 <button
                   onClick={() => {
                     onClose();
                     navigate("/delivery-note", { state: { quotation } });
                   }}
-                  className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-900 transition-colors"
+                  className="flex items-center gap-2 px-4 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-xl hover:bg-slate-800 transition-colors cursor-pointer"
                 >
-                  🚚 Delivery Note
+                  <Icon.Truck className="w-4 h-4" /> Delivery Note
                 </button>
               </div>
             </div>
+
+            {/* Status selector */}
             <div>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Update Status
               </p>
-              <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 mb-3">
+              <div className="grid grid-cols-5 gap-2 mb-3">
                 {QUOTATION_STATUSES.map((s) => (
                   <button
                     key={s.value}
                     onClick={() => setStatus(s.value)}
-                    className={`flex flex-col items-center gap-1 px-2 py-2.5 rounded-xl border text-[10px] font-bold transition-all ${
+                    className={`flex flex-col items-center gap-1.5 py-3 px-1 rounded-xl border transition-all cursor-pointer ${
                       status === s.value
-                        ? `${s.bg} ${s.text} ${s.border} shadow-sm`
+                        ? `${s.activeBg} ${s.activeBorder} ${s.activeText}`
                         : "bg-white border-slate-200 text-slate-400 hover:border-slate-300"
                     }`}
                   >
                     <span className={`w-2 h-2 rounded-full ${s.dot}`} />
-                    {s.label}
+                    <span className="text-[10px] font-bold">{s.label}</span>
                   </button>
                 ))}
               </div>
@@ -704,24 +1008,26 @@ function QuotationModal({
                 onChange={(e) => setAdminNotes(e.target.value)}
                 rows={2}
                 placeholder="Internal notes…"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 focus:outline-none focus:border-orange-300 placeholder-slate-300 resize-none"
+                className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 placeholder-slate-300 resize-none transition-colors"
               />
             </div>
+
+            {/* Actions */}
             <div className="flex gap-3">
               <button
                 onClick={onClose}
-                className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-50 transition-colors"
+                className="flex-1 py-3.5 rounded-xl border border-slate-200 bg-white text-slate-500 font-semibold text-sm hover:bg-slate-50 transition-colors cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-sm rounded-xl hover:opacity-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+                className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
               >
                 {saving ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                     Saving…
                   </>
                 ) : (
@@ -737,7 +1043,6 @@ function QuotationModal({
 }
 
 // ── PRODUCT MODAL ─────────────────────────────────────────────────────────────
-// onSave(msg, type) — returns toast message to parent so it fires AFTER modal unmounts
 function ProductModal({ product, onClose, onSave }) {
   const isEdit = !!product?._id;
   const [form, setForm] = useState({
@@ -772,7 +1077,6 @@ function ProductModal({ product, onClose, onSave }) {
       if (isEdit)
         await authAxios().put(`/api/products/${product._id}`, payload);
       else await authAxios().post(`/api/products`, payload);
-      // Pass message UP to parent — parent will show toast after this modal unmounts
       onSave(
         isEdit
           ? `"${form.name}" updated successfully!`
@@ -785,159 +1089,150 @@ function ProductModal({ product, onClose, onSave }) {
     }
   };
 
+  const inputCls =
+    "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all";
+  const labelCls =
+    "block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider";
+
+  const stockOptions = [
+    {
+      val: "In Stock",
+      active: "bg-emerald-50 border-emerald-300 text-emerald-700",
+    },
+    { val: "Low Stock", active: "bg-amber-50 border-amber-300 text-amber-700" },
+    { val: "Out of Stock", active: "bg-rose-50 border-rose-300 text-rose-700" },
+  ];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm">
-      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white/95 backdrop-blur px-6 py-4 border-b border-slate-100 flex items-center justify-between rounded-t-3xl">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-sm">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-lg max-h-[92vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white/95 backdrop-blur px-6 py-4 border-b border-slate-100 flex items-center justify-between z-10 rounded-t-3xl sm:rounded-t-3xl">
           <div>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              {isEdit ? "Editing" : "New Product"}
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+              {isEdit ? "Editing Product" : "New Product"}
             </p>
-            <h2 className="font-black text-slate-900">
+            <h2 className="font-black text-slate-900 text-xl">
               {isEdit ? product.name : "Add Product"}
             </h2>
           </div>
           <button
             onClick={onClose}
-            className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center"
+            className="w-9 h-9 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer"
           >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <line x1="18" y1="6" x2="6" y2="18" />
-              <line x1="6" y1="6" x2="18" y2="18" />
-            </svg>
+            <Icon.X className="w-4 h-4 text-slate-500" />
           </button>
         </div>
-        <div className="p-6 space-y-4">
+
+        <div className="p-6 flex flex-col gap-5">
           <ImageUploader
             value={form.imageUrl}
             onChange={(url) => set("imageUrl", url)}
           />
-          <div className="grid grid-cols-2 gap-3">
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Product Name *
-              </label>
+              <label className={labelCls}>Product Name *</label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => set("name", e.target.value)}
                 placeholder="e.g. HP LaserJet Pro M404n"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
+                className={inputCls}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Category
-              </label>
+              <label className={labelCls}>Category</label>
               <input
                 type="text"
                 value={form.category}
                 onChange={(e) => set("category", e.target.value)}
                 placeholder="e.g. Printers"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
+                className={inputCls}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Unit
-              </label>
+              <label className={labelCls}>Unit</label>
               <input
                 type="text"
                 value={form.unit}
                 onChange={(e) => set("unit", e.target.value)}
                 placeholder="piece"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
+                className={inputCls}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Price (Ksh) *
-              </label>
+              <label className={labelCls}>Price (Ksh) *</label>
               <input
                 type="number"
                 value={form.price}
                 onChange={(e) => set("price", e.target.value)}
                 placeholder="28500"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
+                className={inputCls}
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Original Price
-              </label>
+              <label className={labelCls}>Original Price</label>
               <input
                 type="number"
                 value={form.originalPrice}
                 onChange={(e) => set("originalPrice", e.target.value)}
                 placeholder="32000"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
+                className={inputCls}
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Stock Status
-              </label>
+              <label className={labelCls}>Stock Status</label>
               <div className="grid grid-cols-3 gap-2">
-                {["In Stock", "Low Stock", "Out of Stock"].map((s) => (
+                {stockOptions.map(({ val, active }) => (
                   <button
-                    key={s}
+                    key={val}
                     type="button"
-                    onClick={() => set("stockStatus", s)}
-                    className={`py-2 rounded-xl border text-xs font-bold transition-all ${
-                      form.stockStatus === s
-                        ? s === "In Stock"
-                          ? "bg-emerald-100 border-emerald-200 text-emerald-700"
-                          : s === "Low Stock"
-                          ? "bg-amber-100 border-amber-200 text-amber-700"
-                          : "bg-rose-100 border-rose-200 text-rose-700"
+                    onClick={() => set("stockStatus", val)}
+                    className={`py-2.5 rounded-xl border text-sm font-bold transition-all cursor-pointer ${
+                      form.stockStatus === val
+                        ? active
                         : "bg-white border-slate-200 text-slate-400 hover:border-slate-300"
                     }`}
                   >
-                    {s}
+                    {val}
                   </button>
                 ))}
               </div>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-bold text-slate-700 mb-1.5">
-                Description
-              </label>
+              <label className={labelCls}>Description</label>
               <textarea
                 value={form.description}
                 onChange={(e) => set("description", e.target.value)}
                 rows={3}
                 placeholder="Brief product description…"
-                className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all resize-none"
+                className={`${inputCls} resize-none`}
               />
             </div>
           </div>
+
           {error && (
-            <div className="flex items-center gap-2 bg-rose-50 border border-rose-100 text-rose-500 text-xs px-3 py-2.5 rounded-xl">
-              ⚠️ {error}
+            <div className="flex items-center gap-2.5 p-3.5 bg-rose-50 border border-rose-100 rounded-xl">
+              <Icon.AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
+              <span className="text-sm text-rose-600">{error}</span>
             </div>
           )}
+
           <div className="flex gap-3 pt-1">
             <button
               onClick={onClose}
-              className="flex-1 py-3 rounded-xl border border-slate-200 text-slate-500 font-semibold text-sm hover:bg-slate-50 transition-colors"
+              className="flex-1 py-3.5 rounded-xl border border-slate-200 bg-white text-slate-500 font-semibold text-sm hover:bg-slate-50 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 py-3 bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-sm rounded-xl hover:opacity-95 transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+              className="flex-1 py-3.5 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold text-sm hover:opacity-90 transition-opacity disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer"
             >
               {saving ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
                   {isEdit ? "Saving…" : "Adding…"}
                 </>
               ) : isEdit ? (
@@ -964,11 +1259,11 @@ function unwrapList(data, ...keys) {
 }
 
 const TABS = [
-  { id: "overview", label: "Overview", icon: "📊" },
-  { id: "quotations", label: "Quotations", icon: "📋" },
-  { id: "products", label: "Products", icon: "📦" },
-  { id: "customers", label: "Customers", icon: "👥" },
-  { id: "settings", label: "Settings", icon: "⚙️" },
+  { id: "overview", label: "Overview", TabIcon: Icon.Grid },
+  { id: "quotations", label: "Quotations", TabIcon: Icon.FileText },
+  { id: "products", label: "Products", TabIcon: Icon.Package },
+  { id: "customers", label: "Customers", TabIcon: Icon.Users },
+  { id: "settings", label: "Settings", TabIcon: Icon.Settings },
 ];
 
 // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
@@ -990,16 +1285,12 @@ export default function AdminDashboard() {
   const [searchQ, setSearchQ] = useState("");
   const [productSearch, setProductSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  // ── Toast state lives here, at the top ──
   const [toasts, setToasts] = useState([]);
+
   const addToast = (msg, type = "success") => {
     const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, msg, type }]);
-    setTimeout(
-      () => setToasts((prev) => prev.filter((t) => t.id !== id)),
-      3500
-    );
+    setToasts((p) => [...p, { id, msg, type }]);
+    setTimeout(() => setToasts((p) => p.filter((t) => t.id !== id)), 3500);
   };
 
   const hasFetched = useRef(false);
@@ -1022,20 +1313,16 @@ export default function AdminDashboard() {
     try {
       const api = authAxios();
       const [qRes, pRes, cRes] = await Promise.all([
-        api.get("/api/quotations").catch((err) => {
-          console.error("[Admin] /api/quotations failed:", err.message);
+        api.get("/api/quotations").catch((e) => {
+          console.error(e.message);
           return { data: [] };
         }),
-        api.get("/api/products").catch((err) => {
-          console.error("[Admin] /api/products failed:", err.message);
+        api.get("/api/products").catch((e) => {
+          console.error(e.message);
           return { data: [] };
         }),
-        api.get("/api/users").catch((err) => {
-          console.error(
-            "[Admin] /api/users failed:",
-            err.response?.status,
-            err.message
-          );
+        api.get("/api/users").catch((e) => {
+          console.error(e.message);
           return { data: [] };
         }),
       ]);
@@ -1053,63 +1340,59 @@ export default function AdminDashboard() {
     setQuotations((p) =>
       p.map((q) => (q._id === id ? { ...q, status, adminNotes } : q))
     );
-
   const handleQuotationDelete = (id) =>
     setQuotations((p) => p.filter((q) => q._id !== id));
 
-  const handleDeleteProduct = async (p) => {
+  const handleDeleteProduct = async (prod) => {
     const ok = await confirm({
       title: "Delete Product",
-      message: `Are you sure you want to delete "${p.name}"? This cannot be undone.`,
+      message: `Delete "${prod.name}"? This cannot be undone.`,
       confirmLabel: "Delete Product",
       confirmStyle: "danger",
     });
     if (!ok) return;
     try {
-      await authAxios().delete(`/api/products/${p._id}`);
-      setProducts((prev) => prev.filter((x) => x._id !== p._id));
-      addToast(`"${p.name}" deleted.`, "success");
-    } catch (err) {
-      console.error(err);
+      await authAxios().delete(`/api/products/${prod._id}`);
+      setProducts((prev) => prev.filter((x) => x._id !== prod._id));
+      addToast(`"${prod.name}" deleted.`);
+    } catch {
       addToast("Failed to delete product.", "error");
     }
   };
 
-  const handleChangeRole = async (c) => {
-    const newRole = c.role === "admin" ? "user" : "admin";
+  const handleChangeRole = async (cust) => {
+    const newRole = cust.role === "admin" ? "user" : "admin";
     const ok = await confirm({
       title: "Change Role",
-      message: `Change ${c.name}'s role to "${newRole}"?`,
+      message: `Change ${cust.name}'s role to "${newRole}"?`,
       confirmLabel: "Change Role",
       confirmStyle: "orange",
     });
     if (!ok) return;
     try {
-      await authAxios().patch(`/api/users/${c._id}/role`, { role: newRole });
+      await authAxios().patch(`/api/users/${cust._id}/role`, { role: newRole });
       setCustomers((p) =>
-        p.map((x) => (x._id === c._id ? { ...x, role: newRole } : x))
+        p.map((x) => (x._id === cust._id ? { ...x, role: newRole } : x))
       );
-      addToast(`${c.name} is now ${newRole}.`, "success");
-    } catch (err) {
-      console.error(err);
+      addToast(`${cust.name} is now ${newRole}.`);
+    } catch {
       addToast("Failed to update role.", "error");
     }
   };
 
-  const handleDeleteCustomer = async (c) => {
+  const handleDeleteCustomer = async (cust) => {
     const ok = await confirm({
       title: "Delete Customer",
-      message: `Permanently delete "${c.name}" (${c.email})? All their data will be lost.`,
+      message: `Permanently delete "${cust.name}" (${cust.email})?`,
       confirmLabel: "Delete Customer",
       confirmStyle: "danger",
     });
     if (!ok) return;
     try {
-      await authAxios().delete(`/api/users/${c._id}`);
-      setCustomers((p) => p.filter((x) => x._id !== c._id));
-      addToast(`${c.name} deleted.`, "success");
-    } catch (err) {
-      console.error(err);
+      await authAxios().delete(`/api/users/${cust._id}`);
+      setCustomers((p) => p.filter((x) => x._id !== cust._id));
+      addToast(`${cust.name} deleted.`);
+    } catch {
       addToast("Failed to delete customer.", "error");
     }
   };
@@ -1150,22 +1433,18 @@ export default function AdminDashboard() {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
 
-  if (authLoading) {
+  if (authLoading)
     return (
-      <div className="min-h-screen bg-[#f8f9fc] flex items-center justify-center">
-        <div
-          className="w-10 h-10 border-orange-500 border-t-transparent rounded-full animate-spin"
-          style={{ borderWidth: 3 }}
-        />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-10 h-10 border-[3px] border-orange-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
-  }
+
+  const activeTabData = TABS.find((t) => t.id === activeTab);
 
   return (
-    <div className="min-h-screen bg-[#f8f9fc] flex font-sans">
-      {/* ── TOASTS — rendered here, always visible, no z-index competition ── */}
+    <div className="min-h-screen bg-slate-50 flex">
       <ToastStack toasts={toasts} />
-
       <ConfirmGlobal />
 
       {selectedQuotation && (
@@ -1177,12 +1456,10 @@ export default function AdminDashboard() {
           navigate={navigate}
           onToast={(msg, type) => {
             setSelectedQuotation(null);
-            // Small delay so modal unmounts before toast renders
             setTimeout(() => addToast(msg, type), 50);
           }}
         />
       )}
-
       {showProductModal && (
         <ProductModal
           product={selectedProduct}
@@ -1191,154 +1468,157 @@ export default function AdminDashboard() {
             setSelectedProduct(null);
           }}
           onSave={(msg, type) => {
-            // 1. Close modal
             setShowProductModal(false);
             setSelectedProduct(null);
-            // 2. Refresh data
             fetchAll();
-            // 3. Show toast after modal is gone
             setTimeout(() => addToast(msg, type), 50);
           }}
         />
       )}
 
+      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-10 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/50 z-10 lg:hidden"
         />
       )}
 
+      {/* ── SIDEBAR ── */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-slate-950 z-20 flex flex-col transition-all duration-300 ${
-          sidebarOpen ? "w-60" : "w-0 overflow-hidden"
-        } lg:static lg:w-60 lg:flex-shrink-0`}
+        className={`fixed top-0 left-0 h-full bg-[#0c111d] z-20 flex flex-col transition-all duration-300 lg:static lg:w-64 lg:shrink-0 ${
+          sidebarOpen ? "w-64" : "w-0 overflow-hidden"
+        }`}
       >
-        <div className="flex items-center gap-3 px-5 py-5 border-b border-white/8">
-          <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center shadow-[0_4px_14px_rgba(249,115,22,.4)] flex-shrink-0">
-            <span className="text-white font-black text-sm">W</span>
+        {/* Logo */}
+        <div className="flex items-center gap-3 px-5 py-6 border-b border-white/[0.06] shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-[0_4px_14px_rgba(249,115,22,.4)] shrink-0">
+            <span className="text-white font-black text-base">W</span>
           </div>
           <div>
-            <p className="text-white font-black text-sm leading-none">
+            <p className="text-white font-extrabold text-sm leading-none tracking-tight">
               Wimwa Tech
             </p>
-            <p className="text-slate-500 text-[10px] mt-0.5">Admin Panel</p>
+            <p className="text-slate-500 text-xs mt-0.5">Admin Panel</p>
           </div>
         </div>
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id);
-                setSidebarOpen(false);
-              }}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-all ${
-                activeTab === tab.id
-                  ? "bg-gradient-to-r from-orange-500/20 to-amber-500/10 border border-orange-500/25 text-orange-400"
-                  : "text-slate-500 hover:text-slate-200 hover:bg-white/5"
-              }`}
-            >
-              <span className="text-base w-5 text-center">{tab.icon}</span>
-              <span className="text-xs font-semibold flex-1">{tab.label}</span>
-              {tab.id === "quotations" && stats.pending > 0 && (
-                <span className="text-[9px] font-black bg-orange-500 text-white w-5 h-5 rounded-full flex items-center justify-center">
-                  {stats.pending}
+
+        {/* Nav */}
+        <nav className="flex-1 px-3 py-4 overflow-y-auto flex flex-col gap-1">
+          {TABS.map((tab) => {
+            const active = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  setSidebarOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-all cursor-pointer border ${
+                  active
+                    ? "bg-orange-500/15 border-orange-500/20 text-orange-400"
+                    : "border-transparent text-slate-500 hover:text-slate-200 hover:bg-white/[0.05]"
+                }`}
+              >
+                <tab.TabIcon
+                  className={`w-[18px] h-[18px] shrink-0 ${
+                    active ? "text-orange-400" : "text-slate-500"
+                  }`}
+                />
+                <span className="text-sm font-semibold flex-1">
+                  {tab.label}
                 </span>
-              )}
-            </button>
-          ))}
-          <div className="pt-3 mt-3 border-t border-white/8 space-y-1">
-            <p className="text-[9px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2">
+                {tab.id === "quotations" && stats.pending > 0 && (
+                  <span className="text-[9px] font-extrabold bg-orange-500 text-white w-5 h-5 rounded-full flex items-center justify-center shrink-0">
+                    {stats.pending}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+
+          <div className="pt-3 mt-2 border-t border-white/[0.06]">
+            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2">
               Documents
             </p>
-            <button
-              onClick={() => {
-                navigate("/quotation");
-                setSidebarOpen(false);
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-500 hover:text-orange-400 hover:bg-orange-500/10 transition-all"
-            >
-              <span className="text-base w-5 text-center">📄</span>
-              <span className="text-xs font-semibold flex-1">
-                Quotation Maker
-              </span>
-            </button>
-            <button
-              onClick={() => {
-                navigate("/delivery-note");
-                setSidebarOpen(false);
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left text-slate-500 hover:text-slate-200 hover:bg-white/5 transition-all"
-            >
-              <span className="text-base w-5 text-center">🚚</span>
-              <span className="text-xs font-semibold flex-1">
-                Delivery Note
-              </span>
-            </button>
+            {[
+              {
+                label: "Quotation Maker",
+                DocIcon: Icon.FileText,
+                path: "/quotation",
+              },
+              {
+                label: "Delivery Note",
+                DocIcon: Icon.Truck,
+                path: "/delivery-note",
+              },
+            ].map((item) => (
+              <button
+                key={item.path}
+                onClick={() => {
+                  navigate(item.path);
+                  setSidebarOpen(false);
+                }}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left text-slate-500 hover:text-slate-200 hover:bg-white/[0.05] transition-all cursor-pointer"
+              >
+                <item.DocIcon className="w-[18px] h-[18px] shrink-0" />
+                <span className="text-sm font-semibold">{item.label}</span>
+              </button>
+            ))}
           </div>
         </nav>
-        <div className="px-3 pb-4 pt-3 border-t border-white/8 space-y-1">
-          <div className="flex items-center gap-3 px-3 py-2.5 mb-1">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center flex-shrink-0">
-              <span className="text-white font-black text-[10px]">
+
+        {/* User footer */}
+        <div className="px-3 pb-4 pt-3 border-t border-white/[0.06] shrink-0 flex flex-col gap-0.5">
+          <div className="flex items-center gap-3 px-3 py-3 mb-1">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shrink-0">
+              <span className="text-white font-black text-sm">
                 {user?.name?.[0]?.toUpperCase()}
               </span>
             </div>
             <div className="min-w-0">
-              <p className="text-white text-xs font-semibold truncate">
+              <p className="text-white text-sm font-bold truncate">
                 {user?.name}
               </p>
-              <p className="text-slate-500 text-[10px] truncate">
-                {user?.email}
-              </p>
+              <p className="text-slate-500 text-xs truncate">{user?.email}</p>
             </div>
           </div>
           <Link
             to="/"
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-500 hover:text-white hover:bg-white/5 transition-all no-underline"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-white hover:bg-white/[0.05] transition-all no-underline"
           >
-            <span className="text-sm w-5 text-center">🏠</span>
-            <span className="text-xs font-semibold">View Shop</span>
+            <Icon.Home className="w-[17px] h-[17px] shrink-0" />
+            <span className="text-sm font-semibold">View Shop</span>
           </Link>
           <button
             onClick={logout}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/8 transition-all"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/[0.08] transition-all cursor-pointer w-full"
           >
-            <span className="text-sm w-5 text-center">🚪</span>
-            <span className="text-xs font-semibold">Sign Out</span>
+            <Icon.LogOut className="w-[17px] h-[17px] shrink-0" />
+            <span className="text-sm font-semibold">Sign Out</span>
           </button>
         </div>
       </aside>
 
+      {/* ── MAIN AREA ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="bg-white border-b border-slate-100 px-4 sm:px-6 py-3.5 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
+        {/* Header */}
+        <header className="bg-white border-b border-slate-100 px-5 sm:px-6 h-16 flex items-center gap-4 sticky top-0 z-10 shadow-sm">
           <button
             onClick={() => setSidebarOpen((o) => !o)}
-            className="lg:hidden w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0"
+            className="lg:hidden w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-100 transition-colors"
           >
-            <svg
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <line x1="3" y1="7" x2="21" y2="7" />
-              <line x1="3" y1="12" x2="21" y2="12" />
-              <line x1="3" y1="17" x2="21" y2="17" />
-            </svg>
+            <Icon.Menu className="w-5 h-5 text-slate-600" />
           </button>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xl">
-              {TABS.find((t) => t.id === activeTab)?.icon}
-            </span>
+          <div className="flex items-center gap-3 shrink-0">
+            {activeTabData && (
+              <activeTabData.TabIcon className="w-5 h-5 text-orange-500" />
+            )}
             <div>
-              <h1 className="font-black text-slate-900 text-sm leading-none">
-                {TABS.find((t) => t.id === activeTab)?.label}
+              <h1 className="font-extrabold text-slate-900 text-base leading-none tracking-tight">
+                {activeTabData?.label}
               </h1>
-              <p className="text-slate-400 text-[10px] mt-0.5">
+              <p className="text-slate-400 text-xs mt-0.5">
                 Welcome back, {user?.name?.split(" ")[0]}
               </p>
             </div>
@@ -1347,7 +1627,7 @@ export default function AdminDashboard() {
             {stats.pending > 0 && (
               <button
                 onClick={() => setActiveTab("quotations")}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-600 text-xs font-bold"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs font-bold cursor-pointer hover:bg-amber-100 transition-colors"
               >
                 <span className="relative flex w-2 h-2">
                   <span className="animate-ping absolute inset-0 rounded-full bg-amber-400 opacity-75" />
@@ -1358,44 +1638,16 @@ export default function AdminDashboard() {
             )}
             <button
               onClick={() => navigate("/quotation")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100 hover:border-orange-300"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100 transition-colors cursor-pointer"
             >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-              </svg>
+              <Icon.FileText className="w-4 h-4" />
               <span className="hidden sm:inline">Quotation</span>
             </button>
             <button
               onClick={() => navigate("/delivery-note")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 hover:border-slate-300"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
             >
-              <svg
-                width="13"
-                height="13"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="1" y="3" width="15" height="13" rx="1" />
-                <path d="M16 8h4l3 5v3h-7V8z" />
-                <circle cx="5.5" cy="18.5" r="2.5" />
-                <circle cx="18.5" cy="18.5" r="2.5" />
-              </svg>
+              <Icon.Truck className="w-4 h-4" />
               <span className="hidden sm:inline">Delivery Note</span>
             </button>
             <button
@@ -1403,196 +1655,205 @@ export default function AdminDashboard() {
                 hasFetched.current = false;
                 fetchAll();
               }}
-              className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors flex-shrink-0"
+              className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
             >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <polyline points="23 4 23 10 17 10" />
-                <polyline points="1 20 1 14 7 14" />
-                <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-              </svg>
+              <Icon.RefreshCw className="w-4 h-4 text-slate-600" />
             </button>
           </div>
         </header>
 
-        <main className="flex-1 p-4 sm:p-6 overflow-auto">
+        {/* Content */}
+        <main className="flex-1 p-5 sm:p-7 overflow-auto">
           {loading ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-3">
-              <div
-                className="w-10 h-10 border-orange-500 border-t-transparent rounded-full animate-spin"
-                style={{ borderWidth: 3 }}
-              />
-              <p className="text-slate-400 text-sm">Loading dashboard…</p>
+            <div className="flex flex-col items-center justify-center h-80 gap-4">
+              <div className="w-10 h-10 border-[3px] border-orange-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-slate-400 font-medium">
+                Loading dashboard…
+              </span>
             </div>
           ) : fetchError ? (
-            <div className="flex flex-col items-center justify-center h-64 gap-4">
-              <div className="text-4xl">⚠️</div>
-              <p className="text-slate-600 font-semibold text-sm">
+            <div className="flex flex-col items-center justify-center h-80 gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-rose-50 flex items-center justify-center">
+                <Icon.AlertTriangle className="w-7 h-7 text-rose-500" />
+              </div>
+              <p className="text-sm text-slate-600 font-semibold">
                 {fetchError}
               </p>
               <button
                 onClick={fetchAll}
-                className="px-5 py-2.5 bg-orange-500 text-white text-xs font-bold rounded-xl hover:bg-orange-600 transition-colors"
+                className="px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
               >
                 Try Again
               </button>
             </div>
           ) : (
             <>
+              {/* ── OVERVIEW ── */}
               {activeTab === "overview" && (
-                <div className="space-y-6 max-w-6xl">
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="flex flex-col gap-6">
+                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                     <StatCard
-                      icon="📋"
+                      icon={Icon.FileText}
                       label="Total Quotations"
                       value={stats.total}
                       sub="All time"
-                      accent="orange"
+                      iconBg="bg-orange-100"
+                      iconColor="text-orange-500"
+                      blobColor="bg-orange-500"
                     />
                     <StatCard
-                      icon="⏳"
+                      icon={Icon.Clock}
                       label="Awaiting Review"
                       value={stats.pending}
                       sub="Needs attention"
-                      accent="blue"
+                      iconBg="bg-blue-100"
+                      iconColor="text-blue-500"
+                      blobColor="bg-blue-500"
                     />
                     <StatCard
-                      icon="✅"
+                      icon={Icon.CheckCircle}
                       label="Approved"
                       value={stats.approved}
                       sub="Successfully closed"
-                      accent="emerald"
+                      iconBg="bg-emerald-100"
+                      iconColor="text-emerald-500"
+                      blobColor="bg-emerald-500"
                     />
                     <StatCard
-                      icon="💰"
+                      icon={Icon.TrendingUp}
                       label="Revenue"
                       value={`Ksh ${(stats.revenue / 1000).toFixed(0)}K`}
-                      sub="From approved"
-                      accent="violet"
+                      sub="From approved orders"
+                      iconBg="bg-violet-100"
+                      iconColor="text-violet-500"
+                      blobColor="bg-violet-500"
                     />
                   </div>
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+
+                  <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                     <StatCard
-                      icon="📦"
-                      label="Products"
+                      icon={Icon.Package}
+                      label="Total Products"
                       value={stats.products}
-                      accent="orange"
+                      iconBg="bg-orange-100"
+                      iconColor="text-orange-500"
+                      blobColor="bg-orange-500"
                     />
                     <StatCard
-                      icon="⚠️"
+                      icon={Icon.AlertTriangle}
                       label="Low Stock"
                       value={stats.lowStock}
-                      accent="blue"
+                      iconBg="bg-amber-100"
+                      iconColor="text-amber-500"
+                      blobColor="bg-amber-500"
                     />
                     <StatCard
-                      icon="🚫"
+                      icon={Icon.Package}
                       label="Out of Stock"
                       value={stats.outOfStock}
-                      accent="rose"
+                      iconBg="bg-rose-100"
+                      iconColor="text-rose-500"
+                      blobColor="bg-rose-500"
                     />
                     <StatCard
-                      icon="👥"
+                      icon={Icon.Users}
                       label="Customers"
                       value={customers.length}
-                      accent="violet"
+                      iconBg="bg-violet-100"
+                      iconColor="text-violet-500"
+                      blobColor="bg-violet-500"
                     />
                   </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-                    {QUOTATION_STATUSES.map((s) => {
-                      const count = quotations.filter(
-                        (q) => q.status === s.value
-                      ).length;
-                      const pct = stats.total
-                        ? Math.round((count / stats.total) * 100)
-                        : 0;
-                      return (
-                        <button
-                          key={s.value}
-                          onClick={() => {
-                            setActiveTab("quotations");
-                            setStatusFilter(s.value);
-                          }}
-                          className={`p-4 rounded-2xl border text-left hover:shadow-md transition-all ${s.bg} ${s.border}`}
-                        >
-                          <p className={`text-2xl font-black ${s.text}`}>
-                            {count}
-                          </p>
-                          <p
-                            className={`text-[10px] font-bold ${s.text} opacity-80 mt-0.5`}
-                          >
-                            {s.label}
-                          </p>
-                          <div className="mt-2 h-1 bg-white/50 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full ${s.dot} rounded-full transition-all`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                    <div className="px-5 py-4 border-b border-slate-50 flex items-center justify-between">
-                      <h3 className="font-black text-slate-900 text-sm">
-                        Recent Quotations
+
+                  <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
+                    {/* Status breakdown */}
+                    <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                      <h3 className="font-extrabold text-slate-900 text-base mb-5">
+                        Status Breakdown
                       </h3>
-                      <button
-                        onClick={() => setActiveTab("quotations")}
-                        className="text-xs text-orange-500 font-bold hover:text-orange-600"
-                      >
-                        View all →
-                      </button>
+                      <div className="flex flex-col gap-2.5">
+                        {QUOTATION_STATUSES.map((s) => {
+                          const count = quotations.filter(
+                            (q) => q.status === s.value
+                          ).length;
+                          const pct = stats.total
+                            ? Math.round((count / stats.total) * 100)
+                            : 0;
+                          return (
+                            <button
+                              key={s.value}
+                              onClick={() => {
+                                setActiveTab("quotations");
+                                setStatusFilter(s.value);
+                              }}
+                              className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer w-full text-left"
+                            >
+                              <span
+                                className={`w-2.5 h-2.5 rounded-full shrink-0 ${s.dot}`}
+                              />
+                              <span className="text-sm font-semibold text-slate-600 flex-1">
+                                {s.label}
+                              </span>
+                              <span className="text-sm font-extrabold text-slate-900 w-6 text-right">
+                                {count}
+                              </span>
+                              <div className="w-16 h-1.5 rounded-full bg-slate-100 overflow-hidden shrink-0">
+                                <div
+                                  className={`h-full rounded-full ${s.bar}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="divide-y divide-slate-50">
+
+                    {/* Recent quotations */}
+                    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                      <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
+                        <h3 className="font-extrabold text-slate-900 text-base">
+                          Recent Quotations
+                        </h3>
+                        <button
+                          onClick={() => setActiveTab("quotations")}
+                          className="text-sm text-orange-500 font-bold hover:text-orange-600 cursor-pointer"
+                        >
+                          View all →
+                        </button>
+                      </div>
                       {recentQuotations.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-12 gap-2">
-                          <span className="text-3xl">📭</span>
-                          <p className="text-slate-400 text-sm">
+                        <div className="flex flex-col items-center justify-center h-48 gap-2.5">
+                          <Icon.FileText className="w-8 h-8 text-slate-200" />
+                          <span className="text-sm text-slate-400">
                             No quotations yet
-                          </p>
+                          </span>
                         </div>
                       ) : (
                         recentQuotations.map((q) => (
                           <div
                             key={q._id}
                             onClick={() => setSelectedQuotation(q)}
-                            className="flex items-center gap-3 px-5 py-3.5 hover:bg-slate-50 cursor-pointer transition-colors group"
+                            className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-50 last:border-0 group"
                           >
-                            <div className="w-9 h-9 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center flex-shrink-0">
-                              <span className="text-[9px] font-black text-orange-500">
+                            <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+                              <span className="text-[10px] font-extrabold text-orange-500">
                                 #{q._id?.slice(-3).toUpperCase()}
                               </span>
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-slate-900 truncate">
+                              <p className="text-sm font-bold text-slate-900 truncate">
                                 {q.customer?.companyName}
                               </p>
-                              <p className="text-[10px] text-slate-400 truncate">
+                              <p className="text-xs text-slate-400 truncate mt-0.5">
                                 {q.customer?.email}
                               </p>
                             </div>
-                            <p className="text-xs font-black text-orange-500 hidden sm:block">
+                            <p className="text-sm font-extrabold text-orange-500 hidden sm:block shrink-0">
                               Ksh {q.total?.toLocaleString("en-KE")}
                             </p>
-                            <StatusBadge status={q.status} />
-                            <svg
-                              className="text-slate-300 group-hover:text-slate-400 flex-shrink-0 transition-colors"
-                              width="13"
-                              height="13"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                            >
-                              <path d="M9 18l6-6-6-6" />
-                            </svg>
+                            <StatusPill status={q.status} />
+                            <Icon.ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-400 transition-colors shrink-0" />
                           </div>
                         ))
                       )}
@@ -1601,28 +1862,19 @@ export default function AdminDashboard() {
                 </div>
               )}
 
+              {/* ── QUOTATIONS ── */}
               {activeTab === "quotations" && (
-                <div className="space-y-4 max-w-5xl">
-                  <div className="relative flex-1">
-                    <svg
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <circle cx="11" cy="11" r="8" />
-                      <path d="M21 21l-4.35-4.35" />
-                    </svg>
+                <div className="flex flex-col gap-5">
+                  <div className="relative">
+                    <Icon.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <input
                       value={searchQ}
                       onChange={(e) => setSearchQ(e.target.value)}
                       placeholder="Search company, contact or email…"
-                      className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300"
+                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300 transition-colors"
                     />
                   </div>
+
                   <div className="flex gap-2 flex-wrap">
                     {["all", ...QUOTATION_STATUSES.map((s) => s.value)].map(
                       (s) => {
@@ -1633,15 +1885,16 @@ export default function AdminDashboard() {
                           s === "all"
                             ? quotations.length
                             : quotations.filter((q) => q.status === s).length;
+                        const active = statusFilter === s;
                         return (
                           <button
                             key={s}
                             onClick={() => setStatusFilter(s)}
-                            className={`text-xs font-bold px-3 py-2 rounded-xl border transition-all ${
-                              statusFilter === s
+                            className={`text-xs font-bold px-4 py-2 rounded-full border transition-all cursor-pointer ${
+                              active
                                 ? s === "all"
                                   ? "bg-slate-900 text-white border-slate-900"
-                                  : `${conf?.bg} ${conf?.text} ${conf?.border}`
+                                  : `${conf?.activeBg} ${conf?.activeBorder} ${conf?.activeText}`
                                 : "bg-white border-slate-200 text-slate-500 hover:border-slate-300"
                             }`}
                           >
@@ -1651,83 +1904,66 @@ export default function AdminDashboard() {
                       }
                     )}
                   </div>
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+
+                  <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                     {filteredQuotations.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-16 gap-2">
-                        <span className="text-4xl">🔍</span>
-                        <p className="text-slate-400 text-sm font-medium">
+                      <div className="flex flex-col items-center justify-center h-64 gap-3">
+                        <Icon.Search className="w-10 h-10 text-slate-200" />
+                        <span className="text-sm text-slate-400 font-medium">
                           No quotations found
-                        </p>
+                        </span>
                       </div>
                     ) : (
-                      <div className="divide-y divide-slate-50">
-                        {filteredQuotations.map((q) => (
-                          <div
-                            key={q._id}
-                            onClick={() => setSelectedQuotation(q)}
-                            className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 cursor-pointer transition-colors group"
-                          >
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-100 flex items-center justify-center flex-shrink-0">
-                              <span className="text-[9px] font-black text-orange-500">
-                                #{q._id?.slice(-4).toUpperCase()}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-slate-900 truncate">
-                                {q.customer?.companyName}
-                              </p>
-                              <p className="text-xs text-slate-400 truncate">
-                                {q.customer?.contactName} · {q.customer?.email}
-                              </p>
-                              <p className="text-[10px] text-slate-300 mt-0.5">
-                                {q.items?.length} items ·{" "}
-                                {new Date(q.createdAt).toLocaleString()}
-                              </p>
-                            </div>
-                            <p className="text-sm font-black text-orange-500 hidden sm:block whitespace-nowrap">
-                              Ksh {q.total?.toLocaleString("en-KE")}
-                            </p>
-                            <StatusBadge status={q.status} />
-                            <svg
-                              className="text-slate-200 group-hover:text-slate-400 transition-colors flex-shrink-0"
-                              width="13"
-                              height="13"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                            >
-                              <path d="M9 18l6-6-6-6" />
-                            </svg>
+                      filteredQuotations.map((q, i) => (
+                        <div
+                          key={q._id}
+                          onClick={() => setSelectedQuotation(q)}
+                          className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors group ${
+                            i < filteredQuotations.length - 1
+                              ? "border-b border-slate-50"
+                              : ""
+                          }`}
+                        >
+                          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 flex items-center justify-center shrink-0">
+                            <span className="text-[10px] font-black text-orange-500">
+                              #{q._id?.slice(-4).toUpperCase()}
+                            </span>
                           </div>
-                        ))}
-                      </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-900 truncate">
+                              {q.customer?.companyName}
+                            </p>
+                            <p className="text-xs text-slate-400 truncate mt-0.5">
+                              {q.customer?.contactName} · {q.customer?.email}
+                            </p>
+                            <p className="text-xs text-slate-300 mt-0.5">
+                              {q.items?.length} items ·{" "}
+                              {new Date(q.createdAt).toLocaleString()}
+                            </p>
+                          </div>
+                          <p className="text-sm font-extrabold text-orange-500 hidden sm:block shrink-0">
+                            Ksh {q.total?.toLocaleString("en-KE")}
+                          </p>
+                          <StatusPill status={q.status} />
+                          <Icon.ChevronRight className="w-4 h-4 text-slate-200 group-hover:text-slate-400 transition-colors shrink-0" />
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>
               )}
 
+              {/* ── PRODUCTS ── */}
               {activeTab === "products" && (
-                <div className="space-y-4 max-w-5xl">
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <div className="relative flex-1">
-                      <svg
-                        className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                        width="13"
-                        height="13"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <circle cx="11" cy="11" r="8" />
-                        <path d="M21 21l-4.35-4.35" />
-                      </svg>
+                <div className="flex flex-col gap-5">
+                  <div className="flex gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Icon.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                       <input
                         value={productSearch}
                         onChange={(e) => setProductSearch(e.target.value)}
                         placeholder="Search products…"
-                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300"
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300 transition-colors"
                       />
                     </div>
                     <button
@@ -1735,251 +1971,241 @@ export default function AdminDashboard() {
                         setSelectedProduct(null);
                         setShowProductModal(true);
                       }}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold rounded-xl shadow-[0_4px_14px_rgba(249,115,22,0.3)] hover:opacity-95 transition-all whitespace-nowrap"
+                      className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_rgba(249,115,22,0.3)] hover:opacity-90 transition-opacity cursor-pointer whitespace-nowrap"
                     >
-                      <svg
-                        width="12"
-                        height="12"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                      >
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                      Add Product
+                      <Icon.Plus className="w-4 h-4" /> Add Product
                     </button>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-slate-400 font-medium">
-                      {filteredProducts.length} product
-                      {filteredProducts.length !== 1 ? "s" : ""}
-                    </p>
-                    <div className="flex gap-2">
-                      {[
-                        { label: "All", status: null },
-                        { label: "In Stock", status: "In Stock" },
-                        { label: "Low Stock", status: "Low Stock" },
-                        { label: "Out of Stock", status: "Out of Stock" },
-                      ].map(({ label, status }) => {
-                        const count = status
-                          ? products.filter((p) => p.stockStatus === status)
-                              .length
-                          : products.length;
-                        return (
-                          <span
-                            key={label}
-                            className="text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-2.5 py-1 rounded-lg"
-                          >
-                            {label}: {count}
-                          </span>
-                        );
-                      })}
-                    </div>
+
+                  <div className="flex gap-2 flex-wrap">
+                    {[
+                      {
+                        label: "All",
+                        count: products.length,
+                        cls: "bg-slate-100 text-slate-600 border-slate-200",
+                      },
+                      {
+                        label: "In Stock",
+                        count: products.filter(
+                          (p) => p.stockStatus === "In Stock"
+                        ).length,
+                        cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
+                      },
+                      {
+                        label: "Low Stock",
+                        count: products.filter(
+                          (p) => p.stockStatus === "Low Stock"
+                        ).length,
+                        cls: "bg-amber-50 text-amber-700 border-amber-200",
+                      },
+                      {
+                        label: "Out of Stock",
+                        count: products.filter(
+                          (p) => p.stockStatus === "Out of Stock"
+                        ).length,
+                        cls: "bg-rose-50 text-rose-700 border-rose-200",
+                      },
+                    ].map(({ label, count, cls }) => (
+                      <span
+                        key={label}
+                        className={`text-xs font-bold px-3 py-1.5 rounded-full border ${cls}`}
+                      >
+                        {label}: {count}
+                      </span>
+                    ))}
                   </div>
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+
+                  <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                     {filteredProducts.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <span className="text-4xl">📦</span>
-                        <p className="text-slate-400 text-sm">
+                      <div className="flex flex-col items-center justify-center h-64 gap-3">
+                        <Icon.Package className="w-10 h-10 text-slate-200" />
+                        <span className="text-sm text-slate-400 font-medium">
                           {productSearch
                             ? "No products match your search"
                             : "No products yet"}
-                        </p>
+                        </span>
                         {!productSearch && (
                           <button
                             onClick={() => {
                               setSelectedProduct(null);
                               setShowProductModal(true);
                             }}
-                            className="px-4 py-2 bg-orange-500 text-white text-xs font-bold rounded-xl hover:bg-orange-600 transition-colors"
+                            className="px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
                           >
                             Add First Product
                           </button>
                         )}
                       </div>
                     ) : (
-                      <div className="divide-y divide-slate-50">
-                        {filteredProducts.map((p) => (
-                          <div
-                            key={p._id}
-                            className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 transition-colors group"
-                          >
-                            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-slate-100 border border-slate-100">
-                              {p.imageUrl ? (
-                                <img
-                                  src={p.imageUrl}
-                                  alt={p.name}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center text-xl">
-                                  📦
-                                </div>
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-slate-900 truncate">
-                                {p.name}
-                              </p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                {p.category && (
-                                  <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-medium">
-                                    {p.category}
-                                  </span>
-                                )}
-                                <span className="text-xs font-bold text-orange-500">
-                                  Ksh {p.price?.toLocaleString("en-KE")}
-                                </span>
-                                {p.originalPrice && (
-                                  <span className="text-[10px] text-slate-300 line-through">
-                                    Ksh{" "}
-                                    {p.originalPrice?.toLocaleString("en-KE")}
-                                  </span>
-                                )}
-                                {p.unit && (
-                                  <span className="text-[10px] text-slate-400">
-                                    / {p.unit}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            <StockBadge status={p.stockStatus || "In Stock"} />
-                            <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => {
-                                  setSelectedProduct(p);
-                                  setShowProductModal(true);
-                                }}
-                                className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-500 hover:bg-sky-100 transition-colors"
-                              >
-                                <svg
-                                  width="12"
-                                  height="12"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                >
-                                  <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                                  <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProduct(p)}
-                                className="w-8 h-8 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-400 hover:bg-rose-100 transition-colors"
-                              >
-                                <svg
-                                  width="12"
-                                  height="12"
-                                  viewBox="0 0 24 24"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="2"
-                                >
-                                  <polyline points="3 6 5 6 21 6" />
-                                  <path d="M19 6l-1 14H6L5 6" />
-                                </svg>
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "customers" && (
-                <div className="space-y-4 max-w-4xl">
-                  <p className="text-sm font-bold text-slate-700">
-                    {customers.length} registered customer
-                    {customers.length !== 1 ? "s" : ""}
-                  </p>
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
-                    {customers.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center py-16 gap-2">
-                        <span className="text-4xl">👥</span>
-                        <p className="text-slate-400 text-sm">
-                          No customers yet
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="divide-y divide-slate-50">
-                        {customers.map((c) => (
-                          <div
-                            key={c._id}
-                            className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 transition-colors group"
-                          >
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-100 to-amber-50 border border-orange-100 flex items-center justify-center flex-shrink-0">
-                              <span className="text-orange-500 font-black text-sm">
-                                {c.name?.[0]?.toUpperCase()}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-bold text-slate-900 truncate">
-                                {c.name}
-                              </p>
-                              <p className="text-xs text-slate-400 truncate">
-                                {c.email}
-                              </p>
-                            </div>
-                            <div className="hidden sm:flex items-center gap-2 mr-2">
-                              <span
-                                className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
-                                  c.role === "admin"
-                                    ? "bg-violet-50 text-violet-600 border-violet-200"
-                                    : "bg-slate-50 text-slate-500 border-slate-200"
-                                }`}
-                              >
-                                {c.role === "admin" ? "🔑 Admin" : "Customer"}
-                              </span>
-                              {c.createdAt && (
-                                <span className="text-[10px] text-slate-300">
-                                  {new Date(c.createdAt).toLocaleDateString()}
-                                </span>
-                              )}
-                            </div>
-                            {c._id !== user?._id && (
-                              <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                  onClick={() => handleChangeRole(c)}
-                                  className="text-[10px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-colors whitespace-nowrap"
-                                >
-                                  {c.role === "admin" ? "Demote" : "Make Admin"}
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteCustomer(c)}
-                                  className="w-7 h-7 rounded-lg bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-400 hover:bg-rose-100 transition-colors"
-                                >
-                                  <svg
-                                    width="11"
-                                    height="11"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="2"
-                                  >
-                                    <polyline points="3 6 5 6 21 6" />
-                                    <path d="M19 6l-1 14H6L5 6" />
-                                  </svg>
-                                </button>
-                              </div>
+                      filteredProducts.map((prod, i) => (
+                        <div
+                          key={prod._id}
+                          className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors group ${
+                            i < filteredProducts.length - 1
+                              ? "border-b border-slate-50"
+                              : ""
+                          }`}
+                        >
+                          <div className="w-14 h-14 rounded-xl bg-slate-100 border border-slate-100 overflow-hidden shrink-0 flex items-center justify-center">
+                            {prod.imageUrl ? (
+                              <img
+                                src={prod.imageUrl}
+                                alt={prod.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Icon.Package className="w-6 h-6 text-slate-300" />
                             )}
                           </div>
-                        ))}
-                      </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-900 truncate">
+                              {prod.name}
+                            </p>
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              {prod.category && (
+                                <span className="text-xs bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-medium">
+                                  {prod.category}
+                                </span>
+                              )}
+                              <span className="text-sm font-extrabold text-orange-500">
+                                Ksh {prod.price?.toLocaleString("en-KE")}
+                              </span>
+                              {prod.originalPrice && (
+                                <span className="text-xs text-slate-300 line-through">
+                                  Ksh{" "}
+                                  {prod.originalPrice?.toLocaleString("en-KE")}
+                                </span>
+                              )}
+                              {prod.unit && (
+                                <span className="text-xs text-slate-400">
+                                  / {prod.unit}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <StockPill status={prod.stockStatus || "In Stock"} />
+                          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              onClick={() => {
+                                setSelectedProduct(prod);
+                                setShowProductModal(true);
+                              }}
+                              className="w-9 h-9 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-500 hover:bg-blue-100 transition-colors cursor-pointer"
+                            >
+                              <Icon.Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteProduct(prod)}
+                              className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-400 hover:bg-rose-100 transition-colors cursor-pointer"
+                            >
+                              <Icon.Trash className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>
               )}
 
+              {/* ── CUSTOMERS ── */}
+              {activeTab === "customers" && (
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-slate-700">
+                      {customers.length} registered customer
+                      {customers.length !== 1 ? "s" : ""}
+                    </span>
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-full text-xs font-bold text-violet-700">
+                      <Icon.Users className="w-3.5 h-3.5" />
+                      {
+                        customers.filter((cust) => cust.role === "admin").length
+                      }{" "}
+                      admins
+                    </span>
+                  </div>
+
+                  <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                    {customers.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center h-64 gap-3">
+                        <Icon.Users className="w-10 h-10 text-slate-200" />
+                        <span className="text-sm text-slate-400">
+                          No customers yet
+                        </span>
+                      </div>
+                    ) : (
+                      customers.map((cust, i) => (
+                        <div
+                          key={cust._id}
+                          className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors group ${
+                            i < customers.length - 1
+                              ? "border-b border-slate-50"
+                              : ""
+                          }`}
+                        >
+                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-orange-100 to-amber-50 border border-orange-100 flex items-center justify-center shrink-0">
+                            <span className="font-extrabold text-orange-500 text-base">
+                              {cust.name?.[0]?.toUpperCase()}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-bold text-slate-900 truncate">
+                              {cust.name}
+                            </p>
+                            <p className="text-xs text-slate-400 truncate mt-0.5">
+                              {cust.email}
+                            </p>
+                          </div>
+                          <div className="hidden sm:flex items-center gap-2 mr-2">
+                            <span
+                              className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                                cust.role === "admin"
+                                  ? "bg-violet-50 text-violet-600 border-violet-200"
+                                  : "bg-slate-50 text-slate-500 border-slate-200"
+                              }`}
+                            >
+                              {cust.role === "admin" ? "Admin" : "Customer"}
+                            </span>
+                            {cust.createdAt && (
+                              <span className="text-xs text-slate-300">
+                                {new Date(cust.createdAt).toLocaleDateString()}
+                              </span>
+                            )}
+                          </div>
+                          {cust._id !== user?._id && (
+                            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button
+                                onClick={() => handleChangeRole(cust)}
+                                className="text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-colors whitespace-nowrap cursor-pointer"
+                              >
+                                {cust.role === "admin"
+                                  ? "Demote"
+                                  : "Make Admin"}
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCustomer(cust)}
+                                className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-400 hover:bg-rose-100 transition-colors cursor-pointer"
+                              >
+                                <Icon.Trash className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ── SETTINGS ── */}
               {activeTab === "settings" && (
-                <div className="space-y-5 max-w-2xl">
+                <div className="flex flex-col gap-5 max-w-3xl">
                   {[
                     {
                       title: "Store Information",
+                      SIcon: Icon.Home,
+                      iconBg: "bg-orange-100",
+                      iconColor: "text-orange-500",
                       fields: [
                         {
                           label: "Business Name",
@@ -2001,6 +2227,9 @@ export default function AdminDashboard() {
                     },
                     {
                       title: "Quotation Settings",
+                      SIcon: Icon.FileText,
+                      iconBg: "bg-orange-100",
+                      iconColor: "text-orange-500",
                       fields: [
                         { label: "Quote Validity (days)", defaultValue: "14" },
                         {
@@ -2013,37 +2242,53 @@ export default function AdminDashboard() {
                   ].map((section) => (
                     <div
                       key={section.title}
-                      className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6"
+                      className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
                     >
-                      <h3 className="font-black text-slate-900 text-sm mb-4">
-                        {section.title}
-                      </h3>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center ${section.iconBg}`}
+                        >
+                          <section.SIcon
+                            className={`w-5 h-5 ${section.iconColor}`}
+                          />
+                        </div>
+                        <h3 className="font-extrabold text-slate-900 text-base">
+                          {section.title}
+                        </h3>
+                      </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {section.fields.map((f) => (
                           <div key={f.label}>
-                            <label className="block text-xs font-bold text-slate-600 mb-1.5">
+                            <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
                               {f.label}
                             </label>
                             <input
                               defaultValue={f.defaultValue}
-                              className="w-full px-3 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
+                              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
                             />
                           </div>
                         ))}
                       </div>
                       <button
-                        onClick={() => addToast("Settings saved!", "success")}
-                        className="mt-4 px-4 py-2 bg-gradient-to-r from-orange-500 to-amber-500 text-white text-xs font-bold rounded-xl hover:opacity-95 transition-all"
+                        onClick={() => addToast("Settings saved!")}
+                        className="mt-5 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
                       >
                         Save Changes
                       </button>
                     </div>
                   ))}
-                  <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6">
-                    <h3 className="font-black text-slate-900 text-sm mb-3">
-                      Session
-                    </h3>
-                    <div className="space-y-2.5">
+
+                  {/* Session */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
+                        <Icon.Shield className="w-5 h-5 text-violet-500" />
+                      </div>
+                      <h3 className="font-extrabold text-slate-900 text-base">
+                        Session
+                      </h3>
+                    </div>
+                    <div className="flex flex-col divide-y divide-slate-50">
                       {[
                         {
                           label: "Logged in as",
@@ -2054,13 +2299,13 @@ export default function AdminDashboard() {
                       ].map((row) => (
                         <div
                           key={row.label}
-                          className="flex justify-between text-xs py-1 border-b border-slate-50 last:border-0"
+                          className="flex justify-between items-center py-3"
                         >
-                          <span className="text-slate-400 font-medium">
+                          <span className="text-sm text-slate-400 font-medium">
                             {row.label}
                           </span>
                           <span
-                            className={`font-bold ${
+                            className={`text-sm font-bold ${
                               row.violet
                                 ? "text-violet-600 capitalize"
                                 : "text-slate-700"
@@ -2073,17 +2318,25 @@ export default function AdminDashboard() {
                     </div>
                     <button
                       onClick={logout}
-                      className="mt-4 flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-slate-600 text-xs font-semibold hover:bg-slate-50 transition-colors"
+                      className="mt-5 flex items-center gap-2 px-4 py-2.5 border border-slate-200 rounded-xl text-slate-600 text-sm font-semibold hover:bg-slate-50 transition-colors cursor-pointer"
                     >
-                      🚪 Sign Out
+                      <Icon.LogOut className="w-4 h-4" /> Sign Out
                     </button>
                   </div>
-                  <div className="bg-white rounded-2xl border border-rose-100 shadow-sm p-6">
-                    <h3 className="font-black text-rose-600 text-sm mb-1">
-                      Danger Zone
-                    </h3>
-                    <p className="text-xs text-slate-400 mb-4">
-                      These actions are irreversible. Proceed with caution.
+
+                  {/* Danger zone */}
+                  <div className="bg-white rounded-2xl border border-rose-200 p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-2">
+                      <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">
+                        <Icon.AlertTriangle className="w-5 h-5 text-rose-500" />
+                      </div>
+                      <h3 className="font-extrabold text-rose-600 text-base">
+                        Danger Zone
+                      </h3>
+                    </div>
+                    <p className="text-sm text-slate-400 mb-5 leading-relaxed">
+                      These actions are irreversible. Please proceed with
+                      extreme caution.
                     </p>
                     <button
                       onClick={async () => {
@@ -2102,18 +2355,17 @@ export default function AdminDashboard() {
                             )
                           );
                           setQuotations([]);
-                          addToast("All quotations deleted.", "success");
-                        } catch (err) {
-                          console.error(err);
+                          addToast("All quotations deleted.");
+                        } catch {
                           addToast(
                             "Some quotations could not be deleted.",
                             "error"
                           );
                         }
                       }}
-                      className="flex items-center gap-2 px-4 py-2.5 border border-rose-200 rounded-xl text-rose-500 text-xs font-bold hover:bg-rose-50 transition-colors"
+                      className="flex items-center gap-2 px-4 py-2.5 border border-rose-200 rounded-xl bg-rose-50 text-rose-500 text-sm font-bold hover:bg-rose-100 transition-colors cursor-pointer"
                     >
-                      🗑️ Clear All Quotations
+                      <Icon.Trash className="w-4 h-4" /> Clear All Quotations
                     </button>
                   </div>
                 </div>

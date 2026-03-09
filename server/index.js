@@ -31,6 +31,11 @@ app.options("*", cors());
 // ── Body parser ──
 app.use(express.json({ limit: "10mb" }));
 
+const passport = require("passport");
+require("./routes/auth"); // ensures GoogleStrategy is registered
+
+app.use(passport.initialize());
+
 // ── MongoDB with auto-reconnect ──
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://localhost:27017/quotation-maker";

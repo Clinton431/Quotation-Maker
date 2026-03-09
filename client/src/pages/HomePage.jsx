@@ -1510,7 +1510,7 @@ export default function HomePage() {
             res.data
           );
         } else {
-          console.log(`[HomePage] Loaded ${data.length} products`);
+          // console.log(`[HomePage] Loaded ${data.length} products`);
         }
 
         setProducts(data);

@@ -188,7 +188,7 @@ function HeroCartCard() {
       }}
     >
       <div
-        className="absolute -inset-5 rounded-[34px] pointer-events-none"
+        className="absolute inset-0 sm:-inset-5 rounded-[34px] pointer-events-none"
         style={{
           background:
             "radial-gradient(ellipse at 55% 45%,rgba(251,146,60,0.22) 0%,transparent 68%)",
@@ -1203,8 +1203,10 @@ function Hero({ onShopNow }) {
   }, []);
 
   return (
+    // FIX 1: overflow-hidden on the section clips all absolute children
+    // that were bleeding past the right edge on mobile
     <section className="relative overflow-hidden" style={{ minHeight: "92vh" }}>
-      <div
+      {/* <div
         className="absolute inset-0 z-0"
         style={{
           backgroundImage: "url(/hero-bg.jpg)",
@@ -1212,12 +1214,12 @@ function Hero({ onShopNow }) {
           backgroundPosition: "center right",
           backgroundRepeat: "no-repeat",
         }}
-      />
+      /> */}
       <div
         className="absolute inset-0 z-0"
         style={{
           background:
-            "linear-gradient(155deg,rgba(6,13,26,0.97) 0%,rgba(11,20,34,0.93) 45%,rgba(8,15,28,0.88) 100%)",
+            "linear-gradient(155deg,rgba(6,13,26,1) 0%,rgba(11,20,34,0.97) 45%,rgba(8,15,28,0.95) 100%)",
         }}
       />
       <style>{`
@@ -1244,8 +1246,10 @@ function Hero({ onShopNow }) {
           backgroundImage:
             "radial-gradient(rgba(249,115,22,.18) 1px,transparent 1px)",
           backgroundSize: "28px 28px",
+          maxWidth: "100%",
         }}
       />
+
       <div
         className="absolute top-0 inset-x-0 h-px pointer-events-none"
         style={{
@@ -1253,13 +1257,17 @@ function Hero({ onShopNow }) {
             "linear-gradient(90deg,transparent 0%,rgba(249,115,22,.9) 30%,rgba(251,146,60,.5) 65%,transparent 100%)",
         }}
       />
+
       <div
-        className="absolute -top-16 right-0 w-[540px] h-[540px] rounded-full pointer-events-none"
+        className="absolute top-0 right-0 rounded-full pointer-events-none"
         style={{
+          width: "min(540px, 100vw)",
+          height: "min(540px, 100vw)",
           background:
             "radial-gradient(circle,rgba(249,115,22,.14) 0%,transparent 65%)",
         }}
       />
+
       <div className="absolute bottom-7 left-5 hidden lg:flex items-center gap-2 pointer-events-none z-10">
         <span
           className="w-1.5 h-1.5 rounded-full"
@@ -1271,10 +1279,10 @@ function Hero({ onShopNow }) {
       </div>
 
       <div
-        className="wt-scan relative z-10 max-w-7xl mx-auto px-6 sm:px-8"
+        className="wt-scan relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         style={{ minHeight: "92vh", display: "flex", alignItems: "center" }}
       >
-        <div className="w-full grid grid-cols-1 lg:grid-cols-[1.12fr_0.88fr] gap-12 lg:gap-14 py-20 lg:py-0">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-10 py-20 lg:py-0">
           <div className="flex flex-col items-start">
             <div
               className={`${
@@ -1335,7 +1343,9 @@ function Hero({ onShopNow }) {
             </h1>
 
             <p
-              className={`${mounted ? "wt-a-sub" : ""} mb-8 max-w-[400px]`}
+              className={`${
+                mounted ? "wt-a-sub" : ""
+              } mb-8 w-full sm:max-w-[400px]`}
               style={{
                 color: "rgba(148,163,184,.85)",
                 fontSize: "15px",
@@ -1353,7 +1363,7 @@ function Hero({ onShopNow }) {
             >
               <button
                 onClick={onShopNow}
-                className="group relative overflow-hidden flex items-center justify-center gap-2.5 font-bold text-white text-[15px] px-8 py-4 rounded-2xl border-none cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
+                className="group relative overflow-hidden flex items-center justify-center gap-2.5 font-bold text-white text-[15px] px-5 sm:px-8 py-4 rounded-2xl border-none cursor-pointer transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.98]"
                 style={{
                   background: "linear-gradient(135deg,#fb923c 0%,#ea580c 100%)",
                   boxShadow:
@@ -1377,7 +1387,7 @@ function Hero({ onShopNow }) {
               </button>
               <button
                 onClick={() => navigate("/contact")}
-                className="flex items-center justify-center gap-2 font-semibold text-slate-300 text-[15px] px-8 py-4 rounded-2xl cursor-pointer transition-all duration-200 hover:text-white hover:-translate-y-0.5 border-none"
+                className="flex items-center justify-center gap-2 font-semibold text-slate-300 text-[15px] px-5 sm:px-8 py-4 rounded-2xl cursor-pointer transition-all duration-200 hover:text-white hover:-translate-y-0.5 border-none"
                 style={{
                   background: "rgba(255,255,255,.04)",
                   border: "1px solid rgba(255,255,255,.11)",
@@ -1388,7 +1398,7 @@ function Hero({ onShopNow }) {
               </button>
             </div>
 
-            <div className="flex flex-wrap gap-2 mt-8 pt-7 border-t border-white/8">
+            <div className="flex flex-wrap gap-2 mt-8 pt-7 border-t border-white/8 min-w-0 overflow-hidden w-full">
               {[
                 "🖨️ Printers",
                 "🔋 UPS & Power",
@@ -1413,9 +1423,11 @@ function Hero({ onShopNow }) {
               ))}
             </div>
           </div>
-
           <div className="flex justify-center lg:justify-end">
-            <div className="wt-float w-full max-w-[380px] sm:max-w-[410px] lg:max-w-none lg:w-full">
+            <div
+              className="wt-float w-full"
+              style={{ maxWidth: "min(480px, 100%)" }}
+            >
               <HeroCartCard />
             </div>
           </div>
@@ -1430,7 +1442,8 @@ function Hero({ onShopNow }) {
           viewBox="0 0 1440 52"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          style={{ display: "block", width: "100%" }}
+          preserveAspectRatio="none"
+          style={{ display: "block", width: "100%", height: "52px" }}
         >
           <path
             d="M0 52L80 44.3C160 37 320 21 480 18.3C640 16 800 26 960 32C1120 38 1280 40 1360 41L1440 42V52H0Z"
@@ -1509,8 +1522,6 @@ export default function HomePage() {
             "[HomePage] Products API returned 0 items. Raw response:",
             res.data
           );
-        } else {
-          // console.log(`[HomePage] Loaded ${data.length} products`);
         }
 
         setProducts(data);
@@ -1571,335 +1582,339 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar cartCount={count} onCartOpen={() => setCartOpen(true)} />
+      <div className="overflow-x-hidden">
+        {/* Auth prompt modal */}
 
-      {/* Auth prompt modal */}
-      {showAuthModal && (
-        <AuthPromptModal
-          onClose={() => setShowAuthModal(false)}
-          onAuthSuccess={handleAuthSuccess}
-          cartTotal={total}
-        />
-      )}
-
-      <CartDrawer
-        open={cartOpen}
-        onClose={() => setCartOpen(false)}
-        cart={cart}
-        onRemove={removeFromCart}
-        onUpdateQty={updateQty}
-        onClear={clearCart}
-        total={total}
-        onRequestQuotation={handleRequestQuotation}
-      />
-
-      <Hero
-        onShopNow={() =>
-          catalogRef.current?.scrollIntoView({ behavior: "smooth" })
-        }
-      />
-      <TrustStrip />
-
-      {/* ── CATALOG ── */}
-      <section
-        ref={catalogRef}
-        className="max-w-7xl mx-auto px-4 sm:px-6 py-12"
-      >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              Our Products
-            </h2>
-            <p className="text-slate-400 text-sm mt-0.5">
-              {loading
-                ? "Loading…"
-                : `${filtered.length} item${
-                    filtered.length !== 1 ? "s" : ""
-                  } available`}
-            </p>
-          </div>
-          <div className="relative sm:w-72">
-            <svg
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-              width="15"
-              height="15"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search products…"
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200"
-            />
-          </div>
-        </div>
-
-        {categories.length > 1 && (
-          <div className="flex gap-2 flex-wrap mb-6 pb-4 border-b border-slate-100">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setCategory(cat)}
-                className={`text-xs font-bold px-3.5 py-1.5 rounded-full transition-all ${
-                  category === cat
-                    ? "bg-orange-500 text-white shadow-[0_4px_14px_rgba(249,115,22,0.3)]"
-                    : "bg-white text-slate-500 border border-slate-200 hover:border-orange-200 hover:text-orange-500"
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
+        {showAuthModal && (
+          <AuthPromptModal
+            onClose={() => setShowAuthModal(false)}
+            onAuthSuccess={handleAuthSuccess}
+            cartTotal={total}
+          />
         )}
 
-        {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {Array.from({ length: 10 }).map((_, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-2xl overflow-hidden border border-slate-100"
-              >
-                <div
-                  className="bg-slate-100 animate-pulse"
-                  style={{ height: "160px" }}
-                />
-                <div className="p-3 space-y-2">
-                  <div className="h-2.5 bg-slate-100 rounded animate-pulse w-1/2" />
-                  <div className="h-3 bg-slate-100 rounded animate-pulse w-3/4" />
-                  <div className="h-7 bg-slate-100 rounded animate-pulse mt-3" />
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : error ? (
-          <div className="text-center py-20">
-            <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
-              <svg
-                width="28"
-                height="28"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#ef4444"
-                strokeWidth="1.5"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
+        <CartDrawer
+          open={cartOpen}
+          onClose={() => setCartOpen(false)}
+          cart={cart}
+          onRemove={removeFromCart}
+          onUpdateQty={updateQty}
+          onClear={clearCart}
+          total={total}
+          onRequestQuotation={handleRequestQuotation}
+        />
+
+        <Hero
+          onShopNow={() =>
+            catalogRef.current?.scrollIntoView({ behavior: "smooth" })
+          }
+        />
+        <TrustStrip />
+
+        {/* ── CATALOG ── */}
+        <section
+          ref={catalogRef}
+          className="max-w-7xl mx-auto px-4 sm:px-6 py-12"
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                Our Products
+              </h2>
+              <p className="text-slate-400 text-sm mt-0.5">
+                {loading
+                  ? "Loading…"
+                  : `${filtered.length} item${
+                      filtered.length !== 1 ? "s" : ""
+                    } available`}
+              </p>
             </div>
-            <p className="text-slate-500 font-semibold mb-1">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-3 text-orange-500 text-sm font-semibold hover:underline"
-            >
-              Try again
-            </button>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+            <div className="relative sm:w-72">
               <svg
-                width="32"
-                height="32"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                width="15"
+                height="15"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#cbd5e1"
-                strokeWidth="1.5"
+                stroke="currentColor"
+                strokeWidth="2"
               >
                 <circle cx="11" cy="11" r="8" />
                 <path d="M21 21l-4.35-4.35" />
               </svg>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search products…"
+                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200"
+              />
             </div>
-            <p className="text-slate-400 font-semibold">
-              {products.length === 0
-                ? "No products have been added yet"
-                : "No products found"}
-            </p>
-            {products.length > 0 && (
+          </div>
+
+          {categories.length > 1 && (
+            <div className="flex gap-2 flex-wrap mb-6 pb-4 border-b border-slate-100">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setCategory(cat)}
+                  className={`text-xs font-bold px-3.5 py-1.5 rounded-full transition-all ${
+                    category === cat
+                      ? "bg-orange-500 text-white shadow-[0_4px_14px_rgba(249,115,22,0.3)]"
+                      : "bg-white text-slate-500 border border-slate-200 hover:border-orange-200 hover:text-orange-500"
+                  }`}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {Array.from({ length: 10 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white rounded-2xl overflow-hidden border border-slate-100"
+                >
+                  <div
+                    className="bg-slate-100 animate-pulse"
+                    style={{ height: "160px" }}
+                  />
+                  <div className="p-3 space-y-2">
+                    <div className="h-2.5 bg-slate-100 rounded animate-pulse w-1/2" />
+                    <div className="h-3 bg-slate-100 rounded animate-pulse w-3/4" />
+                    <div className="h-7 bg-slate-100 rounded animate-pulse mt-3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            <div className="text-center py-20">
+              <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
+                <svg
+                  width="28"
+                  height="28"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#ef4444"
+                  strokeWidth="1.5"
+                >
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <p className="text-slate-500 font-semibold mb-1">{error}</p>
               <button
-                onClick={() => {
-                  setSearch("");
-                  setCategory("All");
-                }}
+                onClick={() => window.location.reload()}
                 className="mt-3 text-orange-500 text-sm font-semibold hover:underline"
               >
-                Clear filters
+                Try again
               </button>
-            )}
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
-            {filtered.map((p) => (
-              <ProductCard
-                key={p._id}
-                product={p}
-                onAdd={handleAdd}
-                added={addedIds.has(p._id)}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer className="bg-slate-950 text-slate-400 border-t border-white/5">
-        <div className="max-w-7xl mx-auto px-6 py-14">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-            <div className="md:col-span-1">
-              <div className="flex items-center gap-2.5 mb-4">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-[0_4px_14px_rgba(249,115,22,.35)]">
-                  <span className="text-white font-black text-base">W</span>
-                </div>
-                <div>
-                  <p className="text-white font-bold text-sm">Wimwa Tech</p>
-                  <p className="text-slate-500 text-xs">General Supplies Ltd</p>
-                </div>
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="text-center py-20">
+              <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
+                <svg
+                  width="32"
+                  height="32"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="#cbd5e1"
+                  strokeWidth="1.5"
+                >
+                  <circle cx="11" cy="11" r="8" />
+                  <path d="M21 21l-4.35-4.35" />
+                </svg>
               </div>
-              <p className="text-sm text-slate-500 leading-relaxed mb-5">
-                Your trusted partner for technology and general supplies across
-                Kenya. Serving businesses since 2018.
+              <p className="text-slate-400 font-semibold">
+                {products.length === 0
+                  ? "No products have been added yet"
+                  : "No products found"}
               </p>
-              <div className="flex gap-2">
-                {[
-                  { label: "fb", href: "#", icon: "f" },
-                  { label: "tw", href: "#", icon: "𝕏" },
-                  {
-                    label: "wa",
-                    href: "https://wa.me/254712953780",
-                    icon: "W",
-                  },
-                ].map((s) => (
-                  <a
-                    key={s.label}
-                    href={s.href}
-                    className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[11px] font-bold text-slate-400 hover:text-white hover:bg-orange-500/20 hover:border-orange-500/30 transition-all no-underline"
-                  >
-                    {s.icon}
-                  </a>
-                ))}
-              </div>
+              {products.length > 0 && (
+                <button
+                  onClick={() => {
+                    setSearch("");
+                    setCategory("All");
+                  }}
+                  className="mt-3 text-orange-500 text-sm font-semibold hover:underline"
+                >
+                  Clear filters
+                </button>
+              )}
             </div>
-
-            <div>
-              <p className="text-white font-bold text-sm mb-4">Categories</p>
-              <div className="space-y-2.5">
-                {[
-                  "Printers & Scanners",
-                  "Networking & Cables",
-                  "UPS & Power",
-                  "CCTV & Security",
-                  "Monitors & Displays",
-                  "Peripherals",
-                  "Construction Materials",
-                ].map((c) => (
-                  <p
-                    key={c}
-                    onClick={() => {
-                      setCategory(c.split(" ")[0]);
-                      catalogRef.current?.scrollIntoView({
-                        behavior: "smooth",
-                      });
-                    }}
-                    className="text-slate-500 text-sm hover:text-orange-400 cursor-pointer transition-colors"
-                  >
-                    {c}
-                  </p>
-                ))}
-              </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+              {filtered.map((p) => (
+                <ProductCard
+                  key={p._id}
+                  product={p}
+                  onAdd={handleAdd}
+                  added={addedIds.has(p._id)}
+                />
+              ))}
             </div>
+          )}
+        </section>
 
-            <div>
-              <p className="text-white font-bold text-sm mb-4">Company</p>
-              <div className="space-y-2.5">
-                {[
-                  { label: "About Us", to: "/about" },
-                  { label: "Privacy Policy", to: "/privacy-policy" },
-                  { label: "Terms of Service", to: "/terms" },
-                  { label: "Sign In", to: "/login" },
-                  { label: "Register", to: "/register" },
-                ].map((l) => (
-                  <Link
-                    key={l.label}
-                    to={l.to}
-                    className="block text-slate-500 text-sm hover:text-orange-400 transition-colors no-underline"
-                  >
-                    {l.label}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <p className="text-white font-bold text-sm mb-4">Contact Us</p>
-              <div className="space-y-3">
-                {[
-                  {
-                    icon: "📍",
-                    text: "P.O Box 273-00206\nKiserian, Kajiado County",
-                  },
-                  { icon: "📞", text: "+254 70000000" },
-                  { icon: "✉️", text: "wimwatech@gmail.com" },
-                  { icon: "🕐", text: "Mon–Sat: 8AM – 6PM" },
-                ].map((c) => (
-                  <div key={c.text} className="flex items-start gap-2.5">
-                    <span className="text-sm mt-0.5">{c.icon}</span>
-                    <p className="text-slate-500 text-sm whitespace-pre-line leading-relaxed">
-                      {c.text}
+        {/* ── FOOTER ── */}
+        <footer className="bg-slate-950 text-slate-400 border-t border-white/5">
+          <div className="max-w-7xl mx-auto px-6 py-14">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
+              <div className="md:col-span-1">
+                <div className="flex items-center gap-2.5 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-[0_4px_14px_rgba(249,115,22,.35)]">
+                    <span className="text-white font-black text-base">W</span>
+                  </div>
+                  <div>
+                    <p className="text-white font-bold text-sm">Wimwa Tech</p>
+                    <p className="text-slate-500 text-xs">
+                      General Supplies Ltd
                     </p>
                   </div>
-                ))}
+                </div>
+                <p className="text-sm text-slate-500 leading-relaxed mb-5">
+                  Your trusted partner for technology and general supplies
+                  across Kenya. Serving businesses since 2018.
+                </p>
+                <div className="flex gap-2">
+                  {[
+                    { label: "fb", href: "#", icon: "f" },
+                    { label: "tw", href: "#", icon: "𝕏" },
+                    {
+                      label: "wa",
+                      href: "https://wa.me/254712953780",
+                      icon: "W",
+                    },
+                  ].map((s) => (
+                    <a
+                      key={s.label}
+                      href={s.href}
+                      className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[11px] font-bold text-slate-400 hover:text-white hover:bg-orange-500/20 hover:border-orange-500/30 transition-all no-underline"
+                    >
+                      {s.icon}
+                    </a>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-white font-bold text-sm mb-4">Categories</p>
+                <div className="space-y-2.5">
+                  {[
+                    "Printers & Scanners",
+                    "Networking & Cables",
+                    "UPS & Power",
+                    "CCTV & Security",
+                    "Monitors & Displays",
+                    "Peripherals",
+                    "Construction Materials",
+                  ].map((c) => (
+                    <p
+                      key={c}
+                      onClick={() => {
+                        setCategory(c.split(" ")[0]);
+                        catalogRef.current?.scrollIntoView({
+                          behavior: "smooth",
+                        });
+                      }}
+                      className="text-slate-500 text-sm hover:text-orange-400 cursor-pointer transition-colors"
+                    >
+                      {c}
+                    </p>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-white font-bold text-sm mb-4">Company</p>
+                <div className="space-y-2.5">
+                  {[
+                    { label: "About Us", to: "/about" },
+                    { label: "Privacy Policy", to: "/privacy-policy" },
+                    { label: "Terms of Service", to: "/terms" },
+                    { label: "Sign In", to: "/login" },
+                    { label: "Register", to: "/register" },
+                  ].map((l) => (
+                    <Link
+                      key={l.label}
+                      to={l.to}
+                      className="block text-slate-500 text-sm hover:text-orange-400 transition-colors no-underline"
+                    >
+                      {l.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-white font-bold text-sm mb-4">Contact Us</p>
+                <div className="space-y-3">
+                  {[
+                    {
+                      icon: "📍",
+                      text: "P.O Box 273-00206\nKiserian, Kajiado County",
+                    },
+                    { icon: "📞", text: "+254 70000000" },
+                    { icon: "✉️", text: "wimwatech@gmail.com" },
+                    { icon: "🕐", text: "Mon–Sat: 8AM – 6PM" },
+                  ].map((c) => (
+                    <div key={c.text} className="flex items-start gap-2.5">
+                      <span className="text-sm mt-0.5">{c.icon}</span>
+                      <p className="text-slate-500 text-sm whitespace-pre-line leading-relaxed">
+                        {c.text}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="border-t border-white/5">
-          <div className="max-w-7xl mx-auto px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <p className="text-white font-bold text-sm">
-                Get price updates &amp; new arrivals
-              </p>
-              <p className="text-slate-500 text-xs mt-0.5">
-                Subscribe to our newsletter
-              </p>
-            </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <input
-                type="email"
-                placeholder="your@email.com"
-                className="flex-1 sm:w-56 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500/50 transition-all"
-              />
-              <button className="px-4 py-2.5 bg-gradient-to-br from-orange-400 to-orange-600 text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_rgba(249,115,22,.3)] hover:opacity-90 transition-all whitespace-nowrap">
-                Subscribe
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="border-t border-white/5">
-          <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-600">
-            <p>
-              © {new Date().getFullYear()} Wimwa Tech General Supplies Limited.
-              All rights reserved.
-            </p>
-            <div className="flex items-center gap-4">
-              <p>We Offer The Best Customer Experience</p>
-              <div className="flex items-center gap-1.5">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-emerald-600">
-                  All systems operational
-                </span>
+          <div className="border-t border-white/5">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <p className="text-white font-bold text-sm">
+                  Get price updates &amp; new arrivals
+                </p>
+                <p className="text-slate-500 text-xs mt-0.5">
+                  Subscribe to our newsletter
+                </p>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto min-w-0">
+                <input
+                  type="email"
+                  placeholder="your@email.com"
+                  className="flex-1 sm:w-56 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500/50 transition-all"
+                />
+                <button className="px-4 py-2.5 bg-gradient-to-br from-orange-400 to-orange-600 text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_rgba(249,115,22,.3)] hover:opacity-90 transition-all whitespace-nowrap">
+                  Subscribe
+                </button>
               </div>
             </div>
           </div>
-        </div>
-      </footer>
+
+          <div className="border-t border-white/5">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-600">
+              <p>
+                © {new Date().getFullYear()} Wimwa Tech General Supplies
+                Limited. All rights reserved.
+              </p>
+              <div className="flex items-center gap-4">
+                <p>We Offer The Best Customer Experience</p>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-emerald-600">
+                    All systems operational
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }

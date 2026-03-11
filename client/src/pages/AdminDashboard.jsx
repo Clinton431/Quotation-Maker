@@ -359,29 +359,62 @@ const Icon = {
 // ── TOAST STACK ───────────────────────────────────────────────────────────────
 function ToastStack({ toasts }) {
   return (
-    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2.5 pointer-events-none">
+    <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 pointer-events-none">
+      <style>{`
+        @keyframes wt-toast-in {
+          from { transform: translateX(calc(100% + 24px)); opacity: 0; }
+          to   { transform: translateX(0);                 opacity: 1; }
+        }
+        @keyframes wt-toast-out {
+          from { transform: translateX(0);                 opacity: 1; max-height: 80px; margin-bottom: 0; }
+          to   { transform: translateX(calc(100% + 24px)); opacity: 0; max-height: 0;   margin-bottom: -8px; }
+        }
+        .wt-toast { animation: wt-toast-in 0.28s cubic-bezier(.22,1,.36,1) forwards; }
+      `}</style>
       {toasts.map((t) => (
         <div
           key={t.id}
-          className={`flex items-center gap-3 px-5 py-3.5 rounded-2xl text-white font-bold text-sm shadow-2xl min-w-[240px] max-w-sm toast-in ${
-            t.type === "success"
-              ? "bg-gradient-to-r from-emerald-500 to-emerald-600"
-              : "bg-gradient-to-r from-rose-500 to-rose-600"
-          }`}
+          className="wt-toast flex items-stretch rounded-xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.10)] border border-slate-200/80 bg-white min-w-[280px] max-w-[340px]"
         >
-          <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-            {t.type === "success" ? (
-              <Icon.Check className="w-3.5 h-3.5" />
-            ) : (
-              <Icon.Info className="w-3.5 h-3.5" />
-            )}
+          {/* Left accent bar */}
+          <div
+            className={`w-1 shrink-0 ${
+              t.type === "success" ? "bg-emerald-500" : "bg-rose-500"
+            }`}
+          />
+
+          {/* Content */}
+          <div className="flex flex-col justify-center px-4 py-3.5 flex-1 min-w-0">
+            <p
+              className={`text-[11px] font-extrabold uppercase tracking-widest mb-0.5 ${
+                t.type === "success" ? "text-emerald-600" : "text-rose-500"
+              }`}
+            >
+              {t.type === "success" ? "Success" : "Error"}
+            </p>
+            <p className="text-sm font-medium text-slate-700 leading-snug">
+              {t.msg}
+            </p>
           </div>
-          <span className="leading-snug">{t.msg}</span>
+
+          {/* Progress bar */}
+          <div className="absolute bottom-0 left-1 right-0 h-[2px] bg-slate-100 rounded-b-xl overflow-hidden">
+            <div
+              className={`h-full ${
+                t.type === "success" ? "bg-emerald-400" : "bg-rose-400"
+              }`}
+              style={{
+                animation: "wt-toast-progress 3.5s linear forwards",
+              }}
+            />
+          </div>
         </div>
       ))}
       <style>{`
-        @keyframes toast-in { from { transform: translateX(110%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        .toast-in { animation: toast-in 0.3s cubic-bezier(.34,1.56,.64,1); }
+        @keyframes wt-toast-progress {
+          from { width: 100%; }
+          to   { width: 0%; }
+        }
       `}</style>
     </div>
   );
@@ -822,7 +855,6 @@ function QuotationModal({
       <Dialog />
       <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/65 backdrop-blur-sm">
         <div className="bg-white rounded-t-3xl sm:rounded-3xl w-full sm:max-w-2xl max-h-[92vh] overflow-y-auto">
-          {/* Header */}
           <div className="sticky top-0 bg-white/95 backdrop-blur px-6 py-4 border-b border-slate-100 flex items-center justify-between z-10 rounded-t-3xl sm:rounded-t-3xl">
             <div>
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
@@ -852,7 +884,6 @@ function QuotationModal({
           </div>
 
           <div className="p-6 flex flex-col gap-5">
-            {/* Customer grid */}
             <div className="bg-slate-50 rounded-2xl p-5 grid grid-cols-2 gap-4">
               {[
                 {
@@ -896,7 +927,6 @@ function QuotationModal({
               </div>
             </div>
 
-            {/* Items */}
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Order Items
@@ -943,7 +973,6 @@ function QuotationModal({
               </div>
             </div>
 
-            {/* Customer notes */}
             {quotation.notes && (
               <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">
@@ -955,7 +984,6 @@ function QuotationModal({
               </div>
             )}
 
-            {/* Documents */}
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Documents
@@ -982,7 +1010,6 @@ function QuotationModal({
               </div>
             </div>
 
-            {/* Status selector */}
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Update Status
@@ -1012,7 +1039,6 @@ function QuotationModal({
               />
             </div>
 
-            {/* Actions */}
             <div className="flex gap-3">
               <button
                 onClick={onClose}
@@ -1093,7 +1119,6 @@ function ProductModal({ product, onClose, onSave }) {
     "w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all";
   const labelCls =
     "block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider";
-
   const stockOptions = [
     {
       val: "In Stock",
@@ -1476,7 +1501,6 @@ export default function AdminDashboard() {
         />
       )}
 
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           onClick={() => setSidebarOpen(false)}
@@ -1490,7 +1514,6 @@ export default function AdminDashboard() {
           sidebarOpen ? "w-64" : "w-0 overflow-hidden"
         }`}
       >
-        {/* Logo */}
         <div className="flex items-center gap-3 px-5 py-6 border-b border-white/[0.06] shrink-0">
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-[0_4px_14px_rgba(249,115,22,.4)] shrink-0">
             <span className="text-white font-black text-base">W</span>
@@ -1503,7 +1526,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto flex flex-col gap-1">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -1568,7 +1590,6 @@ export default function AdminDashboard() {
           </div>
         </nav>
 
-        {/* User footer */}
         <div className="px-3 pb-4 pt-3 border-t border-white/[0.06] shrink-0 flex flex-col gap-0.5">
           <div className="flex items-center gap-3 px-3 py-3 mb-1">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shrink-0">
@@ -1602,7 +1623,6 @@ export default function AdminDashboard() {
 
       {/* ── MAIN AREA ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Header */}
         <header className="bg-white border-b border-slate-100 px-5 sm:px-6 h-16 flex items-center gap-4 sticky top-0 z-10 shadow-sm">
           <button
             onClick={() => setSidebarOpen((o) => !o)}
@@ -1662,7 +1682,6 @@ export default function AdminDashboard() {
           </div>
         </header>
 
-        {/* Content */}
         <main className="flex-1 p-5 sm:p-7 overflow-auto">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-80 gap-4">
@@ -1729,7 +1748,6 @@ export default function AdminDashboard() {
                       blobColor="bg-violet-500"
                     />
                   </div>
-
                   <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
                     <StatCard
                       icon={Icon.Package}
@@ -1766,7 +1784,6 @@ export default function AdminDashboard() {
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
-                    {/* Status breakdown */}
                     <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
                       <h3 className="font-extrabold text-slate-900 text-base mb-5">
                         Status Breakdown
@@ -1809,7 +1826,6 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    {/* Recent quotations */}
                     <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                       <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
                         <h3 className="font-extrabold text-slate-900 text-base">
@@ -1874,7 +1890,6 @@ export default function AdminDashboard() {
                       className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300 transition-colors"
                     />
                   </div>
-
                   <div className="flex gap-2 flex-wrap">
                     {["all", ...QUOTATION_STATUSES.map((s) => s.value)].map(
                       (s) => {
@@ -1904,7 +1919,6 @@ export default function AdminDashboard() {
                       }
                     )}
                   </div>
-
                   <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                     {filteredQuotations.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -1976,7 +1990,6 @@ export default function AdminDashboard() {
                       <Icon.Plus className="w-4 h-4" /> Add Product
                     </button>
                   </div>
-
                   <div className="flex gap-2 flex-wrap">
                     {[
                       {
@@ -2014,7 +2027,6 @@ export default function AdminDashboard() {
                       </span>
                     ))}
                   </div>
-
                   <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                     {filteredProducts.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -2124,7 +2136,6 @@ export default function AdminDashboard() {
                       admins
                     </span>
                   </div>
-
                   <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                     {customers.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -2278,7 +2289,6 @@ export default function AdminDashboard() {
                     </div>
                   ))}
 
-                  {/* Session */}
                   <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-5">
                       <div className="w-10 h-10 rounded-xl bg-violet-100 flex items-center justify-center">
@@ -2324,7 +2334,6 @@ export default function AdminDashboard() {
                     </button>
                   </div>
 
-                  {/* Danger zone */}
                   <div className="bg-white rounded-2xl border border-rose-200 p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center">

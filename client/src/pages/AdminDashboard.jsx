@@ -354,6 +354,19 @@ const Icon = {
       <line x1="3" y1="17" x2="21" y2="17" />
     </svg>
   ),
+  SortAsc: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M3 6h18M6 12h12M9 18h6" />
+    </svg>
+  ),
 };
 
 // ── TOAST STACK ───────────────────────────────────────────────────────────────
@@ -365,25 +378,19 @@ function ToastStack({ toasts }) {
           from { transform: translateX(calc(100% + 24px)); opacity: 0; }
           to   { transform: translateX(0);                 opacity: 1; }
         }
-        @keyframes wt-toast-out {
-          from { transform: translateX(0);                 opacity: 1; max-height: 80px; margin-bottom: 0; }
-          to   { transform: translateX(calc(100% + 24px)); opacity: 0; max-height: 0;   margin-bottom: -8px; }
-        }
         .wt-toast { animation: wt-toast-in 0.28s cubic-bezier(.22,1,.36,1) forwards; }
+        @keyframes wt-toast-progress { from { width: 100%; } to { width: 0%; } }
       `}</style>
       {toasts.map((t) => (
         <div
           key={t.id}
           className="wt-toast flex items-stretch rounded-xl overflow-hidden shadow-[0_4px_24px_rgba(0,0,0,0.10)] border border-slate-200/80 bg-white min-w-[280px] max-w-[340px]"
         >
-          {/* Left accent bar */}
           <div
             className={`w-1 shrink-0 ${
               t.type === "success" ? "bg-emerald-500" : "bg-rose-500"
             }`}
           />
-
-          {/* Content */}
           <div className="flex flex-col justify-center px-4 py-3.5 flex-1 min-w-0">
             <p
               className={`text-[11px] font-extrabold uppercase tracking-widest mb-0.5 ${
@@ -396,26 +403,16 @@ function ToastStack({ toasts }) {
               {t.msg}
             </p>
           </div>
-
-          {/* Progress bar */}
           <div className="absolute bottom-0 left-1 right-0 h-[2px] bg-slate-100 rounded-b-xl overflow-hidden">
             <div
               className={`h-full ${
                 t.type === "success" ? "bg-emerald-400" : "bg-rose-400"
               }`}
-              style={{
-                animation: "wt-toast-progress 3.5s linear forwards",
-              }}
+              style={{ animation: "wt-toast-progress 3.5s linear forwards" }}
             />
           </div>
         </div>
       ))}
-      <style>{`
-        @keyframes wt-toast-progress {
-          from { width: 100%; }
-          to   { width: 0%; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -476,10 +473,7 @@ function ConfirmDialog({
           </button>
         </div>
       </div>
-      <style>{`
-        @keyframes dialog-in { from { transform: scale(.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .dialog-in { animation: dialog-in .2s cubic-bezier(.34,1.56,.64,1); }
-      `}</style>
+      <style>{`@keyframes dialog-in { from { transform: scale(.88); opacity: 0; } to { transform: scale(1); opacity: 1; } } .dialog-in { animation: dialog-in .2s cubic-bezier(.34,1.56,.64,1); }`}</style>
     </div>
   );
 }
@@ -882,7 +876,6 @@ function QuotationModal({
               </button>
             </div>
           </div>
-
           <div className="p-6 flex flex-col gap-5">
             <div className="bg-slate-50 rounded-2xl p-5 grid grid-cols-2 gap-4">
               {[
@@ -926,7 +919,6 @@ function QuotationModal({
                 </p>
               </div>
             </div>
-
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Order Items
@@ -972,7 +964,6 @@ function QuotationModal({
                 </span>
               </div>
             </div>
-
             {quotation.notes && (
               <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">
@@ -983,7 +974,6 @@ function QuotationModal({
                 </p>
               </div>
             )}
-
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Documents
@@ -1009,7 +999,6 @@ function QuotationModal({
                 </button>
               </div>
             </div>
-
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Update Status
@@ -1038,7 +1027,6 @@ function QuotationModal({
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 placeholder-slate-300 resize-none transition-colors"
               />
             </div>
-
             <div className="flex gap-3">
               <button
                 onClick={onClose}
@@ -1147,13 +1135,11 @@ function ProductModal({ product, onClose, onSave }) {
             <Icon.X className="w-4 h-4 text-slate-500" />
           </button>
         </div>
-
         <div className="p-6 flex flex-col gap-5">
           <ImageUploader
             value={form.imageUrl}
             onChange={(url) => set("imageUrl", url)}
           />
-
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className={labelCls}>Product Name *</label>
@@ -1235,14 +1221,12 @@ function ProductModal({ product, onClose, onSave }) {
               />
             </div>
           </div>
-
           {error && (
             <div className="flex items-center gap-2.5 p-3.5 bg-rose-50 border border-rose-100 rounded-xl">
               <Icon.AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
               <span className="text-sm text-rose-600">{error}</span>
             </div>
           )}
-
           <div className="flex gap-3 pt-1">
             <button
               onClick={onClose}
@@ -1291,6 +1275,19 @@ const TABS = [
   { id: "settings", label: "Settings", TabIcon: Icon.Settings },
 ];
 
+// ── DEFAULT SETTINGS STATE ────────────────────────────────────────────────────
+const DEFAULT_STORE_SETTINGS = {
+  businessName: "Wimwa Tech General Supplies",
+  contactEmail: "wimwatech@gmail.com",
+  phoneNumber: "+254 712 953 780",
+  businessAddress: "P.O Box 273-00206, Kiserian",
+};
+const DEFAULT_QUOTATION_SETTINGS = {
+  quoteValidity: "14",
+  replyToEmail: "wimwatech@gmail.com",
+  quotePrefix: "WTQ",
+};
+
 // ── ADMIN DASHBOARD ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const { user, logout, loading: authLoading } = useAuth();
@@ -1307,10 +1304,20 @@ export default function AdminDashboard() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [quotationSort, setQuotationSort] = useState("newest"); // NEW
   const [searchQ, setSearchQ] = useState("");
   const [productSearch, setProductSearch] = useState("");
+  const [stockFilter, setStockFilter] = useState("all"); // NEW
+  const [customerSearch, setCustomerSearch] = useState(""); // NEW
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
+  const [lastRefreshed, setLastRefreshed] = useState(null); // NEW
+
+  // NEW – controlled settings state so edits survive tab switches
+  const [storeSettings, setStoreSettings] = useState(DEFAULT_STORE_SETTINGS);
+  const [quotationSettings, setQuotationSettings] = useState(
+    DEFAULT_QUOTATION_SETTINGS
+  );
 
   const addToast = (msg, type = "success") => {
     const id = Date.now() + Math.random();
@@ -1354,6 +1361,7 @@ export default function AdminDashboard() {
       setQuotations(unwrapList(qRes.data, "quotations"));
       setProducts(unwrapList(pRes.data, "products"));
       setCustomers(unwrapList(cRes.data, "users", "customers"));
+      setLastRefreshed(new Date()); // NEW
     } catch (err) {
       setFetchError(err.response?.data?.message || "Failed to load data.");
     } finally {
@@ -1434,6 +1442,7 @@ export default function AdminDashboard() {
     lowStock: products.filter((p) => p.stockStatus === "Low Stock").length,
   };
 
+  // ── QUOTATIONS: filter + sort ─────────────────────────────────────────────
   const filteredQuotations = quotations
     .filter((q) => {
       const ms = statusFilter === "all" || q.status === statusFilter;
@@ -1446,14 +1455,42 @@ export default function AdminDashboard() {
         q.customer?.contactName?.toLowerCase().includes(searchQ.toLowerCase());
       return ms && mq;
     })
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    .sort((a, b) => {
+      if (quotationSort === "newest")
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      if (quotationSort === "oldest")
+        return new Date(a.createdAt) - new Date(b.createdAt);
+      if (quotationSort === "highest") return (b.total || 0) - (a.total || 0);
+      if (quotationSort === "lowest") return (a.total || 0) - (b.total || 0);
+      return 0;
+    });
 
-  const filteredProducts = products.filter(
-    (p) =>
+  // ── PRODUCTS: filter by search + stock status ─────────────────────────────
+  const filteredProducts = products.filter((p) => {
+    const matchSearch =
       !productSearch ||
       p.name?.toLowerCase().includes(productSearch.toLowerCase()) ||
-      p.category?.toLowerCase().includes(productSearch.toLowerCase())
+      p.category?.toLowerCase().includes(productSearch.toLowerCase());
+    const matchStock =
+      stockFilter === "all" || (p.stockStatus || "In Stock") === stockFilter;
+    return matchSearch && matchStock;
+  });
+
+  // ── CUSTOMERS: filter by search ───────────────────────────────────────────
+  const filteredCustomers = customers.filter(
+    (c) =>
+      !customerSearch ||
+      c.name?.toLowerCase().includes(customerSearch.toLowerCase()) ||
+      c.email?.toLowerCase().includes(customerSearch.toLowerCase())
   );
+
+  // quote count per customer email
+  const quoteCountByEmail = quotations.reduce((acc, q) => {
+    const email = q.customer?.email;
+    if (email) acc[email] = (acc[email] || 0) + 1;
+    return acc;
+  }, {});
+
   const recentQuotations = [...quotations]
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 5);
@@ -1466,6 +1503,42 @@ export default function AdminDashboard() {
     );
 
   const activeTabData = TABS.find((t) => t.id === activeTab);
+
+  // ── SORT OPTIONS for quotations ───────────────────────────────────────────
+  const SORT_OPTIONS = [
+    { value: "newest", label: "Newest first" },
+    { value: "oldest", label: "Oldest first" },
+    { value: "highest", label: "Highest value" },
+    { value: "lowest", label: "Lowest value" },
+  ];
+
+  // ── STOCK FILTER OPTIONS ──────────────────────────────────────────────────
+  const STOCK_FILTER_OPTIONS = [
+    {
+      value: "all",
+      label: "All",
+      cls: "bg-slate-100 text-slate-700 border-slate-300",
+      ring: "ring-slate-400",
+    },
+    {
+      value: "In Stock",
+      label: "In Stock",
+      cls: "bg-emerald-50 text-emerald-700 border-emerald-300",
+      ring: "ring-emerald-400",
+    },
+    {
+      value: "Low Stock",
+      label: "Low Stock",
+      cls: "bg-amber-50 text-amber-700 border-amber-300",
+      ring: "ring-amber-400",
+    },
+    {
+      value: "Out of Stock",
+      label: "Out of Stock",
+      cls: "bg-rose-50 text-rose-700 border-rose-300",
+      ring: "ring-rose-400",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -1525,7 +1598,6 @@ export default function AdminDashboard() {
             <p className="text-slate-500 text-xs mt-0.5">Admin Panel</p>
           </div>
         </div>
-
         <nav className="flex-1 px-3 py-4 overflow-y-auto flex flex-col gap-1">
           {TABS.map((tab) => {
             const active = activeTab === tab.id;
@@ -1558,7 +1630,6 @@ export default function AdminDashboard() {
               </button>
             );
           })}
-
           <div className="pt-3 mt-2 border-t border-white/[0.06]">
             <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest px-3 mb-2">
               Documents
@@ -1589,7 +1660,6 @@ export default function AdminDashboard() {
             ))}
           </div>
         </nav>
-
         <div className="px-3 pb-4 pt-3 border-t border-white/[0.06] shrink-0 flex flex-col gap-0.5">
           <div className="flex items-center gap-3 px-3 py-3 mb-1">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shrink-0">
@@ -1644,6 +1714,17 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
+            {/* NEW – last refreshed timestamp */}
+            {lastRefreshed && (
+              <span className="hidden md:flex items-center gap-1 text-xs text-slate-400 font-medium">
+                <Icon.Clock className="w-3.5 h-3.5" />
+                Updated{" "}
+                {lastRefreshed.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            )}
             {stats.pending > 0 && (
               <button
                 onClick={() => setActiveTab("quotations")}
@@ -1676,6 +1757,7 @@ export default function AdminDashboard() {
                 fetchAll();
               }}
               className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+              title="Refresh data"
             >
               <Icon.RefreshCw className="w-4 h-4 text-slate-600" />
             </button>
@@ -1782,7 +1864,6 @@ export default function AdminDashboard() {
                       blobColor="bg-violet-500"
                     />
                   </div>
-
                   <div className="grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-5">
                     <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
                       <h3 className="font-extrabold text-slate-900 text-base mb-5">
@@ -1825,7 +1906,6 @@ export default function AdminDashboard() {
                         })}
                       </div>
                     </div>
-
                     <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                       <div className="px-6 py-4 border-b border-slate-50 flex items-center justify-between">
                         <h3 className="font-extrabold text-slate-900 text-base">
@@ -1881,15 +1961,34 @@ export default function AdminDashboard() {
               {/* ── QUOTATIONS ── */}
               {activeTab === "quotations" && (
                 <div className="flex flex-col gap-5">
-                  <div className="relative">
-                    <Icon.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <input
-                      value={searchQ}
-                      onChange={(e) => setSearchQ(e.target.value)}
-                      placeholder="Search company, contact or email…"
-                      className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300 transition-colors"
-                    />
+                  {/* Search + Sort row */}
+                  <div className="flex gap-3 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Icon.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        value={searchQ}
+                        onChange={(e) => setSearchQ(e.target.value)}
+                        placeholder="Search company, contact or email…"
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300 transition-colors"
+                      />
+                    </div>
+                    {/* NEW – sort control */}
+                    <div className="relative">
+                      <Icon.SortAsc className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      <select
+                        value={quotationSort}
+                        onChange={(e) => setQuotationSort(e.target.value)}
+                        className="pl-9 pr-8 py-3 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:border-orange-300 transition-colors appearance-none cursor-pointer"
+                      >
+                        {SORT_OPTIONS.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
+                  {/* Status filter chips */}
                   <div className="flex gap-2 flex-wrap">
                     {["all", ...QUOTATION_STATUSES.map((s) => s.value)].map(
                       (s) => {
@@ -1919,6 +2018,11 @@ export default function AdminDashboard() {
                       }
                     )}
                   </div>
+                  {/* Result count */}
+                  <p className="text-xs text-slate-400 font-medium -mt-2">
+                    Showing {filteredQuotations.length} of {quotations.length}{" "}
+                    quotation{quotations.length !== 1 ? "s" : ""}
+                  </p>
                   <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                     {filteredQuotations.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -1990,53 +2094,49 @@ export default function AdminDashboard() {
                       <Icon.Plus className="w-4 h-4" /> Add Product
                     </button>
                   </div>
+
+                  {/* NEW – clickable stock filter pills */}
                   <div className="flex gap-2 flex-wrap">
-                    {[
-                      {
-                        label: "All",
-                        count: products.length,
-                        cls: "bg-slate-100 text-slate-600 border-slate-200",
-                      },
-                      {
-                        label: "In Stock",
-                        count: products.filter(
-                          (p) => p.stockStatus === "In Stock"
-                        ).length,
-                        cls: "bg-emerald-50 text-emerald-700 border-emerald-200",
-                      },
-                      {
-                        label: "Low Stock",
-                        count: products.filter(
-                          (p) => p.stockStatus === "Low Stock"
-                        ).length,
-                        cls: "bg-amber-50 text-amber-700 border-amber-200",
-                      },
-                      {
-                        label: "Out of Stock",
-                        count: products.filter(
-                          (p) => p.stockStatus === "Out of Stock"
-                        ).length,
-                        cls: "bg-rose-50 text-rose-700 border-rose-200",
-                      },
-                    ].map(({ label, count, cls }) => (
-                      <span
-                        key={label}
-                        className={`text-xs font-bold px-3 py-1.5 rounded-full border ${cls}`}
-                      >
-                        {label}: {count}
-                      </span>
-                    ))}
+                    {STOCK_FILTER_OPTIONS.map(({ value, label, cls, ring }) => {
+                      const count =
+                        value === "all"
+                          ? products.length
+                          : products.filter(
+                              (p) => (p.stockStatus || "In Stock") === value
+                            ).length;
+                      const active = stockFilter === value;
+                      return (
+                        <button
+                          key={value}
+                          onClick={() => setStockFilter(value)}
+                          className={`text-xs font-bold px-3.5 py-1.5 rounded-full border transition-all cursor-pointer ${cls} ${
+                            active
+                              ? `ring-2 ${ring}`
+                              : "opacity-70 hover:opacity-100"
+                          }`}
+                        >
+                          {label}: {count}
+                        </button>
+                      );
+                    })}
                   </div>
+
+                  {/* Result count */}
+                  <p className="text-xs text-slate-400 font-medium -mt-2">
+                    Showing {filteredProducts.length} of {products.length}{" "}
+                    product{products.length !== 1 ? "s" : ""}
+                  </p>
+
                   <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                     {filteredProducts.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-64 gap-3">
                         <Icon.Package className="w-10 h-10 text-slate-200" />
                         <span className="text-sm text-slate-400 font-medium">
-                          {productSearch
-                            ? "No products match your search"
+                          {productSearch || stockFilter !== "all"
+                            ? "No products match your filters"
                             : "No products yet"}
                         </span>
-                        {!productSearch && (
+                        {!productSearch && stockFilter === "all" && (
                           <button
                             onClick={() => {
                               setSelectedProduct(null);
@@ -2123,86 +2223,117 @@ export default function AdminDashboard() {
               {/* ── CUSTOMERS ── */}
               {activeTab === "customers" && (
                 <div className="flex flex-col gap-5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-700">
-                      {customers.length} registered customer
-                      {customers.length !== 1 ? "s" : ""}
-                    </span>
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-full text-xs font-bold text-violet-700">
+                  {/* NEW – search bar for customers */}
+                  <div className="flex gap-3 flex-wrap items-center">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Icon.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                      <input
+                        value={customerSearch}
+                        onChange={(e) => setCustomerSearch(e.target.value)}
+                        placeholder="Search by name or email…"
+                        className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300 transition-colors"
+                      />
+                    </div>
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-full text-xs font-bold text-violet-700 whitespace-nowrap">
                       <Icon.Users className="w-3.5 h-3.5" />
-                      {
-                        customers.filter((cust) => cust.role === "admin").length
-                      }{" "}
+                      {customers.filter((c) => c.role === "admin").length}{" "}
                       admins
                     </span>
                   </div>
+                  {/* NEW – result count */}
+                  <p className="text-xs text-slate-400 font-medium -mt-2">
+                    Showing {filteredCustomers.length} of {customers.length}{" "}
+                    customer{customers.length !== 1 ? "s" : ""}
+                  </p>
                   <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-                    {customers.length === 0 ? (
+                    {filteredCustomers.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-64 gap-3">
                         <Icon.Users className="w-10 h-10 text-slate-200" />
                         <span className="text-sm text-slate-400">
-                          No customers yet
+                          {customerSearch
+                            ? "No customers match your search"
+                            : "No customers yet"}
                         </span>
                       </div>
                     ) : (
-                      customers.map((cust, i) => (
-                        <div
-                          key={cust._id}
-                          className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors group ${
-                            i < customers.length - 1
-                              ? "border-b border-slate-50"
-                              : ""
-                          }`}
-                        >
-                          <div className="w-11 h-11 rounded-full bg-gradient-to-br from-orange-100 to-amber-50 border border-orange-100 flex items-center justify-center shrink-0">
-                            <span className="font-extrabold text-orange-500 text-base">
-                              {cust.name?.[0]?.toUpperCase()}
-                            </span>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-bold text-slate-900 truncate">
-                              {cust.name}
-                            </p>
-                            <p className="text-xs text-slate-400 truncate mt-0.5">
-                              {cust.email}
-                            </p>
-                          </div>
-                          <div className="hidden sm:flex items-center gap-2 mr-2">
-                            <span
-                              className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
-                                cust.role === "admin"
-                                  ? "bg-violet-50 text-violet-600 border-violet-200"
-                                  : "bg-slate-50 text-slate-500 border-slate-200"
-                              }`}
-                            >
-                              {cust.role === "admin" ? "Admin" : "Customer"}
-                            </span>
-                            {cust.createdAt && (
-                              <span className="text-xs text-slate-300">
-                                {new Date(cust.createdAt).toLocaleDateString()}
+                      filteredCustomers.map((cust, i) => {
+                        const custQuoteCount =
+                          quoteCountByEmail[cust.email] || 0;
+                        return (
+                          <div
+                            key={cust._id}
+                            className={`flex items-center gap-4 px-6 py-4 hover:bg-slate-50 transition-colors group ${
+                              i < filteredCustomers.length - 1
+                                ? "border-b border-slate-50"
+                                : ""
+                            }`}
+                          >
+                            <div className="w-11 h-11 rounded-full bg-gradient-to-br from-orange-100 to-amber-50 border border-orange-100 flex items-center justify-center shrink-0">
+                              <span className="font-extrabold text-orange-500 text-base">
+                                {cust.name?.[0]?.toUpperCase()}
                               </span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-bold text-slate-900 truncate">
+                                {cust.name}
+                              </p>
+                              <p className="text-xs text-slate-400 truncate mt-0.5">
+                                {cust.email}
+                              </p>
+                            </div>
+                            <div className="hidden sm:flex items-center gap-2 mr-2">
+                              {/* NEW – quote count badge, clickable */}
+                              {custQuoteCount > 0 && (
+                                <button
+                                  onClick={() => {
+                                    setSearchQ(cust.email);
+                                    setStatusFilter("all");
+                                    setActiveTab("quotations");
+                                  }}
+                                  className="text-xs font-bold px-2.5 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100 transition-colors cursor-pointer whitespace-nowrap"
+                                >
+                                  {custQuoteCount} quote
+                                  {custQuoteCount !== 1 ? "s" : ""}
+                                </button>
+                              )}
+                              <span
+                                className={`text-xs font-bold px-2.5 py-1 rounded-full border ${
+                                  cust.role === "admin"
+                                    ? "bg-violet-50 text-violet-600 border-violet-200"
+                                    : "bg-slate-50 text-slate-500 border-slate-200"
+                                }`}
+                              >
+                                {cust.role === "admin" ? "Admin" : "Customer"}
+                              </span>
+                              {cust.createdAt && (
+                                <span className="text-xs text-slate-300">
+                                  {new Date(
+                                    cust.createdAt
+                                  ).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            {cust._id !== user?._id && (
+                              <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => handleChangeRole(cust)}
+                                  className="text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-colors whitespace-nowrap cursor-pointer"
+                                >
+                                  {cust.role === "admin"
+                                    ? "Demote"
+                                    : "Make Admin"}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteCustomer(cust)}
+                                  className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-400 hover:bg-rose-100 transition-colors cursor-pointer"
+                                >
+                                  <Icon.Trash className="w-4 h-4" />
+                                </button>
+                              </div>
                             )}
                           </div>
-                          {cust._id !== user?._id && (
-                            <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => handleChangeRole(cust)}
-                                className="text-xs font-bold px-3 py-2 rounded-lg border border-slate-200 text-slate-500 hover:border-violet-300 hover:text-violet-600 transition-colors whitespace-nowrap cursor-pointer"
-                              >
-                                {cust.role === "admin"
-                                  ? "Demote"
-                                  : "Make Admin"}
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCustomer(cust)}
-                                className="w-9 h-9 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-400 hover:bg-rose-100 transition-colors cursor-pointer"
-                              >
-                                <Icon.Trash className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                 </div>
@@ -2211,83 +2342,91 @@ export default function AdminDashboard() {
               {/* ── SETTINGS ── */}
               {activeTab === "settings" && (
                 <div className="flex flex-col gap-5 max-w-3xl">
-                  {[
-                    {
-                      title: "Store Information",
-                      SIcon: Icon.Home,
-                      iconBg: "bg-orange-100",
-                      iconColor: "text-orange-500",
-                      fields: [
-                        {
-                          label: "Business Name",
-                          defaultValue: "Wimwa Tech General Supplies",
-                        },
-                        {
-                          label: "Contact Email",
-                          defaultValue: "wimwatech@gmail.com",
-                        },
-                        {
-                          label: "Phone Number",
-                          defaultValue: "+254 712 953 780",
-                        },
-                        {
-                          label: "Business Address",
-                          defaultValue: "P.O Box 273-00206, Kiserian",
-                        },
-                      ],
-                    },
-                    {
-                      title: "Quotation Settings",
-                      SIcon: Icon.FileText,
-                      iconBg: "bg-orange-100",
-                      iconColor: "text-orange-500",
-                      fields: [
-                        { label: "Quote Validity (days)", defaultValue: "14" },
-                        {
-                          label: "Reply-to Email",
-                          defaultValue: "wimwatech@gmail.com",
-                        },
-                        { label: "Quote Number Prefix", defaultValue: "WTQ" },
-                      ],
-                    },
-                  ].map((section) => (
-                    <div
-                      key={section.title}
-                      className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm"
-                    >
-                      <div className="flex items-center gap-3 mb-5">
-                        <div
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center ${section.iconBg}`}
-                        >
-                          <section.SIcon
-                            className={`w-5 h-5 ${section.iconColor}`}
+                  {/* Store Information – fully controlled */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-orange-100">
+                        <Icon.Home className="w-5 h-5 text-orange-500" />
+                      </div>
+                      <h3 className="font-extrabold text-slate-900 text-base">
+                        Store Information
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {[
+                        { key: "businessName", label: "Business Name" },
+                        { key: "contactEmail", label: "Contact Email" },
+                        { key: "phoneNumber", label: "Phone Number" },
+                        { key: "businessAddress", label: "Business Address" },
+                      ].map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                            {label}
+                          </label>
+                          <input
+                            value={storeSettings[key]}
+                            onChange={(e) =>
+                              setStoreSettings((p) => ({
+                                ...p,
+                                [key]: e.target.value,
+                              }))
+                            }
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
                           />
                         </div>
-                        <h3 className="font-extrabold text-slate-900 text-base">
-                          {section.title}
-                        </h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {section.fields.map((f) => (
-                          <div key={f.label}>
-                            <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
-                              {f.label}
-                            </label>
-                            <input
-                              defaultValue={f.defaultValue}
-                              className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <button
-                        onClick={() => addToast("Settings saved!")}
-                        className="mt-5 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
-                      >
-                        Save Changes
-                      </button>
+                      ))}
                     </div>
-                  ))}
+                    <button
+                      onClick={() => addToast("Store information saved!")}
+                      className="mt-5 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
+
+                  {/* Quotation Settings – fully controlled */}
+                  <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-orange-100">
+                        <Icon.FileText className="w-5 h-5 text-orange-500" />
+                      </div>
+                      <h3 className="font-extrabold text-slate-900 text-base">
+                        Quotation Settings
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {[
+                        {
+                          key: "quoteValidity",
+                          label: "Quote Validity (days)",
+                        },
+                        { key: "replyToEmail", label: "Reply-to Email" },
+                        { key: "quotePrefix", label: "Quote Number Prefix" },
+                      ].map(({ key, label }) => (
+                        <div key={key}>
+                          <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider">
+                            {label}
+                          </label>
+                          <input
+                            value={quotationSettings[key]}
+                            onChange={(e) =>
+                              setQuotationSettings((p) => ({
+                                ...p,
+                                [key]: e.target.value,
+                              }))
+                            }
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 bg-slate-50 focus:bg-white transition-all"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => addToast("Quotation settings saved!")}
+                      className="mt-5 px-5 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white text-sm font-bold rounded-xl hover:opacity-90 transition-opacity cursor-pointer"
+                    >
+                      Save Changes
+                    </button>
+                  </div>
 
                   <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-5">

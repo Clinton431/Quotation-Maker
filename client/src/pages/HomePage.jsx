@@ -195,7 +195,6 @@ function HeroCartCard() {
           filter: "blur(18px)",
         }}
       />
-
       <div
         className="relative rounded-[22px] overflow-hidden"
         style={{
@@ -285,7 +284,6 @@ function HeroCartCard() {
             </div>
           </div>
         </div>
-
         {/* Shop header */}
         <div className="px-4 pt-3.5 pb-2.5 flex items-center justify-between border-b border-white/[0.07]">
           <div className="flex items-center gap-2.5">
@@ -323,7 +321,6 @@ function HeroCartCard() {
             </div>
           </div>
         </div>
-
         {/* Product shelf */}
         <div className="px-4 pt-3 pb-2">
           <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2">
@@ -374,8 +371,6 @@ function HeroCartCard() {
             })}
           </div>
         </div>
-
-        {/* Flying item animation */}
         {flyItem && (
           <div
             className="absolute left-1/2 -translate-x-1/2 z-20 px-3 py-2 rounded-xl flex items-center gap-2 pointer-events-none"
@@ -401,7 +396,6 @@ function HeroCartCard() {
             </div>
           </div>
         )}
-
         {/* Cart items list */}
         <div className="px-4 pt-1 pb-3">
           <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 flex items-center justify-between">
@@ -477,7 +471,6 @@ function HeroCartCard() {
             )}
           </div>
         </div>
-
         {/* Checkout bar */}
         <div className="px-4 pb-4">
           <div
@@ -509,7 +502,6 @@ function HeroCartCard() {
           </div>
         </div>
       </div>
-
       {/* Toast */}
       <div
         className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-2 rounded-full text-[10px] font-bold text-white flex items-center gap-1.5 pointer-events-none transition-all duration-300"
@@ -536,7 +528,6 @@ function HeroCartCard() {
         </svg>
         <span className="text-emerald-400">{notification}</span>
       </div>
-
       <div
         className="mt-1 mx-8 h-4 rounded-b-2xl blur-sm opacity-15"
         style={{
@@ -686,7 +677,6 @@ function ProductCard({ product, onAdd, added }) {
           </div>
         )}
       </div>
-
       <div className="p-3">
         <p className="text-[9px] font-bold text-orange-500 uppercase tracking-widest mb-0.5 truncate">
           {product.category || "General"}
@@ -838,7 +828,6 @@ function CartDrawer({
             </button>
           </div>
         </div>
-
         <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
           {cart.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center">
@@ -927,7 +916,6 @@ function CartDrawer({
             ))
           )}
         </div>
-
         {cart.length > 0 && (
           <div className="px-6 py-5 border-t border-slate-100 bg-white">
             <div className="flex items-center justify-between mb-4">
@@ -972,7 +960,6 @@ function Navbar({ cartCount, onCartOpen }) {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-
   const isActive = (path) => location.pathname === path;
 
   useEffect(() => {
@@ -1003,7 +990,6 @@ function Navbar({ cartCount, onCartOpen }) {
             </p>
           </div>
         </Link>
-
         <div className="hidden md:flex items-center gap-3">
           {user?.role === "admin" && (
             <button
@@ -1017,13 +1003,13 @@ function Navbar({ cartCount, onCartOpen }) {
             <div className="flex items-center gap-2">
               <Link
                 to="/my-orders"
-                className={`text-xs font-semibold px-3 py-2 rounded-lg transition-colors no-underline ${
+                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-colors no-underline ${
                   isActive("/my-orders")
                     ? "text-orange-600 bg-orange-50"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
-                📋 My Orders
+                🧾 My Orders
               </Link>
               <span className="text-sm text-slate-500 font-medium">
                 Hi, {user.name?.split(" ")[0]}
@@ -1081,7 +1067,6 @@ function Navbar({ cartCount, onCartOpen }) {
             )}
           </button>
         </div>
-
         <div className="md:hidden flex items-center gap-2">
           <button
             onClick={onCartOpen}
@@ -1127,7 +1112,6 @@ function Navbar({ cartCount, onCartOpen }) {
           </button>
         </div>
       </div>
-
       {menuOpen && (
         <div className="md:hidden border-t border-slate-100 bg-white px-4 py-4 flex flex-col gap-2">
           {user?.role === "admin" && (
@@ -1148,9 +1132,9 @@ function Navbar({ cartCount, onCartOpen }) {
                   navigate("/my-orders");
                   setMenuOpen(false);
                 }}
-                className="text-sm font-semibold text-slate-700 py-2.5 px-4 rounded-xl hover:bg-slate-100 text-left"
+                className="flex items-center gap-2 text-sm font-semibold text-slate-700 py-2.5 px-4 rounded-xl hover:bg-slate-100 text-left"
               >
-                📋 My Orders
+                🧾 My Orders
               </button>
               <p className="text-sm text-slate-500 px-4 py-2">
                 Signed in as {user.name}
@@ -1203,18 +1187,7 @@ function Hero({ onShopNow }) {
   }, []);
 
   return (
-    // FIX 1: overflow-hidden on the section clips all absolute children
-    // that were bleeding past the right edge on mobile
     <section className="relative overflow-hidden" style={{ minHeight: "92vh" }}>
-      {/* <div
-        className="absolute inset-0 z-0"
-        style={{
-          backgroundImage: "url(/hero-bg.jpg)",
-          backgroundSize: "cover",
-          backgroundPosition: "center right",
-          backgroundRepeat: "no-repeat",
-        }}
-      /> */}
       <div
         className="absolute inset-0 z-0"
         style={{
@@ -1239,7 +1212,6 @@ function Hero({ onShopNow }) {
         .wt-a-ctas{animation:wt-fadeUp .55s cubic-bezier(.22,1,.36,1) both .40s}
         .wt-a-badge,.wt-a-h1,.wt-a-sub,.wt-a-ctas{opacity:0;animation-fill-mode:forwards}
       `}</style>
-
       <div
         className="absolute inset-0 pointer-events-none opacity-30"
         style={{
@@ -1249,7 +1221,6 @@ function Hero({ onShopNow }) {
           maxWidth: "100%",
         }}
       />
-
       <div
         className="absolute top-0 inset-x-0 h-px pointer-events-none"
         style={{
@@ -1257,7 +1228,6 @@ function Hero({ onShopNow }) {
             "linear-gradient(90deg,transparent 0%,rgba(249,115,22,.9) 30%,rgba(251,146,60,.5) 65%,transparent 100%)",
         }}
       />
-
       <div
         className="absolute top-0 right-0 rounded-full pointer-events-none"
         style={{
@@ -1267,7 +1237,6 @@ function Hero({ onShopNow }) {
             "radial-gradient(circle,rgba(249,115,22,.14) 0%,transparent 65%)",
         }}
       />
-
       <div className="absolute bottom-7 left-5 hidden lg:flex items-center gap-2 pointer-events-none z-10">
         <span
           className="w-1.5 h-1.5 rounded-full"
@@ -1277,7 +1246,6 @@ function Hero({ onShopNow }) {
           Wimwa Tech · Kiserian, Kenya
         </span>
       </div>
-
       <div
         className="wt-scan relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         style={{ minHeight: "92vh", display: "flex", alignItems: "center" }}
@@ -1304,7 +1272,6 @@ function Hero({ onShopNow }) {
                 Kiserian, Kenya
               </span>
             </div>
-
             <h1
               className={`${mounted ? "wt-a-h1" : ""} mb-6`}
               style={{ lineHeight: 1.02, letterSpacing: "-0.03em" }}
@@ -1341,7 +1308,6 @@ function Hero({ onShopNow }) {
                 Printers · Networking · Security · Construction
               </span>
             </h1>
-
             <p
               className={`${
                 mounted ? "wt-a-sub" : ""
@@ -1355,7 +1321,6 @@ function Hero({ onShopNow }) {
               Shop online, get instant pricing, and receive a branded PDF
               quotation — delivered to you minutes.
             </p>
-
             <div
               className={`${
                 mounted ? "wt-a-ctas" : ""
@@ -1397,7 +1362,6 @@ function Hero({ onShopNow }) {
                 📞 Contact us
               </button>
             </div>
-
             <div className="flex flex-wrap gap-2 mt-8 pt-7 border-t border-white/8 min-w-0 overflow-hidden w-full">
               {[
                 "🖨️ Printers",
@@ -1433,7 +1397,6 @@ function Hero({ onShopNow }) {
           </div>
         </div>
       </div>
-
       <div
         className="absolute bottom-0 inset-x-0 pointer-events-none overflow-hidden"
         style={{ lineHeight: 0 }}
@@ -1482,6 +1445,291 @@ function TrustStrip() {
   );
 }
 
+// ── NEW: FEATURED CATEGORIES ──────────────────────────────────────────────────
+
+function findRealCategory(dbCategories, keyword) {
+  const kw = keyword.toLowerCase();
+  return (
+    dbCategories.find((c) => c.toLowerCase() === kw) ||
+    dbCategories.find((c) => c.toLowerCase().includes(kw)) ||
+    dbCategories.find((c) => kw.includes(c.toLowerCase())) ||
+    null
+  );
+}
+
+function FeaturedCategories({ onSelect, categories }) {
+  const tiles = [
+    {
+      keyword: "printer",
+      label: "Printers",
+      emoji: "🖨️",
+      color: "#3b82f6",
+      bg: "rgba(59,130,246,0.08)",
+      border: "rgba(59,130,246,0.2)",
+      desc: "LaserJet, Inkjet & Scanners",
+    },
+    {
+      keyword: "network",
+      label: "Networking",
+      emoji: "🌐",
+      color: "#06b6d4",
+      bg: "rgba(6,182,212,0.08)",
+      border: "rgba(6,182,212,0.2)",
+      desc: "Switches, Routers & Cables",
+    },
+    {
+      keyword: "security",
+      label: "Security",
+      emoji: "📷",
+      color: "#ef4444",
+      bg: "rgba(239,68,68,0.08)",
+      border: "rgba(239,68,68,0.2)",
+      desc: "CCTV Kits & Access Control",
+    },
+    {
+      keyword: "power",
+      label: "Power",
+      emoji: "🔋",
+      color: "#f59e0b",
+      bg: "rgba(245,158,11,0.08)",
+      border: "rgba(245,158,11,0.2)",
+      desc: "UPS, Inverters & Stabilizers",
+    },
+    {
+      keyword: "display",
+      label: "Displays",
+      emoji: "🖥️",
+      color: "#8b5cf6",
+      bg: "rgba(139,92,246,0.08)",
+      border: "rgba(139,92,246,0.2)",
+      desc: "Monitors & Projectors",
+    },
+    {
+      keyword: "construction",
+      label: "Construction",
+      emoji: "🏗️",
+      color: "#f97316",
+      bg: "rgba(249,115,22,0.08)",
+      border: "rgba(249,115,22,0.2)",
+      desc: "Cement, Steel & Hardware",
+    },
+    {
+      keyword: "peripheral",
+      label: "Peripherals",
+      emoji: "⌨️",
+      color: "#ec4899",
+      bg: "rgba(236,72,153,0.08)",
+      border: "rgba(236,72,153,0.2)",
+      desc: "Keyboards, Mice & Headsets",
+    },
+    {
+      keyword: "cable",
+      label: "Cables",
+      emoji: "🔌",
+      color: "#10b981",
+      bg: "rgba(16,185,129,0.08)",
+      border: "rgba(16,185,129,0.2)",
+      desc: "HDMI, USB & Patch Cables",
+    },
+  ];
+  // Only show tiles that have a matching real category in the DB
+  const dbCats = categories.filter((c) => c !== "All");
+  const cats = tiles
+    .map((t) => ({ ...t, realCategory: findRealCategory(dbCats, t.keyword) }))
+    .filter((t) => t.realCategory !== null);
+  return (
+    <section className="bg-white py-14 border-b border-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="flex items-end justify-between mb-8">
+          <div>
+            <p className="text-[11px] font-bold text-orange-500 uppercase tracking-widest mb-1">
+              Browse by Category
+            </p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+              What are you looking for?
+            </h2>
+          </div>
+          <button
+            onClick={() => onSelect("All")}
+            className="hidden sm:flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-orange-500 transition-colors"
+          >
+            View all products
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <path d="M5 12h14M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
+          {cats.map((cat) => (
+            <button
+              key={cat.label}
+              onClick={() => onSelect(cat.realCategory)}
+              className="group flex flex-col items-center gap-2.5 p-4 rounded-2xl text-center transition-all duration-200 hover:-translate-y-1 hover:shadow-lg border"
+              style={{ background: cat.bg, borderColor: cat.border }}
+            >
+              <span
+                className="text-2xl w-11 h-11 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-110"
+                style={{ background: `${cat.color}15` }}
+              >
+                {cat.emoji}
+              </span>
+              <div>
+                <p className="text-xs font-bold text-slate-800 leading-tight">
+                  {cat.label}
+                </p>
+                <p className="text-[9px] text-slate-400 mt-0.5 leading-tight hidden sm:block">
+                  {cat.desc}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ── NEW: HOW IT WORKS ─────────────────────────────────────────────────────────
+function HowItWorks() {
+  const steps = [
+    {
+      icon: (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <path d="M21 21l-4.35-4.35" />
+        </svg>
+      ),
+      title: "Browse & Select",
+      desc: "Search our catalog of 500+ products across tech, networking, security, and construction supplies.",
+      color: "#3b82f6",
+    },
+    {
+      icon: (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+          <line x1="3" y1="6" x2="21" y2="6" />
+          <path d="M16 10a4 4 0 01-8 0" />
+        </svg>
+      ),
+      title: "Add to Cart",
+      desc: "Add items to your cart with exact quantities. Mix products from different categories freely.",
+      color: "#f97316",
+    },
+    {
+      icon: (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+          <polyline points="14 2 14 8 20 8" />
+          <line x1="16" y1="13" x2="8" y2="13" />
+          <line x1="16" y1="17" x2="8" y2="17" />
+        </svg>
+      ),
+      title: "Request Quotation",
+      desc: "Submit your cart and receive a formal branded PDF quotation within 2 hours during business hours.",
+      color: "#10b981",
+    },
+    {
+      icon: (
+        <svg
+          width="22"
+          height="22"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
+          <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.14 1.2 2 2 0 012.12 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z" />
+        </svg>
+      ),
+      title: "Confirm & Deliver",
+      desc: "Approve the quotation, make payment, and we'll arrange delivery anywhere in Kenya.",
+      color: "#8b5cf6",
+    },
+  ];
+  return (
+    <section className="bg-slate-50 py-16 border-b border-slate-100">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-12">
+          <p className="text-[11px] font-bold text-orange-500 uppercase tracking-widest mb-2">
+            Simple Process
+          </p>
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            How It Works
+          </h2>
+          <p className="text-slate-400 text-sm mt-2 max-w-md mx-auto">
+            From browsing to delivery — fast and transparent for businesses of
+            all sizes.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+          <div
+            className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px pointer-events-none"
+            style={{
+              background:
+                "linear-gradient(90deg, #e2e8f0 0%, #fed7aa 50%, #e2e8f0 100%)",
+            }}
+          />
+          {steps.map((s, i) => (
+            <div
+              key={i}
+              className="relative flex flex-col items-center text-center"
+            >
+              <div
+                className="relative z-10 w-20 h-20 rounded-2xl flex items-center justify-center mb-4 shadow-md"
+                style={{
+                  background: `${s.color}12`,
+                  border: `1.5px solid ${s.color}25`,
+                }}
+              >
+                <div style={{ color: s.color }}>{s.icon}</div>
+                <span
+                  className="absolute -top-2 -right-2 w-6 h-6 rounded-full text-[10px] font-black text-white flex items-center justify-center shadow-sm"
+                  style={{ background: s.color }}
+                >
+                  {i + 1}
+                </span>
+              </div>
+              <h3 className="font-bold text-slate-900 text-sm mb-1.5">
+                {s.title}
+              </h3>
+              <p className="text-slate-400 text-xs leading-relaxed max-w-[200px]">
+                {s.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [products, setProducts] = useState([]);
@@ -1507,23 +1755,18 @@ export default function HomePage() {
     count,
   } = useCart();
 
-  // ── Fetch products ──────────────────────────────────────────────────────────
   useEffect(() => {
     (async () => {
       try {
         const res = await axios.get(`${API_URL}/api/products`, {
           timeout: 20000,
         });
-
         const data = unwrapList(res.data, "products");
-
-        if (data.length === 0) {
+        if (data.length === 0)
           console.warn(
             "[HomePage] Products API returned 0 items. Raw response:",
             res.data
           );
-        }
-
         setProducts(data);
         setCategories([
           "All",
@@ -1564,7 +1807,12 @@ export default function HomePage() {
     );
   };
 
-  // ── Gate quotation request behind auth ─────────────────────────────────────
+  // Helper: select category and scroll to catalog
+  const handleCategorySelect = (cat) => {
+    setCategory(cat);
+    catalogRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const handleRequestQuotation = () => {
     setCartOpen(false);
     if (!user) {
@@ -1583,8 +1831,6 @@ export default function HomePage() {
     <div className="min-h-screen bg-slate-50">
       <Navbar cartCount={count} onCartOpen={() => setCartOpen(true)} />
       <div className="overflow-x-hidden">
-        {/* Auth prompt modal */}
-
         {showAuthModal && (
           <AuthPromptModal
             onClose={() => setShowAuthModal(false)}
@@ -1592,7 +1838,6 @@ export default function HomePage() {
             cartTotal={total}
           />
         )}
-
         <CartDrawer
           open={cartOpen}
           onClose={() => setCartOpen(false)}
@@ -1610,6 +1855,11 @@ export default function HomePage() {
           }
         />
         <TrustStrip />
+        <FeaturedCategories
+          onSelect={handleCategorySelect}
+          categories={categories}
+        />
+        <HowItWorks />
 
         {/* ── CATALOG ── */}
         <section
@@ -1799,35 +2049,41 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-
               <div>
                 <p className="text-white font-bold text-sm mb-4">Categories</p>
                 <div className="space-y-2.5">
                   {[
-                    "Printers & Scanners",
-                    "Networking & Cables",
-                    "UPS & Power",
-                    "CCTV & Security",
-                    "Monitors & Displays",
-                    "Peripherals",
-                    "Construction Materials",
-                  ].map((c) => (
-                    <p
-                      key={c}
-                      onClick={() => {
-                        setCategory(c.split(" ")[0]);
-                        catalogRef.current?.scrollIntoView({
-                          behavior: "smooth",
-                        });
-                      }}
-                      className="text-slate-500 text-sm hover:text-orange-400 cursor-pointer transition-colors"
-                    >
-                      {c}
-                    </p>
-                  ))}
+                    { label: "Printers & Scanners", keyword: "printer" },
+                    { label: "Networking & Cables", keyword: "network" },
+                    { label: "UPS & Power", keyword: "power" },
+                    { label: "CCTV & Security", keyword: "security" },
+                    { label: "Monitors & Displays", keyword: "display" },
+                    { label: "Peripherals", keyword: "peripheral" },
+                    {
+                      label: "Construction Materials",
+                      keyword: "construction",
+                    },
+                  ].map((c) => {
+                    const real = findRealCategory(
+                      categories.filter((x) => x !== "All"),
+                      c.keyword
+                    );
+                    return (
+                      <p
+                        key={c.label}
+                        onClick={() => real && handleCategorySelect(real)}
+                        className={`text-slate-500 text-sm transition-colors ${
+                          real
+                            ? "hover:text-orange-400 cursor-pointer"
+                            : "opacity-40 cursor-default"
+                        }`}
+                      >
+                        {c.label}
+                      </p>
+                    );
+                  })}
                 </div>
               </div>
-
               <div>
                 <p className="text-white font-bold text-sm mb-4">Company</p>
                 <div className="space-y-2.5">
@@ -1848,7 +2104,6 @@ export default function HomePage() {
                   ))}
                 </div>
               </div>
-
               <div>
                 <p className="text-white font-bold text-sm mb-4">Contact Us</p>
                 <div className="space-y-3">
@@ -1872,7 +2127,6 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
           <div className="border-t border-white/5">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
               <div>
@@ -1895,7 +2149,6 @@ export default function HomePage() {
               </div>
             </div>
           </div>
-
           <div className="border-t border-white/5">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-600">
               <p>

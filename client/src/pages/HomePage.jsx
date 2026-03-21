@@ -1685,7 +1685,7 @@ function HowItWorks() {
             all sizes.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 relative">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 relative">
           <div
             className="hidden lg:block absolute top-10 left-[12.5%] right-[12.5%] h-px pointer-events-none"
             style={{

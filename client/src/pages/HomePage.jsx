@@ -284,7 +284,6 @@ function HeroCartCard() {
             </div>
           </div>
         </div>
-        {/* Shop header */}
         <div className="px-4 pt-3.5 pb-2.5 flex items-center justify-between border-b border-white/[0.07]">
           <div className="flex items-center gap-2.5">
             <div
@@ -321,7 +320,6 @@ function HeroCartCard() {
             </div>
           </div>
         </div>
-        {/* Product shelf */}
         <div className="px-4 pt-3 pb-2">
           <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2">
             Browsing
@@ -1445,8 +1443,7 @@ function TrustStrip() {
   );
 }
 
-// ── NEW: FEATURED CATEGORIES ──────────────────────────────────────────────────
-
+// ── FEATURED CATEGORIES ───────────────────────────────────────────────────────
 function findRealCategory(dbCategories, keyword) {
   const kw = keyword.toLowerCase();
   return (
@@ -1532,7 +1529,6 @@ function FeaturedCategories({ onSelect, categories }) {
       desc: "HDMI, USB & Patch Cables",
     },
   ];
-  // Only show tiles that have a matching real category in the DB
   const dbCats = categories.filter((c) => c !== "All");
   const cats = tiles
     .map((t) => ({ ...t, realCategory: findRealCategory(dbCats, t.keyword) }))
@@ -1596,7 +1592,7 @@ function FeaturedCategories({ onSelect, categories }) {
   );
 }
 
-// ── NEW: HOW IT WORKS ─────────────────────────────────────────────────────────
+// ── HOW IT WORKS ──────────────────────────────────────────────────────────────
 function HowItWorks() {
   const steps = [
     {
@@ -1730,6 +1726,7 @@ function HowItWorks() {
     </section>
   );
 }
+
 // ── MAIN PAGE ─────────────────────────────────────────────────────────────────
 export default function HomePage() {
   const [products, setProducts] = useState([]);
@@ -1807,7 +1804,6 @@ export default function HomePage() {
     );
   };
 
-  // Helper: select category and scroll to catalog
   const handleCategorySelect = (cat) => {
     setCategory(cat);
     catalogRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -1848,7 +1844,6 @@ export default function HomePage() {
           total={total}
           onRequestQuotation={handleRequestQuotation}
         />
-
         <Hero
           onShopNow={() =>
             catalogRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -1901,7 +1896,6 @@ export default function HomePage() {
               />
             </div>
           </div>
-
           {categories.length > 1 && (
             <div className="flex gap-2 flex-wrap mb-6 pb-4 border-b border-slate-100">
               {categories.map((cat) => (
@@ -1919,7 +1913,6 @@ export default function HomePage() {
               ))}
             </div>
           )}
-
           {loading ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
               {Array.from({ length: 10 }).map((_, i) => (
@@ -2011,58 +2004,62 @@ export default function HomePage() {
 
         {/* ── FOOTER ── */}
         <footer className="bg-slate-950 text-slate-400 border-t border-white/5">
-          <div className="max-w-7xl mx-auto px-6 py-14">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
-              <div className="md:col-span-1">
-                <div className="flex items-center gap-2.5 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-[0_4px_14px_rgba(249,115,22,.35)]">
-                    <span className="text-white font-black text-base">W</span>
-                  </div>
-                  <div>
-                    <p className="text-white font-bold text-sm">Wimwa Tech</p>
-                    <p className="text-slate-500 text-xs">
-                      General Supplies Ltd
-                    </p>
-                  </div>
+          {/* ── Main content: tight padding on mobile ── */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-6 sm:pt-12 sm:pb-10">
+            {/* ── Top row: brand + socials side by side on ALL screen sizes ── */}
+            <div className="flex items-center justify-between gap-4 mb-6 pb-6 border-b border-white/[0.06]">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-[0_4px_14px_rgba(249,115,22,.35)] shrink-0">
+                  <span className="text-white font-black text-xs sm:text-sm">
+                    W
+                  </span>
                 </div>
-                <p className="text-sm text-slate-500 leading-relaxed mb-5">
-                  Your trusted partner for technology and general supplies
-                  across Kenya. Serving businesses since 2018.
-                </p>
-                <div className="flex gap-2">
-                  {[
-                    { label: "fb", href: "#", icon: "f" },
-                    { label: "tw", href: "#", icon: "𝕏" },
-                    {
-                      label: "wa",
-                      href: "https://wa.me/254712953780",
-                      icon: "W",
-                    },
-                  ].map((s) => (
-                    <a
-                      key={s.label}
-                      href={s.href}
-                      className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[11px] font-bold text-slate-400 hover:text-white hover:bg-orange-500/20 hover:border-orange-500/30 transition-all no-underline"
-                    >
-                      {s.icon}
-                    </a>
-                  ))}
+                <div className="min-w-0">
+                  <p className="text-white font-bold text-xs sm:text-sm leading-tight">
+                    Wimwa Tech
+                  </p>
+                  <p className="text-slate-500 text-[10px] sm:text-xs truncate">
+                    General Supplies Ltd · Kiserian
+                  </p>
                 </div>
               </div>
+              <div className="flex items-center gap-2 shrink-0">
+                {[
+                  { label: "fb", href: "#", icon: "f" },
+                  { label: "tw", href: "#", icon: "𝕏" },
+                  {
+                    label: "wa",
+                    href: "https://wa.me/254712953780",
+                    icon: "W",
+                  },
+                ].map((s) => (
+                  <a
+                    key={s.label}
+                    href={s.href}
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-[10px] font-bold text-slate-400 hover:text-white hover:bg-orange-500/20 hover:border-orange-500/30 transition-all no-underline"
+                  >
+                    {s.icon}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* ── Links: always 2 cols on mobile, 4 cols on md+ ── */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6 sm:gap-x-8 sm:gap-y-8 mb-6">
+              {/* Col 1: Categories */}
               <div>
-                <p className="text-white font-bold text-sm mb-4">Categories</p>
-                <div className="space-y-2.5">
+                <p className="text-white font-bold text-[10px] sm:text-xs mb-2.5 uppercase tracking-wider">
+                  Categories
+                </p>
+                <div className="space-y-1.5 sm:space-y-2">
                   {[
                     { label: "Printers & Scanners", keyword: "printer" },
                     { label: "Networking & Cables", keyword: "network" },
                     { label: "UPS & Power", keyword: "power" },
                     { label: "CCTV & Security", keyword: "security" },
-                    { label: "Monitors & Displays", keyword: "display" },
+                    { label: "Monitors", keyword: "display" },
                     { label: "Peripherals", keyword: "peripheral" },
-                    {
-                      label: "Construction Materials",
-                      keyword: "construction",
-                    },
+                    { label: "Construction", keyword: "construction" },
                   ].map((c) => {
                     const real = findRealCategory(
                       categories.filter((x) => x !== "All"),
@@ -2072,10 +2069,10 @@ export default function HomePage() {
                       <p
                         key={c.label}
                         onClick={() => real && handleCategorySelect(real)}
-                        className={`text-slate-500 text-sm transition-colors ${
+                        className={`text-[11px] sm:text-xs transition-colors leading-snug ${
                           real
-                            ? "hover:text-orange-400 cursor-pointer"
-                            : "opacity-40 cursor-default"
+                            ? "text-slate-500 hover:text-orange-400 cursor-pointer"
+                            : "text-slate-600 opacity-40 cursor-default"
                         }`}
                       >
                         {c.label}
@@ -2084,85 +2081,91 @@ export default function HomePage() {
                   })}
                 </div>
               </div>
+
+              {/* Col 2: Company */}
               <div>
-                <p className="text-white font-bold text-sm mb-4">Company</p>
-                <div className="space-y-2.5">
+                <p className="text-white font-bold text-[10px] sm:text-xs mb-2.5 uppercase tracking-wider">
+                  Company
+                </p>
+                <div className="space-y-1.5 sm:space-y-2">
                   {[
                     { label: "About Us", to: "/about" },
                     { label: "Privacy Policy", to: "/privacy-policy" },
                     { label: "Terms of Service", to: "/terms" },
                     { label: "Sign In", to: "/login" },
                     { label: "Register", to: "/register" },
+                    { label: "My Orders", to: "/my-orders" },
                   ].map((l) => (
                     <Link
                       key={l.label}
                       to={l.to}
-                      className="block text-slate-500 text-sm hover:text-orange-400 transition-colors no-underline"
+                      className="block text-slate-500 text-[11px] sm:text-xs hover:text-orange-400 transition-colors no-underline leading-snug"
                     >
                       {l.label}
                     </Link>
                   ))}
                 </div>
               </div>
+
+              {/* Col 3: Contact — second row on mobile, col 3 on md+ */}
               <div>
-                <p className="text-white font-bold text-sm mb-4">Contact Us</p>
-                <div className="space-y-3">
+                <p className="text-white font-bold text-[10px] sm:text-xs mb-2.5 uppercase tracking-wider">
+                  Contact
+                </p>
+                <div className="space-y-1.5 sm:space-y-2.5">
                   {[
-                    {
-                      icon: "📍",
-                      text: "P.O Box 273-00206\nKiserian, Kajiado County",
-                    },
-                    { icon: "📞", text: "+254 70000000" },
+                    { icon: "📍", text: "P.O Box 273-00206, Kiserian" },
+                    { icon: "📞", text: "+254 712 953 780" },
                     { icon: "✉️", text: "wimwatech@gmail.com" },
-                    { icon: "🕐", text: "Mon–Sat: 8AM – 6PM" },
+                    { icon: "🕐", text: "Mon–Sat: 8AM–6PM" },
                   ].map((c) => (
-                    <div key={c.text} className="flex items-start gap-2.5">
-                      <span className="text-sm mt-0.5">{c.icon}</span>
-                      <p className="text-slate-500 text-sm whitespace-pre-line leading-relaxed">
+                    <div key={c.text} className="flex items-start gap-1.5">
+                      <span className="text-[11px] mt-px shrink-0">
+                        {c.icon}
+                      </span>
+                      <p className="text-slate-500 text-[11px] sm:text-xs leading-snug">
                         {c.text}
                       </p>
                     </div>
                   ))}
                 </div>
               </div>
-            </div>
-          </div>
-          <div className="border-t border-white/5">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+
+              {/* Col 4: Newsletter — second row on mobile, col 4 on md+ */}
               <div>
-                <p className="text-white font-bold text-sm">
-                  Get price updates &amp; new arrivals
+                <p className="text-white font-bold text-[10px] sm:text-xs mb-2.5 uppercase tracking-wider">
+                  Newsletter
                 </p>
-                <p className="text-slate-500 text-xs mt-0.5">
-                  Subscribe to our newsletter
+                <p className="text-slate-500 text-[11px] sm:text-xs mb-3 leading-snug">
+                  Get price updates &amp; new arrivals.
                 </p>
-              </div>
-              <div className="flex gap-2 w-full sm:w-auto min-w-0">
-                <input
-                  type="email"
-                  placeholder="your@email.com"
-                  className="flex-1 sm:w-56 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-orange-500/50 transition-all"
-                />
-                <button className="px-4 py-2.5 bg-gradient-to-br from-orange-400 to-orange-600 text-white text-sm font-bold rounded-xl shadow-[0_4px_14px_rgba(249,115,22,.3)] hover:opacity-90 transition-all whitespace-nowrap">
-                  Subscribe
-                </button>
+                {/* Input stacked above button on tiny screens, row on sm+ */}
+                <div className="flex flex-col xs:flex-row gap-2">
+                  <input
+                    type="email"
+                    placeholder="your@email.com"
+                    className="w-full min-w-0 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-orange-500/50 transition-all"
+                  />
+                  <button className="w-full xs:w-auto px-3 py-2 bg-gradient-to-br from-orange-400 to-orange-600 text-white text-[11px] font-bold rounded-lg shadow-[0_3px_10px_rgba(249,115,22,.25)] hover:opacity-90 transition-all whitespace-nowrap shrink-0">
+                    Subscribe
+                  </button>
+                </div>
               </div>
             </div>
           </div>
+
+          {/* ── Bottom bar: single compact row ── */}
           <div className="border-t border-white/5">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-slate-600">
-              <p>
-                © {new Date().getFullYear()} Wimwa Tech General Supplies
-                Limited. All rights reserved.
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 sm:gap-0">
+              <p className="text-[10px] sm:text-xs text-slate-600 text-center sm:text-left">
+                © {new Date().getFullYear()} Wimwa Tech General Supplies Ltd.
+                All rights reserved.
               </p>
-              <div className="flex items-center gap-4">
-                <p>We Offer The Best Customer Experience</p>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-emerald-600">
-                    Thank you for trusting our services
-                  </span>
-                </div>
+              <div className="flex items-center justify-center sm:justify-end gap-1.5">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="text-[10px] sm:text-xs text-emerald-700">
+                  Thank you for trusting our services
+                </span>
               </div>
             </div>
           </div>

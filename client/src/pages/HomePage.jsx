@@ -2160,7 +2160,7 @@ export default function HomePage() {
                 <div className="flex items-center gap-1.5">
                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="text-emerald-600">
-                    Thank your for trusting us
+                    Thank you for trusting our services
                   </span>
                 </div>
               </div>

@@ -128,6 +128,7 @@ function QuotationPage() {
     type: "",
   });
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [billingCompanies, setBillingCompanies] = useState([]);
   const [selectedBilling, setSelectedBilling] = useState(null);
   const [billingLoading, setBillingLoading] = useState(false);
@@ -158,7 +159,7 @@ function QuotationPage() {
   const uploadToCloudinary = async (file) => {
     const payload = new FormData();
     payload.append("image", file);
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("wt_token"); // ← FIX: was "token"
     const res = await axios.post(
       `${API_URL}/api/products/upload-image`,
       payload,
@@ -382,61 +383,93 @@ function QuotationPage() {
         showNotification("Please add at least one item description", "error");
         return;
       }
-      const itemsWithUrls = await Promise.all(
-        formData.items.map(async (item) => {
+
+      setIsSaving(true);
+
+      // ── Map items to the shape the backend expects ────────────────────────
+      // Backend schema: { name, price, qty, subtotal, imageUrl, unit }
+      // Form state uses: { description, quantity, price, total, imageFile, ... }
+      const mappedItems = [];
+      for (const item of formData.items) {
+        if (item.hasOptions && item.options.length > 0) {
+          for (const opt of item.options) {
+            if (!opt.description.trim()) continue;
+            let imageUrl = opt.imageUrl;
+            if (opt.imageFile)
+              imageUrl = await uploadToCloudinary(opt.imageFile);
+            mappedItems.push({
+              name: `${item.description ? item.description + " — " : ""}${
+                opt.label || "Option"
+              }`,
+              price: Number(opt.price),
+              qty: Number(opt.quantity),
+              subtotal: opt.total || Number(opt.price) * Number(opt.quantity),
+              imageUrl,
+              unit: opt.unit || "pcs",
+            });
+          }
+        } else {
+          if (!item.description.trim()) continue;
           let imageUrl = item.imageUrl;
           if (item.imageFile)
             imageUrl = await uploadToCloudinary(item.imageFile);
-          const options = item.hasOptions
-            ? await Promise.all(
-                item.options.map(async (opt) => {
-                  let optImageUrl = opt.imageUrl;
-                  if (opt.imageFile)
-                    optImageUrl = await uploadToCloudinary(opt.imageFile);
-                  return {
-                    ...opt,
-                    imageUrl: optImageUrl,
-                    imageFile: null,
-                    imagePreview: "",
-                  };
-                })
-              )
-            : [];
-          return {
-            ...item,
+          mappedItems.push({
+            name: item.description,
+            price: Number(item.price),
+            qty: Number(item.quantity),
+            subtotal: item.total || Number(item.price) * Number(item.quantity),
             imageUrl,
-            imageFile: null,
-            imagePreview: "",
-            options,
-          };
-        })
-      );
+            unit: item.unit || "pcs",
+          });
+        }
+      }
+
+      // ── Sanitise additional charges ───────────────────────────────────────
+      const mappedCharges = formData.additionalCharges.map((c) => ({
+        category: c.category || "Labour",
+        description: c.description || "",
+        quantity: Number(c.quantity),
+        price: Number(c.price),
+        total: c.total || Number(c.quantity) * Number(c.price),
+      }));
+
+      // ── Build payload matching backend schema ─────────────────────────────
+      // Backend requires: customer.{companyName, contactName, email}, items[].{name,qty,subtotal}, total
+      const token = localStorage.getItem("wt_token"); // ← FIX: was "token"
       await axios.post(
         `${API_URL}/api/quotations`,
         {
-          ...formData,
-          items: itemsWithUrls,
-          subtotal: getSubtotal(),
-          additionalTotal: getAdditionalTotal(),
-          grandTotal: getGrandTotal(),
-          createdAt: new Date(),
+          customer: {
+            companyName: formData.clientInfo.name,
+            contactName: formData.clientInfo.name,
+            email: formData.clientInfo.email.trim() || "noemail@noemail.com",
+            phone: formData.clientInfo.phone || "",
+            deliveryAddress: formData.clientInfo.address || "",
+          },
+          items: mappedItems,
+          additionalCharges: mappedCharges,
+          total: getGrandTotal(),
+          notes: "",
         },
-        { timeout: 5000 }
+        {
+          timeout: 10000,
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        }
       );
+
       showNotification("Quotation saved successfully to database!");
       setTimeout(() => resetForm(), 1000);
     } catch (error) {
       console.error("Error saving quotation:", error);
+      const msg = error.response?.data?.message || error.message;
       if (error.code === "ECONNREFUSED" || error.message.includes("timeout"))
         showNotification(
           "Cannot connect to server. Make sure MongoDB and server are running.",
           "error"
         );
-      else
-        showNotification(
-          "Failed to save to database. Check console for details.",
-          "error"
-        );
+      else showNotification(`Failed to save: ${msg}`, "error");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -731,11 +764,24 @@ function QuotationPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-4 justify-center mb-8">
+          {/* ── Save button — disabled + spinner while isSaving ── */}
           <button
             onClick={saveQuotation}
-            className="btn-primary flex items-center gap-2"
+            disabled={isSaving}
+            className={`btn-primary flex items-center gap-2 ${
+              isSaving ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            <Save className="w-5 h-5" /> Save Quotation
+            {isSaving ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5" /> Save Quotation
+              </>
+            )}
           </button>
           <button
             onClick={downloadPDF}
@@ -1878,11 +1924,11 @@ function QuotationPage() {
                   >
                     <colgroup>
                       <col style={{ width: "5%" }} />
-                      <col style={{ width: "45%" }} />
+                      <col style={{ width: "33%" }} />
                       <col style={{ width: "10%" }} />
-                      <col style={{ width: "15%" }} />
-                      <col style={{ width: "17%" }} />
-                      <col style={{ width: "8%" }} />
+                      <col style={{ width: "10%" }} />
+                      <col style={{ width: "21%" }} />
+                      <col style={{ width: "21%" }} />
                     </colgroup>
                     <thead>
                       <tr className="bg-amber-700 text-white border-b-2 border-amber-900">

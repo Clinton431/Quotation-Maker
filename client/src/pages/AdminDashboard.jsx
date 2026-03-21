@@ -367,6 +367,20 @@ const Icon = {
       <path d="M3 6h18M6 12h12M9 18h6" />
     </svg>
   ),
+  // ── FIX 3: added Wrench icon for additional charges section ──────────────
+  Wrench: (p) => (
+    <svg
+      {...p}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
+    </svg>
+  ),
 };
 
 // ── TOAST STACK ───────────────────────────────────────────────────────────────
@@ -388,16 +402,28 @@ function ToastStack({ toasts }) {
         >
           <div
             className={`w-1 shrink-0 ${
-              t.type === "success" ? "bg-emerald-500" : "bg-rose-500"
+              t.type === "success"
+                ? "bg-emerald-500"
+                : t.type === "warning"
+                ? "bg-amber-500"
+                : "bg-rose-500"
             }`}
           />
           <div className="flex flex-col justify-center px-4 py-3.5 flex-1 min-w-0">
             <p
               className={`text-[11px] font-extrabold uppercase tracking-widest mb-0.5 ${
-                t.type === "success" ? "text-emerald-600" : "text-rose-500"
+                t.type === "success"
+                  ? "text-emerald-600"
+                  : t.type === "warning"
+                  ? "text-amber-600"
+                  : "text-rose-500"
               }`}
             >
-              {t.type === "success" ? "Success" : "Error"}
+              {t.type === "success"
+                ? "Success"
+                : t.type === "warning"
+                ? "Warning"
+                : "Error"}
             </p>
             <p className="text-sm font-medium text-slate-700 leading-snug">
               {t.msg}
@@ -406,7 +432,11 @@ function ToastStack({ toasts }) {
           <div className="absolute bottom-0 left-1 right-0 h-[2px] bg-slate-100 rounded-b-xl overflow-hidden">
             <div
               className={`h-full ${
-                t.type === "success" ? "bg-emerald-400" : "bg-rose-400"
+                t.type === "success"
+                  ? "bg-emerald-400"
+                  : t.type === "warning"
+                  ? "bg-amber-400"
+                  : "bg-rose-400"
               }`}
               style={{ animation: "wt-toast-progress 3.5s linear forwards" }}
             />
@@ -823,8 +853,8 @@ function QuotationModal({
   const handleDelete = async () => {
     const ok = await confirm({
       title: "Delete Quotation",
-      message: `Permanently delete quotation #${
-        quotation.quoteNumber || quotation._id?.slice(-6).toUpperCase()
+      message: `Permanently delete quotation ${
+        quotation.quoteNumber || "#" + quotation._id?.slice(-6).toUpperCase()
       }?`,
       confirmLabel: "Delete",
       confirmStyle: "danger",
@@ -844,6 +874,17 @@ function QuotationModal({
     }
   };
 
+  // ── FIX 1: compute totals for display ────────────────────────────────────
+  const itemsSubtotal =
+    quotation.itemsSubtotal ??
+    quotation.items?.reduce((s, i) => s + (i.subtotal || 0), 0) ??
+    0;
+  const additionalTotal =
+    quotation.additionalTotal ??
+    quotation.additionalCharges?.reduce((s, c) => s + (c.total || 0), 0) ??
+    0;
+  const hasAdditionalCharges = quotation.additionalCharges?.length > 0;
+
   return (
     <>
       <Dialog />
@@ -854,10 +895,10 @@ function QuotationModal({
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
                 Quotation Request
               </p>
+              {/* ── FIX 2: show quoteNumber prominently ── */}
               <h2 className="font-black text-slate-900 text-xl tracking-tight">
-                #
                 {quotation.quoteNumber ||
-                  quotation._id?.slice(-6).toUpperCase()}
+                  `#${quotation._id?.slice(-6).toUpperCase()}`}
               </h2>
             </div>
             <div className="flex items-center gap-2">
@@ -876,7 +917,9 @@ function QuotationModal({
               </button>
             </div>
           </div>
+
           <div className="p-6 flex flex-col gap-5">
+            {/* Customer info */}
             <div className="bg-slate-50 rounded-2xl p-5 grid grid-cols-2 gap-4">
               {[
                 {
@@ -919,6 +962,8 @@ function QuotationModal({
                 </p>
               </div>
             </div>
+
+            {/* Order items */}
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Order Items
@@ -945,7 +990,7 @@ function QuotationModal({
                         {item.name}
                       </p>
                       <p className="text-xs text-slate-400 mt-0.5">
-                        Qty: {item.qty} × Ksh{" "}
+                        {item.qty} {item.unit || "pcs"} × Ksh{" "}
                         {item.price?.toLocaleString("en-KE")}
                       </p>
                     </div>
@@ -955,15 +1000,78 @@ function QuotationModal({
                   </div>
                 ))}
               </div>
-              <div className="flex justify-between items-center mt-4 pt-4 border-t border-slate-100">
-                <span className="text-base font-bold text-slate-900">
-                  Total
-                </span>
-                <span className="text-2xl font-black text-orange-500 tracking-tight">
-                  Ksh {quotation.total?.toLocaleString("en-KE")}
-                </span>
+
+              {/* ── FIX 1: Additional charges section ── */}
+              {hasAdditionalCharges && (
+                <div className="mt-4">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                    <Icon.Wrench className="w-3.5 h-3.5" /> Additional Charges
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    {quotation.additionalCharges.map((charge, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl border border-amber-100"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-white border border-amber-200 flex items-center justify-center shrink-0">
+                          <Icon.Wrench className="w-4 h-4 text-amber-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-extrabold text-amber-700 uppercase tracking-wide leading-none mb-0.5">
+                            {charge.category}
+                          </p>
+                          <p className="text-sm font-bold text-slate-900 truncate">
+                            {charge.description || `${charge.category} charges`}
+                          </p>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            {charge.quantity} × Ksh{" "}
+                            {Number(charge.price).toLocaleString("en-KE")}
+                          </p>
+                        </div>
+                        <p className="text-sm font-extrabold text-amber-600 shrink-0">
+                          Ksh {(charge.total || 0).toLocaleString("en-KE")}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ── FIX 1: Totals breakdown — shows subtotals when additional charges exist ── */}
+              <div className="mt-4 pt-4 border-t border-slate-100 space-y-2">
+                {hasAdditionalCharges && (
+                  <>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-slate-500 font-medium">
+                        Items Subtotal
+                      </span>
+                      <span className="text-sm font-bold text-slate-700">
+                        Ksh {itemsSubtotal.toLocaleString("en-KE")}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-amber-600 font-medium">
+                        Additional Charges
+                      </span>
+                      <span className="text-sm font-bold text-amber-600">
+                        Ksh {additionalTotal.toLocaleString("en-KE")}
+                      </span>
+                    </div>
+                    <div className="border-t border-slate-100 pt-2" />
+                  </>
+                )}
+                <div className="flex justify-between items-center">
+                  <span className="text-base font-bold text-slate-900">
+                    Grand Total
+                  </span>
+                  <span className="text-2xl font-black text-orange-500 tracking-tight">
+                    Ksh {quotation.total?.toLocaleString("en-KE")}
+                  </span>
+                </div>
               </div>
             </div>
+
+            {/* Customer notes */}
             {quotation.notes && (
               <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
                 <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">
@@ -974,6 +1082,8 @@ function QuotationModal({
                 </p>
               </div>
             )}
+
+            {/* Documents */}
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Documents
@@ -999,6 +1109,8 @@ function QuotationModal({
                 </button>
               </div>
             </div>
+
+            {/* Status update */}
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
                 Update Status
@@ -1027,6 +1139,8 @@ function QuotationModal({
                 className="w-full px-4 py-3 rounded-xl border border-slate-200 text-sm text-slate-900 focus:outline-none focus:border-orange-300 placeholder-slate-300 resize-none transition-colors"
               />
             </div>
+
+            {/* Actions */}
             <div className="flex gap-3">
               <button
                 onClick={onClose}
@@ -1275,7 +1389,6 @@ const TABS = [
   { id: "settings", label: "Settings", TabIcon: Icon.Settings },
 ];
 
-// ── DEFAULT SETTINGS STATE ────────────────────────────────────────────────────
 const DEFAULT_STORE_SETTINGS = {
   businessName: "Wimwa Tech General Supplies",
   contactEmail: "wimwatech@gmail.com",
@@ -1304,20 +1417,22 @@ export default function AdminDashboard() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [statusFilter, setStatusFilter] = useState("all");
-  const [quotationSort, setQuotationSort] = useState("newest"); // NEW
+  const [quotationSort, setQuotationSort] = useState("newest");
   const [searchQ, setSearchQ] = useState("");
   const [productSearch, setProductSearch] = useState("");
-  const [stockFilter, setStockFilter] = useState("all"); // NEW
-  const [customerSearch, setCustomerSearch] = useState(""); // NEW
+  const [stockFilter, setStockFilter] = useState("all");
+  const [customerSearch, setCustomerSearch] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
-  const [lastRefreshed, setLastRefreshed] = useState(null); // NEW
-
-  // NEW – controlled settings state so edits survive tab switches
+  const [lastRefreshed, setLastRefreshed] = useState(null);
   const [storeSettings, setStoreSettings] = useState(DEFAULT_STORE_SETTINGS);
   const [quotationSettings, setQuotationSettings] = useState(
     DEFAULT_QUOTATION_SETTINGS
   );
+  // ── FIX 3: session expiry warning state ──────────────────────────────────
+  const [showExpiryWarning, setShowExpiryWarning] = useState(false);
+  const expiryWarningTimerRef = useRef(null);
+  const expiryTimerRef = useRef(null);
 
   const addToast = (msg, type = "success") => {
     const id = Date.now() + Math.random();
@@ -1326,6 +1441,74 @@ export default function AdminDashboard() {
   };
 
   const hasFetched = useRef(false);
+
+  // ── FIX 3: session expiry warning setup ──────────────────────────────────
+  // Reads wt_session_expiry from localStorage and schedules:
+  //   - a warning toast + banner at 10 minutes before expiry
+  //   - listens for the 'wt:session-expired' event from AuthContext
+  useEffect(() => {
+    const scheduleExpiryWarning = () => {
+      const expiry = parseInt(
+        localStorage.getItem("wt_session_expiry") || "0",
+        10
+      );
+      if (!expiry) return;
+
+      const now = Date.now();
+      const msUntilExpiry = expiry - now;
+      const WARN_BEFORE_MS = 10 * 60 * 1000; // 10 minutes
+
+      // Clear any existing timers
+      if (expiryWarningTimerRef.current)
+        clearTimeout(expiryWarningTimerRef.current);
+      if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+
+      if (msUntilExpiry <= 0) {
+        // Already expired — AuthContext will handle the actual logout
+        return;
+      }
+
+      if (msUntilExpiry <= WARN_BEFORE_MS) {
+        // Less than 10 min left right now — show warning immediately
+        setShowExpiryWarning(true);
+        addToast(
+          "Your session expires in less than 10 minutes. Save your work.",
+          "warning"
+        );
+      } else {
+        // Schedule the warning for 10 min before expiry
+        expiryWarningTimerRef.current = setTimeout(() => {
+          setShowExpiryWarning(true);
+          addToast(
+            "Your session expires in 10 minutes. Save your work.",
+            "warning"
+          );
+        }, msUntilExpiry - WARN_BEFORE_MS);
+      }
+
+      // Also schedule hiding the banner once session actually expires
+      expiryTimerRef.current = setTimeout(() => {
+        setShowExpiryWarning(false);
+      }, msUntilExpiry);
+    };
+
+    scheduleExpiryWarning();
+
+    // Listen for the session-expired event fired by AuthContext
+    const handleExpired = () => {
+      setShowExpiryWarning(false);
+      addToast("Your session has expired. Please sign in again.", "error");
+      setTimeout(() => navigate("/login"), 2000);
+    };
+    window.addEventListener("wt:session-expired", handleExpired);
+
+    return () => {
+      window.removeEventListener("wt:session-expired", handleExpired);
+      if (expiryWarningTimerRef.current)
+        clearTimeout(expiryWarningTimerRef.current);
+      if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
+    };
+  }, [navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (authLoading) return;
@@ -1361,7 +1544,7 @@ export default function AdminDashboard() {
       setQuotations(unwrapList(qRes.data, "quotations"));
       setProducts(unwrapList(pRes.data, "products"));
       setCustomers(unwrapList(cRes.data, "users", "customers"));
-      setLastRefreshed(new Date()); // NEW
+      setLastRefreshed(new Date());
     } catch (err) {
       setFetchError(err.response?.data?.message || "Failed to load data.");
     } finally {
@@ -1442,7 +1625,6 @@ export default function AdminDashboard() {
     lowStock: products.filter((p) => p.stockStatus === "Low Stock").length,
   };
 
-  // ── QUOTATIONS: filter + sort ─────────────────────────────────────────────
   const filteredQuotations = quotations
     .filter((q) => {
       const ms = statusFilter === "all" || q.status === statusFilter;
@@ -1465,7 +1647,6 @@ export default function AdminDashboard() {
       return 0;
     });
 
-  // ── PRODUCTS: filter by search + stock status ─────────────────────────────
   const filteredProducts = products.filter((p) => {
     const matchSearch =
       !productSearch ||
@@ -1476,7 +1657,6 @@ export default function AdminDashboard() {
     return matchSearch && matchStock;
   });
 
-  // ── CUSTOMERS: filter by search ───────────────────────────────────────────
   const filteredCustomers = customers.filter(
     (c) =>
       !customerSearch ||
@@ -1484,7 +1664,6 @@ export default function AdminDashboard() {
       c.email?.toLowerCase().includes(customerSearch.toLowerCase())
   );
 
-  // quote count per customer email
   const quoteCountByEmail = quotations.reduce((acc, q) => {
     const email = q.customer?.email;
     if (email) acc[email] = (acc[email] || 0) + 1;
@@ -1504,7 +1683,6 @@ export default function AdminDashboard() {
 
   const activeTabData = TABS.find((t) => t.id === activeTab);
 
-  // ── SORT OPTIONS for quotations ───────────────────────────────────────────
   const SORT_OPTIONS = [
     { value: "newest", label: "Newest first" },
     { value: "oldest", label: "Oldest first" },
@@ -1512,7 +1690,6 @@ export default function AdminDashboard() {
     { value: "lowest", label: "Lowest value" },
   ];
 
-  // ── STOCK FILTER OPTIONS ──────────────────────────────────────────────────
   const STOCK_FILTER_OPTIONS = [
     {
       value: "all",
@@ -1544,6 +1721,35 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-slate-50 flex">
       <ToastStack toasts={toasts} />
       <ConfirmGlobal />
+
+      {/* ── FIX 3: Session expiry warning banner ── */}
+      {showExpiryWarning && (
+        <div className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-between gap-4 px-5 py-3 bg-amber-500 text-white shadow-lg">
+          <div className="flex items-center gap-2.5">
+            <Icon.Clock className="w-4 h-4 shrink-0" />
+            <p className="text-sm font-semibold">
+              Your session expires soon. Any unsaved work may be lost.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                logout();
+                navigate("/login");
+              }}
+              className="text-xs font-bold px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg transition-colors whitespace-nowrap"
+            >
+              Sign In Again
+            </button>
+            <button
+              onClick={() => setShowExpiryWarning(false)}
+              className="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded-lg transition-colors"
+            >
+              <Icon.X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {selectedQuotation && (
         <QuotationModal
@@ -1693,7 +1899,12 @@ export default function AdminDashboard() {
 
       {/* ── MAIN AREA ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        <header className="bg-white border-b border-slate-100 px-5 sm:px-6 h-16 flex items-center gap-4 sticky top-0 z-10 shadow-sm">
+        {/* ── FIX 3: push content down when warning banner is showing ── */}
+        <header
+          className={`bg-white border-b border-slate-100 px-5 sm:px-6 h-16 flex items-center gap-4 sticky z-10 shadow-sm ${
+            showExpiryWarning ? "top-[52px]" : "top-0"
+          }`}
+        >
           <button
             onClick={() => setSidebarOpen((o) => !o)}
             className="lg:hidden w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-100 transition-colors"
@@ -1714,7 +1925,6 @@ export default function AdminDashboard() {
             </div>
           </div>
           <div className="ml-auto flex items-center gap-2">
-            {/* NEW – last refreshed timestamp */}
             {lastRefreshed && (
               <span className="hidden md:flex items-center gap-1 text-xs text-slate-400 font-medium">
                 <Icon.Clock className="w-3.5 h-3.5" />
@@ -1932,9 +2142,11 @@ export default function AdminDashboard() {
                             onClick={() => setSelectedQuotation(q)}
                             className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-50 last:border-0 group"
                           >
+                            {/* ── FIX 2: show quoteNumber in overview recent list ── */}
                             <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
-                              <span className="text-[10px] font-extrabold text-orange-500">
-                                #{q._id?.slice(-3).toUpperCase()}
+                              <span className="text-[9px] font-extrabold text-orange-500 text-center leading-tight px-0.5">
+                                {q.quoteNumber ||
+                                  `#${q._id?.slice(-3).toUpperCase()}`}
                               </span>
                             </div>
                             <div className="flex-1 min-w-0">
@@ -1961,7 +2173,6 @@ export default function AdminDashboard() {
               {/* ── QUOTATIONS ── */}
               {activeTab === "quotations" && (
                 <div className="flex flex-col gap-5">
-                  {/* Search + Sort row */}
                   <div className="flex gap-3 flex-wrap">
                     <div className="relative flex-1 min-w-[200px]">
                       <Icon.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -1972,7 +2183,6 @@ export default function AdminDashboard() {
                         className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-orange-300 transition-colors"
                       />
                     </div>
-                    {/* NEW – sort control */}
                     <div className="relative">
                       <Icon.SortAsc className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
                       <select
@@ -1988,7 +2198,6 @@ export default function AdminDashboard() {
                       </select>
                     </div>
                   </div>
-                  {/* Status filter chips */}
                   <div className="flex gap-2 flex-wrap">
                     {["all", ...QUOTATION_STATUSES.map((s) => s.value)].map(
                       (s) => {
@@ -2018,7 +2227,6 @@ export default function AdminDashboard() {
                       }
                     )}
                   </div>
-                  {/* Result count */}
                   <p className="text-xs text-slate-400 font-medium -mt-2">
                     Showing {filteredQuotations.length} of {quotations.length}{" "}
                     quotation{quotations.length !== 1 ? "s" : ""}
@@ -2042,9 +2250,11 @@ export default function AdminDashboard() {
                               : ""
                           }`}
                         >
+                          {/* ── FIX 2: show quoteNumber in the quotations list ── */}
                           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 flex items-center justify-center shrink-0">
-                            <span className="text-[10px] font-black text-orange-500">
-                              #{q._id?.slice(-4).toUpperCase()}
+                            <span className="text-[9px] font-black text-orange-500 text-center leading-tight px-0.5">
+                              {q.quoteNumber ||
+                                `#${q._id?.slice(-4).toUpperCase()}`}
                             </span>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -2094,8 +2304,6 @@ export default function AdminDashboard() {
                       <Icon.Plus className="w-4 h-4" /> Add Product
                     </button>
                   </div>
-
-                  {/* NEW – clickable stock filter pills */}
                   <div className="flex gap-2 flex-wrap">
                     {STOCK_FILTER_OPTIONS.map(({ value, label, cls, ring }) => {
                       const count =
@@ -2120,13 +2328,10 @@ export default function AdminDashboard() {
                       );
                     })}
                   </div>
-
-                  {/* Result count */}
                   <p className="text-xs text-slate-400 font-medium -mt-2">
                     Showing {filteredProducts.length} of {products.length}{" "}
                     product{products.length !== 1 ? "s" : ""}
                   </p>
-
                   <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                     {filteredProducts.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-64 gap-3">
@@ -2223,7 +2428,6 @@ export default function AdminDashboard() {
               {/* ── CUSTOMERS ── */}
               {activeTab === "customers" && (
                 <div className="flex flex-col gap-5">
-                  {/* NEW – search bar for customers */}
                   <div className="flex gap-3 flex-wrap items-center">
                     <div className="relative flex-1 min-w-[200px]">
                       <Icon.Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
@@ -2240,7 +2444,6 @@ export default function AdminDashboard() {
                       admins
                     </span>
                   </div>
-                  {/* NEW – result count */}
                   <p className="text-xs text-slate-400 font-medium -mt-2">
                     Showing {filteredCustomers.length} of {customers.length}{" "}
                     customer{customers.length !== 1 ? "s" : ""}
@@ -2282,7 +2485,6 @@ export default function AdminDashboard() {
                               </p>
                             </div>
                             <div className="hidden sm:flex items-center gap-2 mr-2">
-                              {/* NEW – quote count badge, clickable */}
                               {custQuoteCount > 0 && (
                                 <button
                                   onClick={() => {
@@ -2342,7 +2544,6 @@ export default function AdminDashboard() {
               {/* ── SETTINGS ── */}
               {activeTab === "settings" && (
                 <div className="flex flex-col gap-5 max-w-3xl">
-                  {/* Store Information – fully controlled */}
                   <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-5">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-orange-100">
@@ -2384,7 +2585,6 @@ export default function AdminDashboard() {
                     </button>
                   </div>
 
-                  {/* Quotation Settings – fully controlled */}
                   <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-5">
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-orange-100">

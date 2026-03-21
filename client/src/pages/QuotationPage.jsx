@@ -159,7 +159,7 @@ function QuotationPage() {
   const uploadToCloudinary = async (file) => {
     const payload = new FormData();
     payload.append("image", file);
-    const token = localStorage.getItem("wt_token"); // ← FIX: was "token"
+    const token = localStorage.getItem("wt_token");
     const res = await axios.post(
       `${API_URL}/api/products/upload-image`,
       payload,
@@ -386,9 +386,6 @@ function QuotationPage() {
 
       setIsSaving(true);
 
-      // ── Map items to the shape the backend expects ────────────────────────
-      // Backend schema: { name, price, qty, subtotal, imageUrl, unit }
-      // Form state uses: { description, quantity, price, total, imageFile, ... }
       const mappedItems = [];
       for (const item of formData.items) {
         if (item.hasOptions && item.options.length > 0) {
@@ -424,7 +421,6 @@ function QuotationPage() {
         }
       }
 
-      // ── Sanitise additional charges ───────────────────────────────────────
       const mappedCharges = formData.additionalCharges.map((c) => ({
         category: c.category || "Labour",
         description: c.description || "",
@@ -433,9 +429,7 @@ function QuotationPage() {
         total: c.total || Number(c.quantity) * Number(c.price),
       }));
 
-      // ── Build payload matching backend schema ─────────────────────────────
-      // Backend requires: customer.{companyName, contactName, email}, items[].{name,qty,subtotal}, total
-      const token = localStorage.getItem("wt_token"); // ← FIX: was "token"
+      const token = localStorage.getItem("wt_token");
       await axios.post(
         `${API_URL}/api/quotations`,
         {
@@ -473,19 +467,41 @@ function QuotationPage() {
     }
   };
 
-  // ── PDF — smart page breaks, never cuts through a row ───────────────────
+  // ── PDF generation ────────────────────────────────────────────────────────
+  //
+  // PAGE-BREAK STRATEGY
+  // ───────────────────
+  // 1. Clone the quotation into an offscreen position:fixed container at top:0.
+  //    Because it's position:fixed, getBoundingClientRect().bottom for any
+  //    child equals its CSS-pixel distance from the container top — no scroll
+  //    offset needed.
+  //
+  // 2. Collect the bottom edge of every <tr> and direct block child in CSS px.
+  //
+  // 3. Render the full content with html2canvas at scale=2.
+  //    Canvas pixels = CSS pixels × 2 — so multiply every break point by 2
+  //    before comparing against canvas-space page boundaries.
+  //
+  // 4. Walk forward through the canvas, breaking at the last safe row bottom
+  //    that fits within each A4 page height (in canvas px).
+  //
+  // 5. MIN_TAIL_PX = 120 mm (in canvas px): if the remaining content after
+  //    the last break is less than this, absorb it into the previous page
+  //    rather than creating a near-empty last page. 120 mm is large enough
+  //    to cover the Terms & Conditions + Signature block (~100 mm tall).
+  // ─────────────────────────────────────────────────────────────────────────
   const downloadPDF = async () => {
     try {
       setIsGeneratingPDF(true);
       showNotification("Generating PDF...", "info");
       await new Promise((r) => setTimeout(r, 100));
 
+      const SCALE = 2;
       const A4_WIDTH_PX = 794;
-      const PADDING_PX = 40; // top/bottom padding on the offscreen container
+      const PADDING_PX = 40;
 
-      // ── 1. Build offscreen container ──────────────────────────────────────
-      const element = quotationRef.current;
-      const clone = element.cloneNode(true);
+      // ── 1. Clone into offscreen fixed container ───────────────────────────
+      const clone = quotationRef.current.cloneNode(true);
       const offscreen = document.createElement("div");
 
       offscreen.style.cssText = [
@@ -502,9 +518,7 @@ function QuotationPage() {
         "box-sizing:border-box",
       ].join(";");
 
-      clone.style.padding = "0";
-      clone.style.margin = "0";
-      clone.style.width = "100%";
+      clone.style.cssText += ";padding:0;margin:0;width:100%;";
 
       clone.querySelectorAll("*").forEach((el) => {
         const cs = window.getComputedStyle(el);
@@ -518,46 +532,29 @@ function QuotationPage() {
 
       offscreen.appendChild(clone);
       document.body.appendChild(offscreen);
-      await new Promise((r) => setTimeout(r, 250));
+      await new Promise((r) => setTimeout(r, 300));
 
-      // ── 2. Measure every block-level child to find safe break points ──────
-      // We walk the top-level children of the clone and record where each ends.
-      // A "safe break" is the gap between two siblings — never inside one.
-      const containerTop = offscreen.getBoundingClientRect().top;
-
-      // Collect all direct children that are meaningful (tr, div, p, etc.)
-      // We look at <tr> rows inside tables and top-level divs/paragraphs.
-      const allRows = [];
-
-      // Helper: add an element's bottom edge (relative to container top)
-      const addRows = (els) => {
+      // ── 2. Collect break points in CSS px ────────────────────────────────
+      const breaksCssPx = [];
+      const collect = (els) => {
         els.forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          if (rect.height > 0) {
-            allRows.push({
-              top: rect.top - containerTop,
-              bottom: rect.bottom - containerTop,
-            });
-          }
+          const r = el.getBoundingClientRect();
+          if (r.height > 0) breaksCssPx.push(r.bottom);
         });
       };
 
-      // Table rows
-      addRows(Array.from(clone.querySelectorAll("tr")));
-      // Top-level block children that are NOT inside a table
-      addRows(
+      collect(Array.from(clone.querySelectorAll("tr")));
+      collect(
         Array.from(clone.children).filter(
           (el) =>
             !["TABLE", "THEAD", "TBODY", "TR", "TD", "TH"].includes(el.tagName)
         )
       );
+      breaksCssPx.sort((a, b) => a - b);
 
-      // Sort by top position
-      allRows.sort((a, b) => a.top - b.top);
-
-      // ── 3. Render the full content as one tall canvas ─────────────────────
+      // ── 3. Render full canvas ─────────────────────────────────────────────
       const canvas = await html2canvas(offscreen, {
-        scale: 2,
+        scale: SCALE,
         backgroundColor: "#ffffff",
         useCORS: true,
         scrollX: 0,
@@ -568,117 +565,116 @@ function QuotationPage() {
 
       document.body.removeChild(offscreen);
 
-      // ── 4. Calculate page break positions ────────────────────────────────
-      // A4 at scale=2: canvas px per mm
+      // ── 4. Convert CSS px → canvas px ────────────────────────────────────
+      // CRITICAL: html2canvas scale=2 means 1 CSS px = 2 canvas px.
+      // All page-boundary comparisons must be in the same unit (canvas px).
+      const breaksCanvasPx = breaksCssPx.map((px) => Math.round(px * SCALE));
+
+      // ── 5. A4 dimensions ──────────────────────────────────────────────────
       const pdf = new jsPDF({
         orientation: "portrait",
         unit: "mm",
         format: "a4",
       });
-      const pageWidthMm = 210;
-      const pageHeightMm = 297;
-      const pxPerMm = canvas.width / pageWidthMm;
-      const pageHeightPx = pageHeightMm * pxPerMm;
+      const PAGE_W_MM = 210;
+      const PAGE_H_MM = 297;
+      const pxPerMm = canvas.width / PAGE_W_MM;
+      const pageHeightPx = PAGE_H_MM * pxPerMm;
       const totalHeightMm = canvas.height / pxPerMm;
 
-      if (totalHeightMm <= pageHeightMm) {
-        // Single page — fits entirely
+      // ── 6. Single-page shortcut ───────────────────────────────────────────
+      if (totalHeightMm <= PAGE_H_MM) {
         pdf.addImage(
           canvas.toDataURL("image/jpeg", 0.92),
           "JPEG",
           0,
           0,
-          pageWidthMm,
+          PAGE_W_MM,
           totalHeightMm
         );
-      } else {
-        /*
-         * Smart page-break algorithm:
-         * - Measure every row/block bottom edge in the DOM
-         * - Break pages at the last row that fully fits within A4 height
-         * - Absorb tiny trailing content (<20mm) into the previous page
-         *   to prevent near-empty last pages
-         */
-        const SCALE = 2;
+        pdf.save(`Quotation-${formData.quotationNumber}.pdf`);
+        showNotification("PDF downloaded successfully!");
+        return;
+      }
 
-        const uniqueBreaks = [
-          ...new Set(allRows.map((r) => Math.round(r.bottom * SCALE))),
-        ].sort((a, b) => a - b);
+      // ── 7. Multi-page slicing ─────────────────────────────────────────────
+      //
+      // MIN_TAIL_PX: if the content remaining after a break is smaller than
+      // this threshold, absorb it into the current page to avoid a near-empty
+      // last page. Set to 120 mm so the Terms & Conditions + Signature footer
+      // (which is ~100 mm) always gets pulled onto the previous page.
+      const MIN_TAIL_MM = 120;
+      const MIN_TAIL_PX = MIN_TAIL_MM * pxPerMm;
 
-        // Any trailing slice shorter than this gets absorbed into prev page
-        const MIN_SLICE_PX = 20 * pxPerMm;
+      const slices = [];
+      let pageStart = 0;
 
-        // Build slice list first, then render — so we can look ahead
-        const slices = [];
-        let pageStartPx = 0;
+      while (pageStart < canvas.height) {
+        const remaining = canvas.height - pageStart;
 
-        while (pageStartPx < canvas.height) {
-          const remaining = canvas.height - pageStartPx;
-
-          // If what's left is less than one full page, just take it all
-          if (remaining <= pageHeightPx) {
-            slices.push({ startPx: pageStartPx, endPx: canvas.height });
-            break;
-          }
-
-          const pageEndPx = pageStartPx + pageHeightPx;
-
-          // Find last safe break at or before the page boundary
-          let breakPx = pageEndPx;
-          for (let i = uniqueBreaks.length - 1; i >= 0; i--) {
-            if (uniqueBreaks[i] <= pageEndPx && uniqueBreaks[i] > pageStartPx) {
-              breakPx = uniqueBreaks[i];
-              break;
-            }
-          }
-          breakPx = Math.min(breakPx, canvas.height);
-
-          // If the remainder after this break would be tiny, absorb it
-          const remainderPx = canvas.height - breakPx;
-          if (remainderPx > 0 && remainderPx < MIN_SLICE_PX) {
-            slices.push({ startPx: pageStartPx, endPx: canvas.height });
-            break;
-          }
-
-          if (breakPx <= pageStartPx) break; // safety guard
-          slices.push({ startPx: pageStartPx, endPx: breakPx });
-          pageStartPx = breakPx;
+        // Everything left fits on one page — take it all
+        if (remaining <= pageHeightPx) {
+          slices.push({ start: pageStart, end: canvas.height });
+          break;
         }
 
-        // Render each slice onto its own PDF page
-        slices.forEach((slice, idx) => {
-          const sliceHeightPx = slice.endPx - slice.startPx;
-          if (sliceHeightPx <= 0) return;
+        const pageEnd = pageStart + pageHeightPx;
 
-          const sliceCanvas = document.createElement("canvas");
-          sliceCanvas.width = canvas.width;
-          sliceCanvas.height = sliceHeightPx;
-          sliceCanvas
-            .getContext("2d")
-            .drawImage(
-              canvas,
-              0,
-              slice.startPx,
-              canvas.width,
-              sliceHeightPx,
-              0,
-              0,
-              canvas.width,
-              sliceHeightPx
-            );
+        // Find the last safe break point that fits within this page
+        let breakAt = pageEnd; // fallback: hard cut
+        for (let i = breaksCanvasPx.length - 1; i >= 0; i--) {
+          if (breaksCanvasPx[i] <= pageEnd && breaksCanvasPx[i] > pageStart) {
+            breakAt = breaksCanvasPx[i];
+            break;
+          }
+        }
+        breakAt = Math.min(breakAt, canvas.height);
 
-          const sliceHeightMm = sliceHeightPx / pxPerMm;
-          if (idx > 0) pdf.addPage();
-          pdf.addImage(
-            sliceCanvas.toDataURL("image/jpeg", 0.92),
-            "JPEG",
-            0,
-            0,
-            pageWidthMm,
-            sliceHeightMm
-          );
-        });
+        // If the tail after this break is smaller than MIN_TAIL_PX,
+        // absorb the whole tail into the current page now
+        const tail = canvas.height - breakAt;
+        if (tail > 0 && tail < MIN_TAIL_PX) {
+          slices.push({ start: pageStart, end: canvas.height });
+          break;
+        }
+
+        if (breakAt <= pageStart) break; // safety guard
+        slices.push({ start: pageStart, end: breakAt });
+        pageStart = breakAt;
       }
+
+      // ── 8. Render each slice onto a PDF page ──────────────────────────────
+      slices.forEach((slice, idx) => {
+        const sliceH = slice.end - slice.start;
+        if (sliceH <= 0) return;
+
+        const tmp = document.createElement("canvas");
+        tmp.width = canvas.width;
+        tmp.height = sliceH;
+        tmp
+          .getContext("2d")
+          .drawImage(
+            canvas,
+            0,
+            slice.start,
+            canvas.width,
+            sliceH,
+            0,
+            0,
+            canvas.width,
+            sliceH
+          );
+
+        if (idx > 0) pdf.addPage();
+        pdf.addImage(
+          tmp.toDataURL("image/jpeg", 0.92),
+          "JPEG",
+          0,
+          0,
+          PAGE_W_MM,
+          sliceH / pxPerMm
+        );
+      });
 
       pdf.save(`Quotation-${formData.quotationNumber}.pdf`);
       showNotification("PDF downloaded successfully!");
@@ -764,7 +760,6 @@ function QuotationPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-4 justify-center mb-8">
-          {/* ── Save button — disabled + spinner while isSaving ── */}
           <button
             onClick={saveQuotation}
             disabled={isSaving}
@@ -921,7 +916,6 @@ function QuotationPage() {
                   key={index}
                   className="p-4 bg-slate-50 rounded-xl border-2 border-slate-200 space-y-3"
                 >
-                  {/* Item header */}
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-bold text-primary-600">
                       Item {index + 1}
@@ -1095,7 +1089,6 @@ function QuotationPage() {
                         Options will appear stacked under this category — the
                         client picks one.
                       </p>
-
                       <div className="space-y-3">
                         {item.options.map((opt, optIdx) => (
                           <div
@@ -1115,8 +1108,6 @@ function QuotationPage() {
                                 </button>
                               )}
                             </div>
-
-                            {/* Image + label + description */}
                             <div className="flex gap-2 items-start">
                               <ImageUploadField
                                 size="xs"
@@ -1167,8 +1158,6 @@ function QuotationPage() {
                                 </div>
                               </div>
                             </div>
-
-                            {/* Qty / Unit / Price — 3-column grid matching outer labels */}
                             <div className="grid grid-cols-3 gap-2">
                               <div>
                                 <label className="block text-xs font-semibold text-slate-500 mb-1">
@@ -1254,7 +1243,6 @@ function QuotationPage() {
                                 />
                               </div>
                             </div>
-
                             <div className="pt-1.5 border-t border-violet-100 flex justify-between items-center">
                               <span className="text-xs font-semibold text-slate-500">
                                 TOTAL:
@@ -1269,7 +1257,6 @@ function QuotationPage() {
                           </div>
                         ))}
                       </div>
-
                       <button
                         type="button"
                         onClick={() => addOption(index)}
@@ -1478,11 +1465,6 @@ function QuotationPage() {
               </p>
             </div>
 
-            {/*
-              quotationRef is what gets captured for PDF.
-              Fixed width + generous padding so the PDF snapshot always matches
-              the on-screen preview exactly.
-            */}
             <div
               ref={quotationRef}
               style={{
@@ -1669,13 +1651,10 @@ function QuotationPage() {
               </p>
 
               {/* ── Items Table ── */}
-              {/* Responsive column visibility — hides QTY+PRICE on narrow screens */}
               <style>{`
                 @media (max-width: 639px) {
-                  .quot-table th.col-qty,
-                  .quot-table td.col-qty,
-                  .quot-table th.col-price,
-                  .quot-table td.col-price { display: none !important; }
+                  .quot-table th.col-qty, .quot-table td.col-qty,
+                  .quot-table th.col-price, .quot-table td.col-price { display: none !important; }
                   .quot-table td.col-total-mobile-hint .hint { display: block; }
                 }
                 @media (min-width: 640px) {
@@ -1691,11 +1670,11 @@ function QuotationPage() {
                   style={{ tableLayout: "fixed" }}
                 >
                   <colgroup>
-                    <col style={{ width: "5%" }} /> {/* # */}
-                    <col style={{ width: "45%" }} /> {/* DESCRIPTION */}
-                    <col style={{ width: "15%" }} /> {/* QTY */}
-                    <col style={{ width: "17%" }} /> {/* PRICE */}
-                    <col style={{ width: "18%" }} /> {/* TOTAL */}
+                    <col style={{ width: "5%" }} />
+                    <col style={{ width: "45%" }} />
+                    <col style={{ width: "15%" }} />
+                    <col style={{ width: "17%" }} />
+                    <col style={{ width: "18%" }} />
                   </colgroup>
                   <thead>
                     <tr className="bg-slate-800 text-white">
@@ -1718,7 +1697,6 @@ function QuotationPage() {
                   </thead>
                   <tbody>
                     {formData.items.map((item, index) => {
-                      // ── Standard single row ──
                       if (!item.hasOptions || item.options.length === 0) {
                         return (
                           <tr
@@ -1774,12 +1752,8 @@ function QuotationPage() {
                         );
                       }
 
-                      // ── Multi-option: category header row + one <tr> per option ──
-                      // Uses React.Fragment so every option row sits as a proper <tr>
-                      // and its cells align perfectly with #/DESCRIPTION/QTY/PRICE/TOTAL
                       return (
                         <React.Fragment key={index}>
-                          {/* Category header */}
                           <tr className="bg-slate-100 border-t-2 border-slate-300">
                             <td className="p-2 sm:p-3 font-medium text-slate-600 text-[10px] sm:text-xs align-middle">
                               {index + 1}
@@ -1796,8 +1770,6 @@ function QuotationPage() {
                               </div>
                             </td>
                           </tr>
-
-                          {/* One row per option — cells aligned to the outer column headers */}
                           {item.options.map((opt, optIdx) => (
                             <tr
                               key={optIdx}
@@ -1811,7 +1783,6 @@ function QuotationPage() {
                                   optIdx % 2 === 0 ? "#f5f3ff" : "#ffffff",
                               }}
                             >
-                              {/* # — option letter badge, aligned under # header */}
                               <td className="p-2 sm:p-3 align-middle">
                                 <div className="w-6 h-6 rounded bg-violet-700 flex items-center justify-center mx-auto">
                                   <span className="text-white font-black text-[10px] uppercase leading-none">
@@ -1819,8 +1790,6 @@ function QuotationPage() {
                                   </span>
                                 </div>
                               </td>
-
-                              {/* DESCRIPTION — image + label + description text */}
                               <td className="p-2 sm:p-3 align-middle">
                                 <div className="flex items-center gap-2">
                                   {opt.imagePreview && (
@@ -1850,21 +1819,15 @@ function QuotationPage() {
                                   </div>
                                 </div>
                               </td>
-
-                              {/* QTY — hidden on mobile via .col-qty CSS */}
                               <td className="col-qty p-2 sm:p-3 text-center font-semibold text-slate-800 text-xs sm:text-sm align-middle whitespace-nowrap">
                                 {opt.quantity} {opt.unit}
                               </td>
-
-                              {/* PRICE — hidden on mobile via .col-price CSS */}
                               <td className="col-price p-2 sm:p-3 text-right text-slate-800 text-xs sm:text-sm align-middle whitespace-nowrap">
                                 Ksh{" "}
                                 {Number(opt.price).toLocaleString("en-KE", {
                                   minimumFractionDigits: 2,
                                 })}
                               </td>
-
-                              {/* TOTAL — always visible; hint shows qty×price on mobile */}
                               <td className="col-total-mobile-hint p-2 sm:p-3 text-right align-middle whitespace-nowrap">
                                 <span className="hint text-[10px] text-slate-400 font-normal mb-0.5 block">
                                   {opt.quantity} {opt.unit} × Ksh{" "}
@@ -1881,8 +1844,6 @@ function QuotationPage() {
                               </td>
                             </tr>
                           ))}
-
-                          {/* Footer note */}
                           <tr>
                             <td colSpan={5} className="px-3 pb-2 pt-0.5">
                               <p className="text-[10px] text-slate-400 italic">
@@ -1897,7 +1858,7 @@ function QuotationPage() {
                 </table>
               </div>
 
-              {/* Items subtotal (only shown when additional charges exist) */}
+              {/* Items subtotal */}
               {formData.additionalCharges.length > 0 && (
                 <div className="flex justify-end mb-3">
                   <div className="flex items-center gap-8 text-sm text-slate-600">

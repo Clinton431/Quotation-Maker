@@ -1,3 +1,6 @@
+// server/models/Product.js
+// Added: images[] array for additional product photos
+
 const mongoose = require("mongoose");
 
 const productSchema = new mongoose.Schema(
@@ -12,8 +15,19 @@ const productSchema = new mongoose.Schema(
       enum: ["In Stock", "Low Stock", "Out of Stock"],
       default: "In Stock",
     },
+    // Primary / cover image (existing)
     imageUrl: { type: String, default: "" },
     cloudinaryId: { type: String, default: "" },
+
+    // ── NEW: additional gallery images ──────────────────────────────────────
+    // Each entry: { url: String, cloudinaryId: String }
+    images: [
+      {
+        url: { type: String, required: true },
+        cloudinaryId: { type: String, default: "" },
+      },
+    ],
+
     isActive: { type: Boolean, default: true },
   },
   { timestamps: true }

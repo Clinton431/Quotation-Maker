@@ -3,12 +3,30 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
 import AuthPromptModal from "../components/AuthPromptModal";
+import { Icon } from "../components/icons";
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 // ── CART HOOK ─────────────────────────────────────────────────────────────────
+const CART_KEY = "wt_cart";
+
 function useCart() {
-  const [cart, setCart] = useState([]);
+  const [cart, setCart] = useState(() => {
+    try {
+      const saved = localStorage.getItem(CART_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [cart]);
 
   const addToCart = (product) => {
     setCart((prev) => {
@@ -18,6 +36,18 @@ function useCart() {
           i._id === product._id ? { ...i, qty: i.qty + 1 } : i
         );
       return [...prev, { ...product, qty: 1 }];
+    });
+  };
+
+  const addWithQty = (product) => {
+    const qty = product.qty || 1;
+    setCart((prev) => {
+      const existing = prev.find((i) => i._id === product._id);
+      if (existing)
+        return prev.map((i) =>
+          i._id === product._id ? { ...i, qty: i.qty + qty } : i
+        );
+      return [...prev, { ...product, qty }];
     });
   };
 
@@ -32,13 +62,22 @@ function useCart() {
     setCart((prev) => prev.map((i) => (i._id === id ? { ...i, qty } : i)));
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+    try {
+      localStorage.removeItem(CART_KEY);
+    } catch {
+      /* ignore */
+    }
+  };
+
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
   const count = cart.reduce((s, i) => s + i.qty, 0);
 
   return {
     cart,
     addToCart,
+    addWithQty,
     removeFromCart,
     updateQty,
     clearCart,
@@ -59,478 +98,379 @@ function unwrapList(responseData, ...keys) {
   return [];
 }
 
-// ── HERO ANIMATION ITEMS ──────────────────────────────────────────────────────
-const SHOP_ITEMS = [
-  {
-    id: 1,
-    name: "HP LaserJet Pro M404n",
-    cat: "Printers",
-    price: 28500,
-    emoji: "🖨️",
-    color: "#3b82f6",
-  },
-  {
-    id: 2,
-    name: "UPS 1500VA APC",
-    cat: "Power",
-    price: 14200,
-    emoji: "🔋",
-    color: "#f59e0b",
-  },
-  {
-    id: 3,
-    name: "CAT6 Cable Roll 305m",
-    cat: "Networking",
-    price: 4800,
-    emoji: "🔌",
-    color: "#10b981",
-  },
-  {
-    id: 4,
-    name: 'Dell 24" Monitor P2422H',
-    cat: "Displays",
-    price: 32000,
-    emoji: "🖥️",
-    color: "#8b5cf6",
-  },
-  {
-    id: 5,
-    name: "Logitech MX Keys Combo",
-    cat: "Peripherals",
-    price: 9600,
-    emoji: "⌨️",
-    color: "#ec4899",
-  },
-  {
-    id: 6,
-    name: "D-Link 24-Port Switch",
-    cat: "Networking",
-    price: 18500,
-    emoji: "🌐",
-    color: "#06b6d4",
-  },
-  {
-    id: 7,
-    name: "Cement 50kg Portland",
-    cat: "Construction",
-    price: 820,
-    emoji: "🏗️",
-    color: "#f97316",
-  },
-  {
-    id: 8,
-    name: "CCTV Kit 8-Channel HD",
-    cat: "Security",
-    price: 42000,
-    emoji: "📷",
-    color: "#ef4444",
-  },
+// ── VERTICAL MARQUEE STRIP ────────────────────────────────────────────────────
+const MARQUEE_ITEMS = [
+  { emoji: "🖨️", label: "HP LaserJet M404n", price: "Ksh 28,500" },
+  { emoji: "🔋", label: "APC UPS 1500VA", price: "Ksh 14,200" },
+  { emoji: "🌐", label: "D-Link 24-Port Switch", price: "Ksh 18,500" },
+  { emoji: "📷", label: "CCTV 8-Channel HD", price: "Ksh 42,000" },
+  { emoji: "🖥️", label: 'Dell 24" P2422H', price: "Ksh 32,000" },
+  { emoji: "🏗️", label: "Portland Cement 50kg", price: "Ksh 820" },
+  { emoji: "⌨️", label: "Logitech MX Keys", price: "Ksh 9,600" },
+  { emoji: "🔌", label: "CAT6 Cable 305m", price: "Ksh 4,800" },
 ];
 
-// ── ANIMATED HERO CART CARD ───────────────────────────────────────────────────
-function HeroCartCard() {
-  const [cartItems, setCartItems] = useState([]);
-  const [currentItemIdx, setCurrentItemIdx] = useState(0);
-  const [phase, setPhase] = useState("idle");
-  const [flyItem, setFlyItem] = useState(null);
-  const [highlight, setHighlight] = useState(null);
-  const [mounted, setMounted] = useState(false);
-  const [notification, setNotification] = useState(null);
+function VerticalMarquee() {
+  const doubled = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
+  return (
+    <div
+      className="relative overflow-hidden"
+      style={{
+        height: "100%",
+        maskImage:
+          "linear-gradient(to bottom, transparent 0%, black 15%, black 85%, transparent 100%)",
+      }}
+    >
+      <style>{`
+        @keyframes marquee-up {
+          0%   { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
+        }
+        .marquee-track { animation: marquee-up 22s linear infinite; }
+        .marquee-track:hover { animation-play-state: paused; }
+      `}</style>
+      <div className="marquee-track flex flex-col gap-2">
+        {doubled.map((item, i) => (
+          <div
+            key={i}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl"
+            style={{
+              background: "rgba(255,255,255,0.05)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              minWidth: 0,
+            }}
+          >
+            <span className="text-lg shrink-0">{item.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-semibold text-white/80 truncate leading-tight">
+                {item.label}
+              </p>
+              <p className="text-[10px] font-black text-orange-400 leading-tight">
+                {item.price}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── STAT COUNTER ──────────────────────────────────────────────────────────────
+function StatCounter({ end, suffix = "", duration = 1800 }) {
+  const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => setMounted(true), 120);
+    const t = setTimeout(() => setStarted(true), 400);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
-    const cycle = () => {
-      const item = SHOP_ITEMS[currentItemIdx % SHOP_ITEMS.length];
-      setPhase("adding");
-      setFlyItem(item);
-      setTimeout(() => {
-        setPhase("added");
-        setFlyItem(null);
-        setHighlight(item.id);
-        setCartItems((prev) => {
-          const exists = prev.find((i) => i.id === item.id);
-          if (exists)
-            return prev.map((i) =>
-              i.id === item.id ? { ...i, qty: i.qty + 1 } : i
-            );
-          const base = prev.length >= 4 ? prev.slice(1) : prev;
-          return [...base, { ...item, qty: 1 }];
-        });
-        setNotification(`${item.name.split(" ").slice(0, 2).join(" ")} added!`);
-        setTimeout(() => {
-          setHighlight(null);
-          setNotification(null);
-          setPhase("idle");
-          setCurrentItemIdx((i) => i + 1);
-        }, 1400);
-      }, 900);
-    };
-    const t = setTimeout(cycle, phase === "idle" ? 1800 : 100);
-    return () => clearTimeout(t);
-  }, [mounted, currentItemIdx, phase]);
+    if (!started) return;
+    const steps = 40;
+    const step = end / steps;
+    let current = 0;
+    const interval = setInterval(() => {
+      current += step;
+      if (current >= end) {
+        setCount(end);
+        clearInterval(interval);
+      } else {
+        setCount(Math.floor(current));
+      }
+    }, duration / steps);
+    return () => clearInterval(interval);
+  }, [started, end, duration]);
 
-  const cartTotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
+  return (
+    <>
+      {count.toLocaleString()}
+      {suffix}
+    </>
+  );
+}
+
+// ── CAPABILITY CARD ───────────────────────────────────────────────────────────
+const CAPABILITIES = [
+  {
+    icon: "🖨️",
+    title: "Technology",
+    items: [
+      "Printers & Scanners",
+      "Monitors & Displays",
+      // "Peripherals & Cables",
+    ],
+    accent: "#3b82f6",
+    bg: "rgba(59,130,246,0.08)",
+    border: "rgba(59,130,246,0.18)",
+  },
+  {
+    icon: "🌐",
+    title: "Networking & Security",
+    items: [
+      "Switches & Routers",
+      "CCTV & Access Control",
+      // "UPS & Power Backup",
+    ],
+    accent: "#06b6d4",
+    bg: "rgba(6,182,212,0.08)",
+    border: "rgba(6,182,212,0.18)",
+  },
+  {
+    icon: "🏗️",
+    title: "Construction",
+    items: ["Cement & Aggregates", "Steel & Hardware"],
+    accent: "#f97316",
+    bg: "rgba(249,115,22,0.08)",
+    border: "rgba(249,115,22,0.18)",
+  },
+];
+
+function CapabilityCard({ cap, delay, visible }) {
+  return (
+    <div
+      style={{
+        background: cap.bg,
+        border: `1px solid ${cap.border}`,
+        borderRadius: "16px",
+        padding: "14px 16px",
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(18px)",
+        transition: `opacity 0.55s ease ${delay}ms, transform 0.55s cubic-bezier(.22,1,.36,1) ${delay}ms`,
+      }}
+    >
+      <div className="flex items-center gap-2.5 mb-2.5">
+        <span
+          className="w-8 h-8 rounded-lg flex items-center justify-center text-base shrink-0"
+          style={{ background: `${cap.accent}18` }}
+        >
+          {cap.icon}
+        </span>
+        <p className="text-[12px] font-bold text-white/90">{cap.title}</p>
+      </div>
+      <div className="space-y-1">
+        {cap.items.map((item) => (
+          <div key={item} className="flex items-center gap-2">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+              <circle cx="5" cy="5" r="2" fill={cap.accent} opacity="0.7" />
+            </svg>
+            <span className="text-[10px] text-white/50">{item}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ── RIGHT PANEL ───────────────────────────────────────────────────────────────
+function HeroRightPanel() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => setVisible(true), 120);
+    return () => clearTimeout(t);
+  }, []);
 
   return (
     <div
-      className="relative w-full select-none"
       style={{
-        opacity: mounted ? 1 : 0,
-        transform: mounted
-          ? "translateY(0) scale(1)"
-          : "translateY(36px) scale(0.95)",
+        opacity: visible ? 1 : 0,
+        transform: visible ? "translateY(0)" : "translateY(28px)",
         transition:
-          "opacity 0.75s cubic-bezier(.22,1,.36,1) 0.15s, transform 0.75s cubic-bezier(.22,1,.36,1) 0.15s",
+          "opacity 0.7s cubic-bezier(.22,1,.36,1) 0.1s, transform 0.7s cubic-bezier(.22,1,.36,1) 0.1s",
       }}
+      className="w-full"
     >
+      {/* Outer card */}
       <div
-        className="absolute inset-0 sm:-inset-5 rounded-[34px] pointer-events-none"
+        className="relative w-full overflow-hidden"
         style={{
           background:
-            "radial-gradient(ellipse at 55% 45%,rgba(251,146,60,0.22) 0%,transparent 68%)",
-          filter: "blur(18px)",
-        }}
-      />
-      <div
-        className="relative rounded-[22px] overflow-hidden"
-        style={{
-          background:
-            "linear-gradient(160deg,rgba(17,24,39,0.99) 0%,rgba(9,15,30,1) 100%)",
-          border: "1px solid rgba(255,255,255,0.11)",
+            "linear-gradient(160deg, rgba(17,24,39,0.98) 0%, rgba(9,14,26,1) 100%)",
+          border: "1px solid rgba(255,255,255,0.09)",
+          borderRadius: "24px",
           boxShadow:
-            "0 36px 90px rgba(0,0,0,0.65), 0 0 0 1px rgba(251,146,60,0.09), inset 0 1px 0 rgba(255,255,255,0.09)",
+            "0 40px 100px rgba(0,0,0,0.6), 0 0 0 1px rgba(249,115,22,0.07)",
         }}
       >
-        {/* Window chrome */}
+        {/* Ambient glow */}
         <div
-          className="flex items-center justify-between px-4 py-3 border-b border-white/[0.08]"
-          style={{ background: "rgba(255,255,255,0.04)" }}
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(ellipse at 70% 20%, rgba(249,115,22,0.12) 0%, transparent 60%)",
+          }}
+        />
+
+        {/* Header */}
+        <div
+          className="relative px-5 py-4 flex items-center justify-between"
+          style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="flex gap-1.5">
               {["#ff5f56", "#ffbd2e", "#27c93f"].map((c) => (
                 <div
                   key={c}
-                  className="w-[10px] h-[10px] rounded-full"
+                  className="w-2.5 h-2.5 rounded-full"
                   style={{ background: c }}
                 />
               ))}
             </div>
             <div
-              className="flex items-center gap-1.5 rounded-md px-2.5 py-1"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg ml-1"
               style={{
                 background: "rgba(255,255,255,0.04)",
                 border: "1px solid rgba(255,255,255,0.07)",
               }}
             >
               <svg
-                className="w-2.5 h-2.5 text-emerald-400"
+                className="w-2 h-2 text-emerald-400"
+                viewBox="0 0 8 8"
                 fill="currentColor"
-                viewBox="0 0 20 20"
               >
-                <path
-                  fillRule="evenodd"
-                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
-                  clipRule="evenodd"
-                />
+                <circle cx="4" cy="4" r="4" />
               </svg>
-              <span className="text-[10px] font-mono text-white/25 tracking-tight">
+              <span className="text-[9px] font-mono text-white/30 tracking-tight">
                 wimwatech.co.ke
               </span>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
+            style={{
+              background: "rgba(16,185,129,0.09)",
+              border: "1px solid rgba(16,185,129,0.2)",
+            }}
+          >
+            <span className="relative flex w-1.5 h-1.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50" />
+              <span className="relative inline-flex rounded-full w-1.5 h-1.5 bg-emerald-400" />
+            </span>
+            <span className="text-[9px] font-bold text-emerald-400 tracking-wider">
+              OPEN
+            </span>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="relative p-5">
+          {/* Stats row */}
+          <div className="grid grid-cols-3 gap-2.5 mb-5">
+            {[
+              { label: "Products", end: 500, suffix: "+", color: "#fb923c" },
+              { label: "Businesses", end: 500, suffix: "+", color: "#34d399" },
+              { label: "Counties", end: 47, suffix: "", color: "#60a5fa" },
+            ].map((s) => (
+              <div
+                key={s.label}
+                className="flex flex-col items-center py-3 rounded-2xl"
+                style={{
+                  background: "rgba(255,255,255,0.04)",
+                  border: "1px solid rgba(255,255,255,0.07)",
+                }}
+              >
+                <span
+                  className="text-[18px] font-black font-mono leading-tight"
+                  style={{ color: s.color }}
+                >
+                  <StatCounter end={s.end} suffix={s.suffix} />
+                </span>
+                <span className="text-[9px] text-white/35 mt-0.5 uppercase tracking-wider">
+                  {s.label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Capability cards + marquee */}
+          <div className="flex gap-3" style={{ minHeight: "220px" }}>
+            {/* Left: capability cards */}
+            <div className="flex flex-col gap-2 flex-1">
+              {CAPABILITIES.map((cap, i) => (
+                <CapabilityCard
+                  key={cap.title}
+                  cap={cap}
+                  delay={300 + i * 100}
+                  visible={visible}
+                />
+              ))}
+            </div>
+            {/* Right: marquee strip */}
             <div
-              className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+              className="shrink-0 rounded-2xl overflow-hidden p-2"
               style={{
-                background: "rgba(249,115,22,0.12)",
-                border: "1px solid rgba(249,115,22,0.25)",
+                width: "128px",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+                height: "270px",
+              }}
+            >
+              <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest mb-2 text-center">
+                Live Catalog
+              </p>
+              <VerticalMarquee />
+            </div>
+          </div>
+
+          {/* Quotation CTA */}
+          <div
+            className="mt-4 flex items-center justify-between px-4 py-3 rounded-2xl"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.1) 100%)",
+              border: "1px solid rgba(249,115,22,0.25)",
+            }}
+          >
+            <div>
+              <p className="text-[11px] font-bold text-white/80">
+                Same-day PDF Quotation
+              </p>
+              <p className="text-[9px] text-white/35 mt-0.5">
+                Add items → Request → Receive in 2 hrs
+              </p>
+            </div>
+            <div
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl"
+              style={{
+                background: "linear-gradient(135deg, #fb923c, #ea580c)",
+                boxShadow: "0 4px 16px rgba(249,115,22,0.4)",
               }}
             >
               <svg
-                width="11"
-                height="11"
+                width="10"
+                height="10"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#fb923c"
+                stroke="white"
                 strokeWidth="2.5"
               >
-                <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <path d="M16 10a4 4 0 01-8 0" />
+                <path d="M14 2H6a2 2 0 00-2 2v16l3-2 2 2 2-2 2 2 2-2 3 2V4a2 2 0 00-2-2z" />
+                <line x1="9" y1="9" x2="15" y2="9" />
+                <line x1="9" y1="13" x2="15" y2="13" />
               </svg>
-              <span className="text-[10px] font-black text-orange-400">
-                {cartItems.reduce((s, i) => s + i.qty, 0)}
-              </span>
-            </div>
-            <div
-              className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
-              style={{
-                background: "rgba(16,185,129,0.09)",
-                border: "1px solid rgba(16,185,129,0.2)",
-              }}
-            >
-              <span className="relative flex w-2 h-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-50" />
-                <span className="relative inline-flex rounded-full w-2 h-2 bg-emerald-400" />
-              </span>
-              <span className="text-[10px] font-bold text-emerald-400 tracking-wider">
-                LIVE
-              </span>
+              <span className="text-[10px] font-black text-white">Quote</span>
             </div>
           </div>
         </div>
-        <div className="px-4 pt-3.5 pb-2.5 flex items-center justify-between border-b border-white/[0.07]">
-          <div className="flex items-center gap-2.5">
-            <div
-              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-              style={{
-                background: "linear-gradient(135deg,#fb923c,#ea580c)",
-                boxShadow: "0 3px 12px rgba(249,115,22,0.45)",
-              }}
-            >
-              <span className="text-white font-black text-[10px]">W</span>
-            </div>
-            <div>
-              <div className="text-[11px] font-bold text-white/90 leading-tight">
-                Wimwa Tech Shop
-              </div>
-              <div className="text-[9px] text-white/40 mt-0.5">
-                General Supplies Ltd
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <div className="text-[9px] text-white/35 uppercase tracking-widest">
-              Total
-            </div>
-            <div
-              className="text-[15px] font-black font-mono transition-all duration-300"
-              style={{
-                color: cartTotal > 0 ? "#fb923c" : "rgba(255,255,255,0.25)",
-              }}
-            >
-              {cartTotal > 0
-                ? `Ksh ${cartTotal.toLocaleString("en-KE")}`
-                : "Ksh 0"}
-            </div>
-          </div>
-        </div>
-        <div className="px-4 pt-3 pb-2">
-          <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2">
-            Browsing
-          </div>
-          <div className="grid grid-cols-4 gap-1.5">
-            {SHOP_ITEMS.slice(0, 8).map((item, i) => {
-              const isActive = i === currentItemIdx % SHOP_ITEMS.length;
-              const inCart = cartItems.some((c) => c.id === item.id);
-              return (
-                <div
-                  key={item.id}
-                  className="relative rounded-xl p-2 flex flex-col items-center gap-1 transition-all duration-300 cursor-default"
-                  style={{
-                    background: isActive
-                      ? `${item.color}18`
-                      : inCart
-                      ? "rgba(249,115,22,0.07)"
-                      : "rgba(255,255,255,0.04)",
-                    border: isActive
-                      ? `1px solid ${item.color}40`
-                      : inCart
-                      ? "1px solid rgba(249,115,22,0.2)"
-                      : "1px solid rgba(255,255,255,0.07)",
-                    transform: isActive ? "scale(1.06)" : "scale(1)",
-                  }}
-                >
-                  <span className="text-base leading-none">{item.emoji}</span>
-                  <span className="text-[7px] font-semibold leading-tight text-white/50 truncate w-full text-center">
-                    {item.cat}
-                  </span>
-                  {inCart && (
-                    <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-orange-500 flex items-center justify-center">
-                      <svg
-                        width="8"
-                        height="8"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="white"
-                        strokeWidth="3.5"
-                      >
-                        <polyline points="20 6 9 17 4 12" />
-                      </svg>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        {flyItem && (
-          <div
-            className="absolute left-1/2 -translate-x-1/2 z-20 px-3 py-2 rounded-xl flex items-center gap-2 pointer-events-none"
-            style={{
-              top: "42%",
-              background: "rgba(17,24,39,0.95)",
-              border: `1px solid ${flyItem.color}50`,
-              boxShadow: `0 8px 30px rgba(0,0,0,0.5), 0 0 0 1px ${flyItem.color}30`,
-              animation: "flyToCart 0.9s cubic-bezier(.22,1,.36,1) forwards",
-            }}
-          >
-            <span className="text-xl">{flyItem.emoji}</span>
-            <div>
-              <div className="text-[11px] font-bold text-white/90 leading-tight truncate max-w-[130px]">
-                {flyItem.name.split(" ").slice(0, 3).join(" ")}
-              </div>
-              <div
-                className="text-[10px] font-bold mt-0.5"
-                style={{ color: flyItem.color }}
-              >
-                + Adding to cart
-              </div>
-            </div>
-          </div>
-        )}
-        {/* Cart items list */}
-        <div className="px-4 pt-1 pb-3">
-          <div className="text-[9px] font-bold text-white/30 uppercase tracking-widest mb-2 flex items-center justify-between">
-            <span>Cart</span>
-            {cartItems.length > 0 && (
-              <span className="text-orange-400/70">
-                {cartItems.length} item{cartItems.length !== 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
-          <div className="space-y-1.5 min-h-[88px]">
-            {cartItems.length === 0 ? (
-              <div
-                className="flex items-center justify-center h-20 rounded-xl"
-                style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px dashed rgba(255,255,255,0.08)",
-                }}
-              >
-                <div className="text-center">
-                  <svg
-                    className="w-6 h-6 mx-auto mb-1 opacity-20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="1.5"
-                  >
-                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                    <line x1="3" y1="6" x2="21" y2="6" />
-                    <path d="M16 10a4 4 0 01-8 0" />
-                  </svg>
-                  <p className="text-[9px] text-white/20">Cart is empty</p>
-                </div>
-              </div>
-            ) : (
-              cartItems.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-500"
-                  style={{
-                    background:
-                      highlight === item.id
-                        ? `${item.color}18`
-                        : "rgba(255,255,255,0.05)",
-                    border:
-                      highlight === item.id
-                        ? `1px solid ${item.color}35`
-                        : "1px solid rgba(255,255,255,0.07)",
-                    transform:
-                      highlight === item.id ? "scale(1.015)" : "scale(1)",
-                  }}
-                >
-                  <span className="text-base flex-shrink-0">{item.emoji}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-[10px] font-semibold text-white/80 truncate">
-                      {item.name.split(" ").slice(0, 3).join(" ")}
-                    </div>
-                    <div
-                      className="text-[9px] font-bold mt-0.5"
-                      style={{ color: item.color }}
-                    >
-                      Ksh {(item.price * item.qty).toLocaleString("en-KE")}
-                    </div>
-                  </div>
-                  <div
-                    className="text-[9px] font-black text-white/40 px-1.5 py-0.5 rounded-md flex-shrink-0"
-                    style={{ background: "rgba(255,255,255,0.07)" }}
-                  >
-                    ×{item.qty}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-        {/* Checkout bar */}
-        <div className="px-4 pb-4">
-          <div
-            className="w-full py-2.5 rounded-xl flex items-center justify-between px-4"
-            style={{
-              background:
-                cartItems.length > 0
-                  ? "linear-gradient(135deg,#fb923c,#ea580c)"
-                  : "rgba(255,255,255,0.05)",
-              boxShadow:
-                cartItems.length > 0
-                  ? "0 4px 20px rgba(249,115,22,0.35)"
-                  : "none",
-              border:
-                cartItems.length > 0
-                  ? "none"
-                  : "1px solid rgba(255,255,255,0.08)",
-              transition: "all 0.4s ease",
-            }}
-          >
-            <span className="text-[11px] font-bold text-white/70">
-              {cartItems.length > 0 ? "Checkout" : "Add items to cart"}
-            </span>
-            <span className="text-[11px] font-black text-white/80">
-              {cartItems.length > 0
-                ? `Ksh ${cartTotal.toLocaleString("en-KE")} →`
-                : "—"}
-            </span>
-          </div>
-        </div>
+
+        {/* Bottom accent line */}
+        <div
+          className="h-0.5 w-full"
+          style={{
+            background:
+              "linear-gradient(90deg, transparent 0%, rgba(249,115,22,0.6) 40%, rgba(251,146,60,0.3) 70%, transparent 100%)",
+          }}
+        />
       </div>
-      {/* Toast */}
+
+      {/* Reflection shadow */}
       <div
-        className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-2 rounded-full text-[10px] font-bold text-white flex items-center gap-1.5 pointer-events-none transition-all duration-300"
-        style={{
-          background: "rgba(16,185,129,0.15)",
-          border: "1px solid rgba(16,185,129,0.3)",
-          backdropFilter: "blur(12px)",
-          opacity: notification ? 1 : 0,
-          transform: notification
-            ? "translateY(0) scale(1)"
-            : "translateY(6px) scale(0.95)",
-          whiteSpace: "nowrap",
-        }}
-      >
-        <svg
-          width="10"
-          height="10"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#34d399"
-          strokeWidth="3"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-        <span className="text-emerald-400">{notification}</span>
-      </div>
-      <div
-        className="mt-1 mx-8 h-4 rounded-b-2xl blur-sm opacity-15"
+        className="mx-10 h-4 rounded-b-2xl blur-md opacity-10"
         style={{
           background:
-            "linear-gradient(to bottom,rgba(249,115,22,0.2),transparent)",
+            "linear-gradient(to bottom, rgba(249,115,22,0.4), transparent)",
         }}
       />
     </div>
@@ -602,6 +542,7 @@ function RatingStars({ rating = 4.5, reviews = 0 }) {
 
 // ── PRODUCT CARD ──────────────────────────────────────────────────────────────
 function ProductCard({ product, onAdd, added }) {
+  const navigate = useNavigate();
   const outOfStock = product.stockStatus === "Out of Stock";
   const discount =
     product.originalPrice && product.originalPrice > product.price
@@ -612,7 +553,10 @@ function ProductCard({ product, onAdd, added }) {
       : null;
 
   return (
-    <div className="group relative bg-white rounded-2xl overflow-hidden border border-slate-100/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300">
+    <div
+      onClick={() => navigate(`/products/${product._id}`)}
+      className="group relative bg-white rounded-2xl overflow-hidden border border-slate-100/80 shadow-[0_2px_8px_rgba(0,0,0,0.06)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.12)] hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+    >
       <div
         className="relative overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100"
         style={{ height: "160px" }}
@@ -656,7 +600,10 @@ function ProductCard({ product, onAdd, added }) {
         {!outOfStock && (
           <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/10 transition-all duration-300 flex items-center justify-center">
             <button
-              onClick={() => onAdd(product)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAdd(product);
+              }}
               className="opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-200 bg-white text-slate-900 text-[10px] font-bold px-3 py-1.5 rounded-full shadow-lg border border-white/80 flex items-center gap-1.5"
             >
               <svg
@@ -708,7 +655,10 @@ function ProductCard({ product, onAdd, added }) {
             )}
           </div>
           <button
-            onClick={() => !outOfStock && onAdd(product)}
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!outOfStock) onAdd(product);
+            }}
             disabled={outOfStock}
             className={`flex items-center gap-1 text-[10px] font-bold px-2.5 py-1.5 rounded-xl transition-all duration-200 shrink-0 ${
               outOfStock
@@ -792,19 +742,7 @@ function CartDrawer({
                 onClick={onClear}
                 className="text-xs font-semibold text-red-400 hover:text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50 transition-colors border border-red-100 flex items-center gap-1.5"
               >
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <polyline points="3 6 5 6 21 6" />
-                  <path d="M19 6l-1 14H6L5 6" />
-                  <path d="M10 11v6M14 11v6" />
-                  <path d="M9 6V4h6v2" />
-                </svg>
+                <Icon.Trash className="w-3 h-3" />
                 Clear all
               </button>
             )}
@@ -812,17 +750,7 @@ function CartDrawer({
               onClick={onClose}
               className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center transition-colors"
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
+              <Icon.X className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -862,8 +790,8 @@ function CartDrawer({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-slate-100 text-slate-300 text-xl">
-                      📦
+                    <div className="w-full h-full flex items-center justify-center bg-slate-100">
+                      <Icon.Package className="w-6 h-6 text-slate-300" />
                     </div>
                   )}
                 </div>
@@ -926,19 +854,7 @@ function CartDrawer({
               onClick={onRequestQuotation}
               className="w-full py-3.5 bg-gradient-to-br from-orange-400 to-orange-600 text-white font-bold rounded-xl shadow-[0_6px_24px_rgba(249,115,22,0.35)] hover:opacity-95 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-              </svg>
+              <Icon.FileText className="w-4 h-4" />
               Request Quotation →
             </button>
             <p className="text-center text-xs text-slate-400 mt-2">
@@ -966,6 +882,17 @@ function Navbar({ cartCount, onCartOpen }) {
     return () => window.removeEventListener("scroll", h);
   }, []);
 
+  const btnGhost =
+    "flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50 hover:text-slate-900 transition-all cursor-pointer";
+  const btnAdmin =
+    "flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100 hover:border-violet-300 transition-all cursor-pointer shadow-sm";
+  const btnDanger =
+    "flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl border border-rose-100 bg-rose-50 text-rose-500 hover:bg-rose-100 hover:border-rose-200 transition-all cursor-pointer";
+  const btnPrimary =
+    "flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 text-white shadow-[0_3px_10px_rgba(249,115,22,0.3)] hover:opacity-90 hover:shadow-[0_4px_14px_rgba(249,115,22,0.4)] transition-all cursor-pointer";
+  const btnActive =
+    "flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl border border-orange-200 bg-orange-50 text-orange-600 transition-all cursor-pointer";
+
   return (
     <nav
       className={`sticky top-0 z-30 transition-all duration-300 ${
@@ -975,7 +902,10 @@ function Navbar({ cartCount, onCartOpen }) {
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2.5 no-underline">
+        <Link
+          to="/"
+          className="flex items-center gap-2.5 no-underline shrink-0"
+        >
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-[0_4px_12px_rgba(249,115,22,0.3)]">
             <span className="text-white font-black text-sm">W</span>
           </div>
@@ -988,28 +918,40 @@ function Navbar({ cartCount, onCartOpen }) {
             </p>
           </div>
         </Link>
-        <div className="hidden md:flex items-center gap-3">
+
+        <div className="hidden md:flex items-center gap-2">
           {user?.role === "admin" && (
-            <button
-              onClick={() => navigate("/admin")}
-              className="text-xs font-bold px-4 py-2 rounded-lg bg-violet-50 text-violet-600 border border-violet-200 hover:bg-violet-100 transition-colors"
-            >
-              ⚙ Admin Panel
+            <button onClick={() => navigate("/admin")} className={btnAdmin}>
+              <Icon.Gear className="w-3.5 h-3.5" />
+              Admin Panel
             </button>
           )}
           {user ? (
-            <div className="flex items-center gap-2">
+            <>
               <Link
                 to="/my-orders"
-                className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-2 rounded-lg transition-colors no-underline ${
-                  isActive("/my-orders")
-                    ? "text-orange-600 bg-orange-50"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
+                className={`${
+                  isActive("/my-orders") ? btnActive : btnGhost
+                } no-underline`}
               >
-                🧾 My Orders
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 00-2 2v16l3-2 2 2 2-2 2 2 2-2 3 2V4a2 2 0 00-2-2z" />
+                  <line x1="9" y1="9" x2="15" y2="9" />
+                  <line x1="9" y1="13" x2="15" y2="13" />
+                  <line x1="9" y1="17" x2="13" y2="17" />
+                </svg>
+                My Orders
               </Link>
-              <span className="text-sm text-slate-500 font-medium">
+              <span className="text-xs text-slate-400 font-medium px-1">
                 Hi, {user.name?.split(" ")[0]}
               </span>
               <button
@@ -1017,26 +959,23 @@ function Navbar({ cartCount, onCartOpen }) {
                   logout();
                   navigate("/");
                 }}
-                className="text-xs font-semibold text-slate-400 hover:text-slate-700 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors"
+                className={btnDanger}
               >
+                <Icon.LogOut className="w-3.5 h-3.5" />
                 Sign out
               </button>
-            </div>
+            </>
           ) : (
             <>
               <button
                 onClick={() => navigate("/login")}
-                className={`text-sm font-semibold px-4 py-2 rounded-lg transition-colors ${
-                  isActive("/login")
-                    ? "text-orange-600 bg-orange-50"
-                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-                }`}
+                className={isActive("/login") ? btnActive : btnGhost}
               >
                 Sign in
               </button>
               <button
                 onClick={() => navigate("/register")}
-                className="text-sm font-bold text-white px-4 py-2 rounded-lg bg-gradient-to-br from-orange-400 to-orange-600 shadow-[0_4px_12px_rgba(249,115,22,0.3)] hover:opacity-90 transition-all"
+                className={btnPrimary}
               >
                 Register
               </button>
@@ -1044,53 +983,32 @@ function Navbar({ cartCount, onCartOpen }) {
           )}
           <button
             onClick={onCartOpen}
-            className="relative w-10 h-10 rounded-xl bg-slate-100 hover:bg-orange-50 flex items-center justify-center transition-colors"
+            className="relative w-10 h-10 rounded-xl border border-slate-200 bg-white hover:bg-orange-50 hover:border-orange-200 flex items-center justify-center transition-all shadow-sm cursor-pointer"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <path d="M16 10a4 4 0 01-8 0" />
-            </svg>
+            <Icon.ShoppingBag className="w-[18px] h-[18px] text-slate-600" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-black flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-black flex items-center justify-center shadow-sm">
                 {cartCount}
               </span>
             )}
           </button>
         </div>
+
         <div className="md:hidden flex items-center gap-2">
           <button
             onClick={onCartOpen}
-            className="relative w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center"
+            className="relative w-10 h-10 rounded-xl border border-slate-200 bg-white flex items-center justify-center shadow-sm cursor-pointer"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-              <line x1="3" y1="6" x2="21" y2="6" />
-              <path d="M16 10a4 4 0 01-8 0" />
-            </svg>
+            <Icon.ShoppingBag className="w-[18px] h-[18px] text-slate-600" />
             {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-black flex items-center justify-center">
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-black flex items-center justify-center">
                 {cartCount}
               </span>
             )}
           </button>
           <button
             onClick={() => setMenuOpen((o) => !o)}
-            className="w-10 h-10 rounded-xl bg-slate-100 flex flex-col items-center justify-center gap-1.5"
+            className="w-10 h-10 rounded-xl border border-slate-200 bg-white flex flex-col items-center justify-center gap-1.5 cursor-pointer shadow-sm"
           >
             <span
               className={`block w-5 h-0.5 bg-slate-700 rounded transition-all duration-300 ${
@@ -1110,17 +1028,19 @@ function Navbar({ cartCount, onCartOpen }) {
           </button>
         </div>
       </div>
+
       {menuOpen && (
-        <div className="md:hidden border-t border-slate-100 bg-white px-4 py-4 flex flex-col gap-2">
+        <div className="md:hidden border-t border-slate-100 bg-white/98 backdrop-blur-sm px-4 py-3 flex flex-col gap-1.5 shadow-lg">
           {user?.role === "admin" && (
             <button
               onClick={() => {
                 navigate("/admin");
                 setMenuOpen(false);
               }}
-              className="text-sm font-bold text-violet-600 py-2.5 px-4 rounded-xl bg-violet-50 text-left"
+              className="flex items-center gap-2.5 text-sm font-bold text-violet-700 py-2.5 px-3.5 rounded-xl bg-violet-50 border border-violet-100 hover:bg-violet-100 transition-colors text-left cursor-pointer"
             >
-              ⚙ Admin Panel
+              <Icon.Gear className="w-4 h-4 shrink-0" />
+              Admin Panel
             </button>
           )}
           {user ? (
@@ -1130,21 +1050,47 @@ function Navbar({ cartCount, onCartOpen }) {
                   navigate("/my-orders");
                   setMenuOpen(false);
                 }}
-                className="flex items-center gap-2 text-sm font-semibold text-slate-700 py-2.5 px-4 rounded-xl hover:bg-slate-100 text-left"
+                className="flex items-center gap-2.5 text-sm font-semibold text-slate-700 py-2.5 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-left cursor-pointer"
               >
-                🧾 My Orders
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M14 2H6a2 2 0 00-2 2v16l3-2 2 2 2-2 2 2 2-2 3 2V4a2 2 0 00-2-2z" />
+                  <line x1="9" y1="9" x2="15" y2="9" />
+                  <line x1="9" y1="13" x2="15" y2="13" />
+                  <line x1="9" y1="17" x2="13" y2="17" />
+                </svg>
+                My Orders
               </button>
-              <p className="text-sm text-slate-500 px-4 py-2">
-                Signed in as {user.name}
-              </p>
+              <div className="flex items-center gap-2.5 px-3.5 py-2">
+                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shrink-0">
+                  <span className="text-white font-black text-[10px]">
+                    {user.name?.[0]?.toUpperCase()}
+                  </span>
+                </div>
+                <span className="text-xs text-slate-500 font-medium">
+                  Signed in as{" "}
+                  <span className="text-slate-700 font-semibold">
+                    {user.name}
+                  </span>
+                </span>
+              </div>
               <button
                 onClick={() => {
                   logout();
                   navigate("/");
                   setMenuOpen(false);
                 }}
-                className="text-sm font-semibold text-slate-600 py-2.5 px-4 rounded-xl hover:bg-slate-100 text-left"
+                className="flex items-center gap-2.5 text-sm font-semibold text-rose-500 py-2.5 px-3.5 rounded-xl border border-rose-100 bg-rose-50 hover:bg-rose-100 transition-colors text-left cursor-pointer"
               >
+                <Icon.LogOut className="w-4 h-4 shrink-0" />
                 Sign out
               </button>
             </>
@@ -1155,7 +1101,7 @@ function Navbar({ cartCount, onCartOpen }) {
                   navigate("/login");
                   setMenuOpen(false);
                 }}
-                className="text-sm font-semibold text-slate-700 py-2.5 px-4 rounded-xl hover:bg-slate-100 text-left"
+                className="text-sm font-semibold text-slate-700 py-2.5 px-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors text-left cursor-pointer"
               >
                 Sign in
               </button>
@@ -1164,7 +1110,7 @@ function Navbar({ cartCount, onCartOpen }) {
                   navigate("/register");
                   setMenuOpen(false);
                 }}
-                className="text-sm font-bold text-white py-2.5 px-4 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600"
+                className="flex items-center justify-center gap-2 text-sm font-bold text-white py-2.5 px-3.5 rounded-xl bg-gradient-to-br from-orange-500 to-orange-600 shadow-[0_3px_10px_rgba(249,115,22,0.3)] cursor-pointer"
               >
                 Register
               </button>
@@ -1180,75 +1126,82 @@ function Navbar({ cartCount, onCartOpen }) {
 function Hero({ onShopNow }) {
   const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
     setTimeout(() => setMounted(true), 60);
   }, []);
 
   return (
     <section className="relative overflow-hidden" style={{ minHeight: "92vh" }}>
+      {/* Background */}
       <div
         className="absolute inset-0 z-0"
         style={{
           background:
-            "linear-gradient(155deg,rgba(6,13,26,1) 0%,rgba(11,20,34,0.97) 45%,rgba(8,15,28,0.95) 100%)",
+            "linear-gradient(155deg, rgba(6,13,26,1) 0%, rgba(11,20,34,0.97) 45%, rgba(8,15,28,0.95) 100%)",
         }}
       />
+
       <style>{`
         @keyframes wt-scan { 0%{top:-2px;opacity:.2}90%{opacity:.2}100%{top:100%;opacity:0} }
-        @keyframes wt-float { 0%,100%{transform:translateY(0) rotate(.2deg)}50%{transform:translateY(-11px) rotate(-.2deg)} }
         @keyframes wt-shimmer { 0%{background-position:-260% center}100%{background-position:260% center} }
         @keyframes wt-slideLeft { from{opacity:0;transform:translateX(-26px)}to{opacity:1;transform:translateX(0)} }
         @keyframes wt-fadeUp { from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)} }
         @keyframes wt-badgeDrop { from{opacity:0;transform:translateY(-10px) scale(.94)}to{opacity:1;transform:translateY(0) scale(1)} }
-        @keyframes flyToCart { 0%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}60%{opacity:1;transform:translateX(-50%) translateY(-18px) scale(1.05)}100%{opacity:0;transform:translateX(-50%) translateY(-36px) scale(.8)} }
         .wt-scan::before{content:'';position:absolute;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,rgba(249,115,22,.25),transparent);animation:wt-scan 9s ease-in-out infinite;pointer-events:none;z-index:1}
-        .wt-float{animation:wt-float 7s ease-in-out infinite}
         .wt-shimmer{background:linear-gradient(90deg,#fde68a 0%,#f97316 22%,#fb923c 50%,#f97316 78%,#fde68a 100%);background-size:260% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:wt-shimmer 3.8s linear infinite}
         .wt-a-badge{animation:wt-badgeDrop .55s cubic-bezier(.22,1,.36,1) both .04s}
         .wt-a-h1{animation:wt-slideLeft .65s cubic-bezier(.22,1,.36,1) both .16s}
         .wt-a-sub{animation:wt-fadeUp .55s cubic-bezier(.22,1,.36,1) both .28s}
         .wt-a-ctas{animation:wt-fadeUp .55s cubic-bezier(.22,1,.36,1) both .40s}
         .wt-a-badge,.wt-a-h1,.wt-a-sub,.wt-a-ctas{opacity:0;animation-fill-mode:forwards}
+        @keyframes wt-diagonal { 0%,100%{opacity:.04} 50%{opacity:.08} }
+        .wt-grid-pulse { animation: wt-diagonal 8s ease-in-out infinite; }
+        @keyframes marquee-up {
+          0%   { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
+        }
+        .marquee-track { animation: marquee-up 22s linear infinite; }
+        .marquee-track:hover { animation-play-state: paused; }
       `}</style>
+
+      {/* Dot-grid */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-30"
+        className="wt-grid-pulse absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            "radial-gradient(rgba(249,115,22,.18) 1px,transparent 1px)",
-          backgroundSize: "28px 28px",
-          maxWidth: "100%",
+            "radial-gradient(rgba(249,115,22,.25) 1px, transparent 1px)",
+          backgroundSize: "30px 30px",
         }}
       />
+
+      {/* Top orange line */}
       <div
         className="absolute top-0 inset-x-0 h-px pointer-events-none"
         style={{
           background:
-            "linear-gradient(90deg,transparent 0%,rgba(249,115,22,.9) 30%,rgba(251,146,60,.5) 65%,transparent 100%)",
+            "linear-gradient(90deg, transparent 0%, rgba(249,115,22,.9) 30%, rgba(251,146,60,.5) 65%, transparent 100%)",
         }}
       />
+
+      {/* Ambient glow */}
       <div
-        className="absolute top-0 right-0 rounded-full pointer-events-none"
+        className="absolute top-0 right-0 pointer-events-none"
         style={{
-          width: "min(540px, 100vw)",
-          height: "min(540px, 100vw)",
+          width: "min(600px, 100vw)",
+          height: "min(600px, 100vw)",
           background:
-            "radial-gradient(circle,rgba(249,115,22,.14) 0%,transparent 65%)",
+            "radial-gradient(circle, rgba(249,115,22,.1) 0%, transparent 65%)",
         }}
       />
-      <div className="absolute bottom-7 left-5 hidden lg:flex items-center gap-2 pointer-events-none z-10">
-        <span
-          className="w-1.5 h-1.5 rounded-full"
-          style={{ background: "rgba(249,115,22,.3)" }}
-        />
-        <span className="text-[10px] font-mono text-white/10 tracking-widest uppercase">
-          Wimwa Tech · Kiserian, Kenya
-        </span>
-      </div>
+
+      {/* Content */}
       <div
         className="wt-scan relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
         style={{ minHeight: "92vh", display: "flex", alignItems: "center" }}
       >
-        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-10 py-20 lg:py-0">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-14 py-20 lg:py-0">
+          {/* LEFT: Copy */}
           <div className="flex flex-col items-start">
             <div
               className={`${
@@ -1270,6 +1223,7 @@ function Hero({ onShopNow }) {
                 Kiserian, Kenya
               </span>
             </div>
+
             <h1
               className={`${mounted ? "wt-a-h1" : ""} mb-6`}
               style={{ lineHeight: 1.02, letterSpacing: "-0.03em" }}
@@ -1306,10 +1260,11 @@ function Hero({ onShopNow }) {
                 Printers · Networking · Security · Construction
               </span>
             </h1>
+
             <p
               className={`${
                 mounted ? "wt-a-sub" : ""
-              } mb-8 w-full sm:max-w-[400px]`}
+              } mb-8 w-full sm:max-w-[420px]`}
               style={{
                 color: "rgba(148,163,184,.85)",
                 fontSize: "15px",
@@ -1317,8 +1272,9 @@ function Hero({ onShopNow }) {
               }}
             >
               Shop online, get instant pricing, and receive a branded PDF
-              quotation — delivered to you minutes.
+              quotation — delivered to you in minutes.
             </p>
+
             <div
               className={`${
                 mounted ? "wt-a-ctas" : ""
@@ -1334,18 +1290,7 @@ function Hero({ onShopNow }) {
                 }}
               >
                 <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 pointer-events-none" />
-                <svg
-                  width="16"
-                  height="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <path d="M16 10a4 4 0 01-8 0" />
-                </svg>
+                <Icon.ShoppingBag className="w-4 h-4" />
                 Browse Products
               </button>
               <button
@@ -1357,10 +1302,11 @@ function Hero({ onShopNow }) {
                   boxShadow: "inset 0 1px 0 rgba(255,255,255,.06)",
                 }}
               >
-                📞 Contact us
+                <Icon.Phone className="w-4 h-4" /> Contact us
               </button>
             </div>
-            <div className="flex flex-wrap gap-2 mt-8 pt-7 border-t border-white/8 min-w-0 overflow-hidden w-full">
+
+            <div className="flex flex-wrap gap-2 mt-8 pt-7 border-t border-white/8 w-full overflow-hidden">
               {[
                 "🖨️ Printers",
                 "🔋 UPS & Power",
@@ -1385,16 +1331,17 @@ function Hero({ onShopNow }) {
               ))}
             </div>
           </div>
+
+          {/* RIGHT: Capability panel */}
           <div className="flex justify-center lg:justify-end">
-            <div
-              className="wt-float w-full"
-              style={{ maxWidth: "min(480px, 100%)" }}
-            >
-              <HeroCartCard />
+            <div className="w-full" style={{ maxWidth: "min(480px, 100%)" }}>
+              <HeroRightPanel />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Wave divider */}
       <div
         className="absolute bottom-0 inset-x-0 pointer-events-none overflow-hidden"
         style={{ lineHeight: 0 }}
@@ -1419,10 +1366,34 @@ function Hero({ onShopNow }) {
 // ── TRUST STRIP ───────────────────────────────────────────────────────────────
 function TrustStrip() {
   const stats = [
-    { icon: "🏢", label: "500+ Businesses Served", sub: "Across Kenya" },
-    { icon: "⚡", label: "Same-Day Quotations", sub: "Within 2 hours" },
-    { icon: "🚚", label: "Nationwide Delivery", sub: "All 47 counties" },
-    { icon: "🛡️", label: "Genuine Products", sub: "Warranted & certified" },
+    {
+      IconComp: Icon.Users,
+      label: "300+ Businesses Served",
+      sub: "Across Kenya",
+      color: "text-violet-500",
+      bg: "bg-violet-50",
+    },
+    {
+      IconComp: Icon.Clock,
+      label: "Same-Day Quotations",
+      sub: "Within 2 hours",
+      color: "text-amber-500",
+      bg: "bg-amber-50",
+    },
+    {
+      IconComp: Icon.Truck,
+      label: "Nationwide Delivery",
+      sub: "All 47 counties",
+      color: "text-blue-500",
+      bg: "bg-blue-50",
+    },
+    {
+      IconComp: Icon.Shield,
+      label: "Genuine Products",
+      sub: "Warranted & certified",
+      color: "text-emerald-500",
+      bg: "bg-emerald-50",
+    },
   ];
   return (
     <div className="bg-white border-b border-slate-100">
@@ -1430,7 +1401,14 @@ function TrustStrip() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((s) => (
             <div key={s.label} className="flex items-center gap-3">
-              <span className="text-2xl">{s.icon}</span>
+              <div
+                className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${s.bg}`}
+              >
+                <s.IconComp
+                  className={`w-4.5 h-4.5 ${s.color}`}
+                  style={{ width: 18, height: 18 }}
+                />
+              </div>
               <div>
                 <p className="text-xs font-bold text-slate-900">{s.label}</p>
                 <p className="text-[10px] text-slate-400">{s.sub}</p>
@@ -1597,17 +1575,9 @@ function HowItWorks() {
   const steps = [
     {
       icon: (
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <path d="M21 21l-4.35-4.35" />
-        </svg>
+        <Icon.Search
+          style={{ width: 22, height: 22, stroke: "currentColor" }}
+        />
       ),
       title: "Browse & Select",
       desc: "Search our catalog of 500+ products across tech, networking, security, and construction supplies.",
@@ -1615,18 +1585,9 @@ function HowItWorks() {
     },
     {
       icon: (
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-          <line x1="3" y1="6" x2="21" y2="6" />
-          <path d="M16 10a4 4 0 01-8 0" />
-        </svg>
+        <Icon.ShoppingBag
+          style={{ width: 22, height: 22, stroke: "currentColor" }}
+        />
       ),
       title: "Add to Cart",
       desc: "Add items to your cart with exact quantities. Mix products from different categories freely.",
@@ -1634,19 +1595,9 @@ function HowItWorks() {
     },
     {
       icon: (
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
-          <line x1="16" y1="13" x2="8" y2="13" />
-          <line x1="16" y1="17" x2="8" y2="17" />
-        </svg>
+        <Icon.FileText
+          style={{ width: 22, height: 22, stroke: "currentColor" }}
+        />
       ),
       title: "Request Quotation",
       desc: "Submit your cart and receive a formal branded PDF quotation within 2 hours during business hours.",
@@ -1654,19 +1605,10 @@ function HowItWorks() {
     },
     {
       icon: (
-        <svg
-          width="22"
-          height="22"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8 19.79 19.79 0 01.14 1.2 2 2 0 012.12 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z" />
-        </svg>
+        <Icon.Phone style={{ width: 22, height: 22, stroke: "currentColor" }} />
       ),
       title: "Confirm & Deliver",
-      desc: "Approve the quotation, make payment, and we'll arrange delivery anywhere in Kenya.",
+      desc: "Approval of the quotation, make payment, and we'll arrange delivery anywhere in Kenya.",
       color: "#8b5cf6",
     },
   ];
@@ -1745,12 +1687,25 @@ export default function HomePage() {
   const {
     cart,
     addToCart,
+    addWithQty,
     removeFromCart,
     updateQty,
     clearCart,
     total,
     count,
   } = useCart();
+  const location = useLocation();
+
+  const cartFromNavHandled = useRef(false);
+  useEffect(() => {
+    if (cartFromNavHandled.current) return;
+    const item = location.state?.addToCart;
+    if (!item) return;
+    cartFromNavHandled.current = true;
+    window.history.replaceState({}, "");
+    addWithQty(item);
+    setCartOpen(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     (async () => {
@@ -1935,18 +1890,7 @@ export default function HomePage() {
           ) : error ? (
             <div className="text-center py-20">
               <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
-                <svg
-                  width="28"
-                  height="28"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#ef4444"
-                  strokeWidth="1.5"
-                >
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
+                <Icon.AlertTriangle className="w-7 h-7 text-red-400" />
               </div>
               <p className="text-slate-500 font-semibold mb-1">{error}</p>
               <button
@@ -1959,17 +1903,7 @@ export default function HomePage() {
           ) : filtered.length === 0 ? (
             <div className="text-center py-20">
               <div className="w-20 h-20 rounded-2xl bg-slate-100 flex items-center justify-center mx-auto mb-4">
-                <svg
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#cbd5e1"
-                  strokeWidth="1.5"
-                >
-                  <circle cx="11" cy="11" r="8" />
-                  <path d="M21 21l-4.35-4.35" />
-                </svg>
+                <Icon.Search className="w-8 h-8 text-slate-300" />
               </div>
               <p className="text-slate-400 font-semibold">
                 {products.length === 0
@@ -2004,9 +1938,7 @@ export default function HomePage() {
 
         {/* ── FOOTER ── */}
         <footer className="bg-slate-950 text-slate-400 border-t border-white/5">
-          {/* ── Main content: tight padding on mobile ── */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 pb-6 sm:pt-12 sm:pb-10">
-            {/* ── Top row: brand + socials side by side on ALL screen sizes ── */}
             <div className="flex items-center justify-between gap-4 mb-6 pb-6 border-b border-white/[0.06]">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-[0_4px_14px_rgba(249,115,22,.35)] shrink-0">
@@ -2044,9 +1976,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* ── Links: always 2 cols on mobile, 4 cols on md+ ── */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-6 sm:gap-x-8 sm:gap-y-8 mb-6">
-              {/* Col 1: Categories */}
               <div>
                 <p className="text-white font-bold text-[10px] sm:text-xs mb-2.5 uppercase tracking-wider">
                   Categories
@@ -2082,7 +2012,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Col 2: Company */}
+              {/* Col 2: Company*/}
               <div>
                 <p className="text-white font-bold text-[10px] sm:text-xs mb-2.5 uppercase tracking-wider">
                   Company
@@ -2107,15 +2037,20 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Col 3: Contact — second row on mobile, col 3 on md+ */}
+              {/*Col 3: Contact -- Second row on mobile, col 3 on md+ */}
               <div>
                 <p className="text-white font-bold text-[10px] sm:text-xs mb-2.5 uppercase tracking-wider">
                   Contact
                 </p>
                 <div className="space-y-1.5 sm:space-y-2.5">
                   {[
-                    { icon: "📍", text: "P.O Box 273-00206, Kiserian" },
-                    { icon: "📞", text: "+254 712 953 780" },
+                    { icon: "🌍", text: "P.O Box 273-00206, Kiserian" },
+                    {
+                      icon: (
+                        <Icon.Phone className="w-3 h-3 text-slate-400 shrink-0 mt-px" />
+                      ),
+                      text: "+254 712 953 780",
+                    },
                     { icon: "✉️", text: "wimwatech@gmail.com" },
                     { icon: "🕐", text: "Mon–Sat: 8AM–6PM" },
                   ].map((c) => (
@@ -2131,7 +2066,6 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Col 4: Newsletter — second row on mobile, col 4 on md+ */}
               <div>
                 <p className="text-white font-bold text-[10px] sm:text-xs mb-2.5 uppercase tracking-wider">
                   Newsletter
@@ -2139,7 +2073,6 @@ export default function HomePage() {
                 <p className="text-slate-500 text-[11px] sm:text-xs mb-3 leading-snug">
                   Get price updates &amp; new arrivals.
                 </p>
-                {/* Input stacked above button on tiny screens, row on sm+ */}
                 <div className="flex flex-col xs:flex-row gap-2">
                   <input
                     type="email"
@@ -2154,7 +2087,6 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* ── Bottom bar: single compact row ── */}
           <div className="border-t border-white/5">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1.5 sm:gap-0">
               <p className="text-[10px] sm:text-xs text-slate-600 text-center sm:text-left">

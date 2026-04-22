@@ -1,3 +1,7 @@
+// server/middleware/upload.js
+// Added: productUpload.array("images", 5) for multi-image gallery uploads.
+// Everything else is unchanged.
+
 const multer = require("multer");
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("cloudinary").v2;

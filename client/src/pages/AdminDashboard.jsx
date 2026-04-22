@@ -2,396 +2,14 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
-
-// ── SVG ICON LIBRARY ──────────────────────────────────────────────────────────
-const Icon = {
-  Grid: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="7" height="7" rx="1.5" />
-      <rect x="14" y="3" width="7" height="7" rx="1.5" />
-      <rect x="3" y="14" width="7" height="7" rx="1.5" />
-      <rect x="14" y="14" width="7" height="7" rx="1.5" />
-    </svg>
-  ),
-  FileText: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
-      <polyline points="14 2 14 8 20 8" />
-      <line x1="16" y1="13" x2="8" y2="13" />
-      <line x1="16" y1="17" x2="8" y2="17" />
-      <line x1="10" y1="9" x2="8" y2="9" />
-    </svg>
-  ),
-  Package: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12.89 1.45l8 4A2 2 0 0122 7.24v9.53a2 2 0 01-1.11 1.79l-8 4a2 2 0 01-1.78 0l-8-4A2 2 0 012 16.76V7.24a2 2 0 011.11-1.79l8-4a2 2 0 011.78 0z" />
-      <polyline points="2.32 6.16 12 11 21.68 6.16" />
-      <line x1="12" y1="22.76" x2="12" y2="11" />
-    </svg>
-  ),
-  Users: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-      <circle cx="9" cy="7" r="4" />
-      <path d="M23 21v-2a4 4 0 00-3-3.87" />
-      <path d="M16 3.13a4 4 0 010 7.75" />
-    </svg>
-  ),
-  Settings: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" />
-    </svg>
-  ),
-  Truck: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="1" y="3" width="15" height="13" rx="1.5" />
-      <path d="M16 8h4l3 5v3h-7V8z" />
-      <circle cx="5.5" cy="18.5" r="2.5" />
-      <circle cx="18.5" cy="18.5" r="2.5" />
-    </svg>
-  ),
-  RefreshCw: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="23 4 23 10 17 10" />
-      <polyline points="1 20 1 14 7 14" />
-      <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-    </svg>
-  ),
-  ChevronRight: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M9 18l6-6-6-6" />
-    </svg>
-  ),
-  X: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-    >
-      <line x1="18" y1="6" x2="6" y2="18" />
-      <line x1="6" y1="6" x2="18" y2="18" />
-    </svg>
-  ),
-  Plus: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-    >
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  ),
-  Edit: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  ),
-  Trash: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="3 6 5 6 21 6" />
-      <path d="M19 6l-1 14H6L5 6" />
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
-      <path d="M9 6V4h6v2" />
-    </svg>
-  ),
-  Search: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="11" cy="11" r="8" />
-      <path d="M21 21l-4.35-4.35" />
-    </svg>
-  ),
-  Shield: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    </svg>
-  ),
-  TrendingUp: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-      <polyline points="17 6 23 6 23 12" />
-    </svg>
-  ),
-  Clock: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
-    </svg>
-  ),
-  CheckCircle: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-      <polyline points="22 4 12 14.01 9 11.01" />
-    </svg>
-  ),
-  AlertTriangle: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-      <line x1="12" y1="9" x2="12" y2="13" />
-      <line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-  ),
-  LogOut: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-      <polyline points="16 17 21 12 16 7" />
-      <line x1="21" y1="12" x2="9" y2="12" />
-    </svg>
-  ),
-  Home: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" />
-      <polyline points="9 22 9 12 15 12 15 22" />
-    </svg>
-  ),
-  Image: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="3" width="18" height="18" rx="2" />
-      <circle cx="8.5" cy="8.5" r="1.5" />
-      <polyline points="21 15 16 10 5 21" />
-    </svg>
-  ),
-  Check: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <polyline points="20 6 9 17 4 12" />
-    </svg>
-  ),
-  Info: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <circle cx="12" cy="12" r="10" />
-      <line x1="12" y1="8" x2="12" y2="12" />
-      <line x1="12" y1="16" x2="12.01" y2="16" />
-    </svg>
-  ),
-  Menu: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-    >
-      <line x1="3" y1="7" x2="21" y2="7" />
-      <line x1="3" y1="12" x2="21" y2="12" />
-      <line x1="3" y1="17" x2="21" y2="17" />
-    </svg>
-  ),
-  SortAsc: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 6h18M6 12h12M9 18h6" />
-    </svg>
-  ),
-  // ── FIX 3: added Wrench icon for additional charges section ──────────────
-  Wrench: (p) => (
-    <svg
-      {...p}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z" />
-    </svg>
-  ),
-};
+import { Icon } from "../components/icons";
 
 // ── TOAST STACK ───────────────────────────────────────────────────────────────
 function ToastStack({ toasts }) {
   return (
     <div className="fixed bottom-6 right-6 z-[9999] flex flex-col gap-2 pointer-events-none">
       <style>{`
-        @keyframes wt-toast-in {
-          from { transform: translateX(calc(100% + 24px)); opacity: 0; }
-          to   { transform: translateX(0);                 opacity: 1; }
-        }
+        @keyframes wt-toast-in { from { transform: translateX(calc(100% + 24px)); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .wt-toast { animation: wt-toast-in 0.28s cubic-bezier(.22,1,.36,1) forwards; }
         @keyframes wt-toast-progress { from { width: 100%; } to { width: 0%; } }
       `}</style>
@@ -677,6 +295,7 @@ function StatCard({
 }
 
 // ── IMAGE UPLOAD ──────────────────────────────────────────────────────────────
+// ── COVER IMAGE UPLOADER (unchanged single-image uploader) ───────────────────
 function ImageUploader({ value, onChange }) {
   const [uploading, setUploading] = useState(false);
   const [dragOver, setDragOver] = useState(false);
@@ -718,7 +337,7 @@ function ImageUploader({ value, onChange }) {
   return (
     <div>
       <label className="block text-xs font-bold text-slate-600 mb-2 uppercase tracking-wider">
-        Product Image
+        Cover Image
       </label>
       {preview ? (
         <div className="relative group w-full h-40 rounded-2xl overflow-hidden border-2 border-orange-200 bg-slate-50">
@@ -813,6 +432,757 @@ function ImageUploader({ value, onChange }) {
         placeholder="https://example.com/image.jpg"
         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm text-slate-700 focus:outline-none focus:border-orange-300 bg-white placeholder-slate-300 transition-colors"
       />
+    </div>
+  );
+}
+
+// ── GALLERY IMAGE UPLOADER ────────────────────────────────────────────────────
+// Allows uploading up to 5 additional images for the product gallery.
+// Each image is uploaded individually via POST /api/products/upload-image
+// and stored as { url, cloudinaryId } in the images[] array.
+function GalleryUploader({ images, onChange }) {
+  const [uploading, setUploading] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const fileRef = useRef();
+  const MAX = 5;
+
+  const uploadFiles = async (files) => {
+    if (!files.length) return;
+    const remaining = MAX - images.length;
+    if (remaining <= 0) return;
+    const toUpload = Array.from(files).slice(0, remaining);
+    setUploading(true);
+    try {
+      const token = localStorage.getItem("wt_token");
+      const results = await Promise.allSettled(
+        toUpload.map(async (file) => {
+          const formData = new FormData();
+          formData.append("image", file);
+          const res = await axios.post(
+            `${API_URL}/api/products/upload-image`,
+            formData,
+            {
+              headers: {
+                "Content-Type": "multipart/form-data",
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          return {
+            url: res.data?.url || res.data?.imageUrl || "",
+            cloudinaryId: res.data?.cloudinaryId || "",
+          };
+        })
+      );
+      const uploaded = results
+        .filter((r) => r.status === "fulfilled" && r.value.url)
+        .map((r) => r.value);
+      if (uploaded.length) onChange([...images, ...uploaded]);
+    } catch {
+      alert("One or more images failed to upload.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = (idx) => {
+    onChange(images.filter((_, i) => i !== idx));
+  };
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">
+          Gallery Images
+          <span className="ml-1.5 font-normal text-slate-400 normal-case tracking-normal">
+            ({images.length}/{MAX} · shown in product detail)
+          </span>
+        </label>
+      </div>
+
+      {/* Existing gallery thumbnails */}
+      {images.length > 0 && (
+        <div className="flex gap-2 flex-wrap mb-3">
+          {images.map((img, idx) => (
+            <div
+              key={idx}
+              className="relative group w-16 h-16 rounded-xl overflow-hidden border-2 border-slate-200 bg-slate-50 shrink-0"
+            >
+              <img
+                src={img.url}
+                alt={`Gallery ${idx + 1}`}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <button
+                  type="button"
+                  onClick={() => removeImage(idx)}
+                  className="w-6 h-6 rounded-full bg-rose-500 text-white flex items-center justify-center hover:bg-rose-600 transition-colors cursor-pointer"
+                >
+                  <Icon.X className="w-3 h-3" />
+                </button>
+              </div>
+              <span className="absolute bottom-0.5 right-0.5 text-[8px] font-black text-white/70">
+                {idx + 1}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Upload zone — only show if under limit */}
+      {images.length < MAX && (
+        <div
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            uploadFiles(e.dataTransfer.files);
+          }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
+          onDragLeave={() => setDragOver(false)}
+          onClick={() => fileRef.current?.click()}
+          className={`w-full h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all ${
+            dragOver
+              ? "border-orange-400 bg-orange-50"
+              : "border-slate-200 bg-slate-50/50 hover:border-orange-300 hover:bg-orange-50/30"
+          }`}
+        >
+          {uploading ? (
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
+              <span className="text-xs text-slate-400">Uploading…</span>
+            </div>
+          ) : (
+            <>
+              <Icon.Image className="w-5 h-5 text-slate-300 mb-1" />
+              <p className="text-xs font-semibold text-slate-400">
+                Add gallery photos{" "}
+                <span className="text-orange-500">browse</span>
+              </p>
+              <p className="text-[10px] text-slate-300 mt-0.5">
+                Up to {MAX - images.length} more · JPG, PNG, WebP
+              </p>
+            </>
+          )}
+        </div>
+      )}
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        multiple
+        className="hidden"
+        onChange={(e) => {
+          uploadFiles(e.target.files);
+          e.target.value = "";
+        }}
+      />
+    </div>
+  );
+}
+
+// ── COMMAND PALETTE ───────────────────────────────────────────────────────────
+// Full-screen ⌘K search overlay. Searches quotations, products, and customers.
+function CommandPalette({
+  open,
+  onClose,
+  quotations,
+  products,
+  customers,
+  onSelectQuotation,
+  onNavigate,
+}) {
+  const [q, setQ] = useState("");
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (open) {
+      setQ("");
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [open]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [open, onClose]);
+
+  if (!open) return null;
+
+  const term = q.trim().toLowerCase();
+
+  const matchedQuotations = term
+    ? quotations
+        .filter(
+          (qt) =>
+            qt.customer?.companyName?.toLowerCase().includes(term) ||
+            qt.customer?.email?.toLowerCase().includes(term) ||
+            qt.quoteNumber?.toLowerCase().includes(term)
+        )
+        .slice(0, 4)
+    : [];
+
+  const matchedProducts = term
+    ? products
+        .filter(
+          (p) =>
+            p.name?.toLowerCase().includes(term) ||
+            p.category?.toLowerCase().includes(term)
+        )
+        .slice(0, 4)
+    : [];
+
+  const matchedCustomers = term
+    ? customers
+        .filter(
+          (c) =>
+            c.name?.toLowerCase().includes(term) ||
+            c.email?.toLowerCase().includes(term)
+        )
+        .slice(0, 3)
+    : [];
+
+  const hasResults =
+    matchedQuotations.length +
+      matchedProducts.length +
+      matchedCustomers.length >
+    0;
+
+  // Quick nav shortcuts shown when search is empty
+  const shortcuts = [
+    {
+      label: "Overview",
+      icon: Icon.Grid,
+      action: () => {
+        onNavigate("overview");
+        onClose();
+      },
+    },
+    {
+      label: "Quotations",
+      icon: Icon.FileText,
+      action: () => {
+        onNavigate("quotations");
+        onClose();
+      },
+    },
+    {
+      label: "Products",
+      icon: Icon.Package,
+      action: () => {
+        onNavigate("products");
+        onClose();
+      },
+    },
+    {
+      label: "Customers",
+      icon: Icon.Users,
+      action: () => {
+        onNavigate("customers");
+        onClose();
+      },
+    },
+    {
+      label: "Settings",
+      icon: Icon.Settings,
+      action: () => {
+        onNavigate("settings");
+        onClose();
+      },
+    },
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-[200] flex items-start justify-center pt-[10vh] px-4 bg-black/60 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Search input */}
+        <div className="flex items-center gap-3 px-4 py-3.5 border-b border-slate-100">
+          <Icon.Search className="w-5 h-5 text-slate-400 shrink-0" />
+          <input
+            ref={inputRef}
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search quotations, products, customers…"
+            className="flex-1 text-sm text-slate-900 placeholder-slate-400 outline-none bg-transparent"
+          />
+          <kbd className="text-[11px] px-2 py-0.5 bg-slate-100 text-slate-400 rounded-md font-mono">
+            Esc
+          </kbd>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto">
+          {/* No query — show quick nav */}
+          {!term && (
+            <div className="p-3">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">
+                Quick navigate
+              </p>
+              {shortcuts.map((s) => (
+                <button
+                  key={s.label}
+                  onClick={s.action}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
+                    <s.icon className="w-4 h-4 text-slate-500" />
+                  </div>
+                  <span className="text-sm font-semibold text-slate-700">
+                    {s.label}
+                  </span>
+                  <Icon.ChevronRight className="w-4 h-4 text-slate-300 ml-auto" />
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Search results */}
+          {term && !hasResults && (
+            <div className="flex flex-col items-center justify-center py-14 gap-2">
+              <Icon.Search className="w-8 h-8 text-slate-200" />
+              <p className="text-sm text-slate-400">No results for "{q}"</p>
+            </div>
+          )}
+
+          {matchedQuotations.length > 0 && (
+            <div className="p-3 border-t border-slate-50">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">
+                Quotations
+              </p>
+              {matchedQuotations.map((qt) => (
+                <button
+                  key={qt._id}
+                  onClick={() => {
+                    onSelectQuotation(qt);
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
+                    <span className="text-[9px] font-black text-orange-500">
+                      {qt.quoteNumber || `#${qt._id?.slice(-3).toUpperCase()}`}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-900 truncate">
+                      {qt.customer?.companyName}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">
+                      {qt.customer?.email}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs font-bold text-orange-500">
+                      Ksh {qt.total?.toLocaleString("en-KE")}
+                    </span>
+                    <StatusPill status={qt.status} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {matchedProducts.length > 0 && (
+            <div className="p-3 border-t border-slate-50">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">
+                Products
+              </p>
+              {matchedProducts.map((prod) => (
+                <button
+                  key={prod._id}
+                  onClick={() => {
+                    onNavigate("products");
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer text-left"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 overflow-hidden flex items-center justify-center shrink-0">
+                    {prod.imageUrl ? (
+                      <img
+                        src={prod.imageUrl}
+                        alt={prod.name}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Icon.Package className="w-4 h-4 text-slate-400" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-900 truncate">
+                      {prod.name}
+                    </p>
+                    <p className="text-xs text-slate-400">{prod.category}</p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="text-xs font-bold text-orange-500">
+                      Ksh {prod.price?.toLocaleString("en-KE")}
+                    </span>
+                    <StockPill status={prod.stockStatus || "In Stock"} />
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {matchedCustomers.length > 0 && (
+            <div className="p-3 border-t border-slate-50">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-2">
+                Customers
+              </p>
+              {matchedCustomers.map((c) => (
+                <button
+                  key={c._id}
+                  onClick={() => {
+                    onNavigate("customers");
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 transition-colors cursor-pointer text-left"
+                >
+                  <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center shrink-0">
+                    <span className="text-sm font-extrabold text-orange-500">
+                      {c.name?.[0]?.toUpperCase()}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-900 truncate">
+                      {c.name}
+                    </p>
+                    <p className="text-xs text-slate-400 truncate">{c.email}</p>
+                  </div>
+                  <span
+                    className={`text-xs font-bold px-2 py-0.5 rounded-full border shrink-0 ${
+                      c.role === "admin"
+                        ? "bg-violet-50 text-violet-600 border-violet-200"
+                        : "bg-slate-50 text-slate-500 border-slate-200"
+                    }`}
+                  >
+                    {c.role === "admin" ? "Admin" : "Customer"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer hint */}
+        <div className="px-4 py-2.5 border-t border-slate-100 flex items-center gap-4">
+          <span className="text-xs text-slate-400 flex items-center gap-1">
+            <kbd className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">
+              ↑↓
+            </kbd>{" "}
+            navigate
+          </span>
+          <span className="text-xs text-slate-400 flex items-center gap-1">
+            <kbd className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">
+              ↵
+            </kbd>{" "}
+            select
+          </span>
+          <span className="text-xs text-slate-400 flex items-center gap-1">
+            <kbd className="font-mono bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">
+              Esc
+            </kbd>{" "}
+            close
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── NOTIFICATIONS PANEL ───────────────────────────────────────────────────────
+// Slide-in panel from right. Notifications are generated from live data:
+//   - Pending quotations  → "Needs review" alerts
+//   - Low / out-of-stock  → "Stock alert" warnings
+// Plus a static demo entry showing how new-quotation events look.
+function NotificationsPanel({
+  open,
+  onClose,
+  quotations,
+  products,
+  onSelectQuotation,
+}) {
+  const panelRef = useRef(null);
+
+  // Close when clicking outside
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => {
+      if (panelRef.current && !panelRef.current.contains(e.target)) onClose();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open, onClose]);
+
+  // Build notification list from real data
+  const notifications = [];
+
+  // Pending quotations — one notif per pending quote (max 5)
+  quotations
+    .filter((q) => q.status === "pending")
+    .slice(0, 5)
+    .forEach((q) => {
+      notifications.push({
+        id: `q-${q._id}`,
+        type: "quotation",
+        unread: true,
+        title: "New quotation needs review",
+        body: `${
+          q.customer?.companyName || "A client"
+        } — Ksh ${q.total?.toLocaleString("en-KE")}`,
+        time: new Date(q.createdAt),
+        action: () => {
+          onSelectQuotation(q);
+          onClose();
+        },
+      });
+    });
+
+  // Low / out-of-stock products — one notif per product (max 4)
+  products
+    .filter(
+      (p) => p.stockStatus === "Out of Stock" || p.stockStatus === "Low Stock"
+    )
+    .slice(0, 4)
+    .forEach((p) => {
+      notifications.push({
+        id: `p-${p._id}`,
+        type: "stock",
+        unread: p.stockStatus === "Out of Stock",
+        title:
+          p.stockStatus === "Out of Stock" ? "Out of stock" : "Low stock alert",
+        body: p.name,
+        time: null,
+        action: null,
+      });
+    });
+
+  // Sort: unread first, then by time descending
+  notifications.sort((a, b) => {
+    if (a.unread !== b.unread) return a.unread ? -1 : 1;
+    if (a.time && b.time) return b.time - a.time;
+    return 0;
+  });
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  const timeAgo = (date) => {
+    if (!date) return null;
+    const diff = (Date.now() - date.getTime()) / 1000;
+    if (diff < 60) return "just now";
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+  };
+
+  const typeStyles = {
+    quotation: { dot: "bg-orange-400", bg: "bg-orange-50" },
+    stock: { dot: "bg-amber-400", bg: "bg-amber-50" },
+  };
+
+  return (
+    <>
+      {/* Backdrop */}
+      {open && (
+        <div className="fixed inset-0 z-[149] bg-black/20" onClick={onClose} />
+      )}
+
+      {/* Panel */}
+      <div
+        ref={panelRef}
+        className={`fixed top-0 right-0 h-full w-full sm:w-96 bg-white z-[150] shadow-2xl flex flex-col transition-transform duration-300 ${
+          open ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-2">
+            <Icon.Bell className="w-5 h-5 text-slate-700" />
+            <h2 className="font-extrabold text-slate-900 text-base">
+              Notifications
+            </h2>
+            {unreadCount > 0 && (
+              <span className="text-[10px] font-extrabold bg-orange-500 text-white px-2 py-0.5 rounded-full">
+                {unreadCount}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors cursor-pointer"
+          >
+            <Icon.X className="w-4 h-4 text-slate-500" />
+          </button>
+        </div>
+
+        {/* List */}
+        <div className="flex-1 overflow-y-auto">
+          {notifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-slate-50 flex items-center justify-center">
+                <Icon.Bell className="w-6 h-6 text-slate-300" />
+              </div>
+              <p className="text-sm text-slate-400 font-medium">
+                All caught up!
+              </p>
+              <p className="text-xs text-slate-300 text-center px-8">
+                No pending quotations or stock alerts right now.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-50">
+              {notifications.map((n) => (
+                <div
+                  key={n.id}
+                  onClick={n.action || undefined}
+                  className={`flex items-start gap-3.5 px-5 py-4 transition-colors ${
+                    n.action
+                      ? "cursor-pointer hover:bg-slate-50"
+                      : "cursor-default"
+                  } ${n.unread ? "bg-orange-50/30" : ""}`}
+                >
+                  {/* Dot indicator */}
+                  <div className="flex flex-col items-center gap-1 pt-1 shrink-0">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        n.unread ? typeStyles[n.type]?.dot : "bg-slate-200"
+                      }`}
+                    />
+                  </div>
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-slate-900 leading-snug">
+                      {n.title}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-0.5 truncate">
+                      {n.body}
+                    </p>
+                    {n.time && (
+                      <p className="text-[11px] text-slate-400 mt-1">
+                        {timeAgo(n.time)}
+                      </p>
+                    )}
+                  </div>
+                  {/* Type badge */}
+                  <span
+                    className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 mt-0.5 ${
+                      n.type === "quotation"
+                        ? "bg-orange-100 text-orange-700"
+                        : "bg-amber-100 text-amber-700"
+                    }`}
+                  >
+                    {n.type === "quotation" ? "Quote" : "Stock"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        {notifications.length > 0 && (
+          <div className="px-5 py-3 border-t border-slate-100 shrink-0">
+            <p className="text-xs text-slate-400 text-center">
+              {unreadCount} unread · notifications are generated from live data
+            </p>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ── USER DROPDOWN ─────────────────────────────────────────────────────────────
+function UserDropdown({ user, logout, navigate, onClose }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) onClose();
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      ref={ref}
+      className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl border border-slate-200 shadow-xl z-50 overflow-hidden"
+    >
+      {/* User info */}
+      <div className="px-4 py-4 border-b border-slate-100">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shrink-0">
+            <span className="text-white font-black text-sm">
+              {user?.name?.[0]?.toUpperCase()}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-extrabold text-slate-900 truncate">
+              {user?.name}
+            </p>
+            <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+          </div>
+        </div>
+        <span className="mt-2.5 inline-flex items-center text-[10px] font-extrabold uppercase tracking-widest bg-violet-50 text-violet-600 border border-violet-200 px-2.5 py-0.5 rounded-full">
+          {user?.role}
+        </span>
+      </div>
+
+      {/* Menu items */}
+      <div className="p-2">
+        <button
+          onClick={() => {
+            navigate("/");
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-colors cursor-pointer text-left"
+        >
+          <Icon.Home className="w-4 h-4 text-slate-400" /> View shop
+        </button>
+        <button
+          onClick={() => {
+            navigate("/quotation");
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-colors cursor-pointer text-left"
+        >
+          <Icon.FileText className="w-4 h-4 text-slate-400" /> Quotation maker
+        </button>
+        <button
+          onClick={() => {
+            navigate("/delivery-note");
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 text-sm font-semibold transition-colors cursor-pointer text-left"
+        >
+          <Icon.Truck className="w-4 h-4 text-slate-400" /> Delivery note
+        </button>
+      </div>
+
+      <div className="p-2 border-t border-slate-100">
+        <button
+          onClick={() => {
+            logout();
+            onClose();
+          }}
+          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-500 hover:bg-rose-50 text-sm font-semibold transition-colors cursor-pointer text-left"
+        >
+          <Icon.LogOut className="w-4 h-4" /> Sign out
+        </button>
+      </div>
     </div>
   );
 }
@@ -1141,6 +1511,7 @@ function QuotationModal({
             </div>
 
             {/* Actions */}
+
             <div className="flex gap-3">
               <button
                 onClick={onClose}
@@ -1182,6 +1553,8 @@ function ProductModal({ product, onClose, onSave }) {
     description: product?.description || "",
     imageUrl: product?.imageUrl || "",
     stockStatus: product?.stockStatus || "In Stock",
+    // gallery images: [{ url, cloudinaryId }]
+    images: product?.images || [],
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -1201,6 +1574,7 @@ function ProductModal({ product, onClose, onSave }) {
         originalPrice: form.originalPrice
           ? Number(form.originalPrice)
           : undefined,
+        images: form.images,
       };
       if (isEdit)
         await authAxios().put(`/api/products/${product._id}`, payload);
@@ -1249,11 +1623,23 @@ function ProductModal({ product, onClose, onSave }) {
             <Icon.X className="w-4 h-4 text-slate-500" />
           </button>
         </div>
+
         <div className="p-6 flex flex-col gap-5">
+          {/* Cover image */}
           <ImageUploader
             value={form.imageUrl}
             onChange={(url) => set("imageUrl", url)}
           />
+
+          {/* Gallery images */}
+          <div className="h-px bg-slate-100" />
+          <GalleryUploader
+            images={form.images}
+            onChange={(imgs) => set("images", imgs)}
+          />
+          <div className="h-px bg-slate-100" />
+
+          {/* Product fields */}
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className={labelCls}>Product Name *</label>
@@ -1335,12 +1721,14 @@ function ProductModal({ product, onClose, onSave }) {
               />
             </div>
           </div>
+
           {error && (
             <div className="flex items-center gap-2.5 p-3.5 bg-rose-50 border border-rose-100 rounded-xl">
               <Icon.AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />
               <span className="text-sm text-rose-600">{error}</span>
             </div>
           )}
+
           <div className="flex gap-3 pt-1">
             <button
               onClick={onClose}
@@ -1430,9 +1818,15 @@ export default function AdminDashboard() {
     DEFAULT_QUOTATION_SETTINGS
   );
   // ── FIX 3: session expiry warning state ──────────────────────────────────
+
   const [showExpiryWarning, setShowExpiryWarning] = useState(false);
   const expiryWarningTimerRef = useRef(null);
   const expiryTimerRef = useRef(null);
+
+  // ── NEW: header UI state ──────────────────────────────────────────────────
+  const [cmdOpen, setCmdOpen] = useState(false); // ⌘K command palette
+  const [notifOpen, setNotifOpen] = useState(false); // notifications panel
+  const [userMenuOpen, setUserMenuOpen] = useState(false); // user dropdown
 
   const addToast = (msg, type = "success") => {
     const id = Date.now() + Math.random();
@@ -1442,10 +1836,19 @@ export default function AdminDashboard() {
 
   const hasFetched = useRef(false);
 
-  // ── FIX 3: session expiry warning setup ──────────────────────────────────
-  // Reads wt_session_expiry from localStorage and schedules:
-  //   - a warning toast + banner at 10 minutes before expiry
-  //   - listens for the 'wt:session-expired' event from AuthContext
+  // ── ⌘K / Ctrl+K keyboard shortcut ────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        setCmdOpen((o) => !o);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // ── Session expiry ────────────────────────────────────────────────────────
   useEffect(() => {
     const scheduleExpiryWarning = () => {
       const expiry = parseInt(
@@ -1453,23 +1856,16 @@ export default function AdminDashboard() {
         10
       );
       if (!expiry) return;
-
       const now = Date.now();
       const msUntilExpiry = expiry - now;
-      const WARN_BEFORE_MS = 10 * 60 * 1000; // 10 minutes
-
+      const WARN_BEFORE_MS = 10 * 60 * 1000;
       // Clear any existing timers
+
       if (expiryWarningTimerRef.current)
         clearTimeout(expiryWarningTimerRef.current);
       if (expiryTimerRef.current) clearTimeout(expiryTimerRef.current);
-
-      if (msUntilExpiry <= 0) {
-        // Already expired — AuthContext will handle the actual logout
-        return;
-      }
-
+      if (msUntilExpiry <= 0) return;
       if (msUntilExpiry <= WARN_BEFORE_MS) {
-        // Less than 10 min left right now — show warning immediately
         setShowExpiryWarning(true);
         addToast(
           "Your session expires in less than 10 minutes. Save your work.",
@@ -1477,6 +1873,7 @@ export default function AdminDashboard() {
         );
       } else {
         // Schedule the warning for 10 min before expiry
+
         expiryWarningTimerRef.current = setTimeout(() => {
           setShowExpiryWarning(true);
           addToast(
@@ -1485,23 +1882,22 @@ export default function AdminDashboard() {
           );
         }, msUntilExpiry - WARN_BEFORE_MS);
       }
-
       // Also schedule hiding the banner once session actually expires
-      expiryTimerRef.current = setTimeout(() => {
-        setShowExpiryWarning(false);
-      }, msUntilExpiry);
+
+      expiryTimerRef.current = setTimeout(
+        () => setShowExpiryWarning(false),
+        msUntilExpiry
+      );
     };
-
     scheduleExpiryWarning();
-
     // Listen for the session-expired event fired by AuthContext
+
     const handleExpired = () => {
       setShowExpiryWarning(false);
       addToast("Your session has expired. Please sign in again.", "error");
       setTimeout(() => navigate("/login"), 2000);
     };
     window.addEventListener("wt:session-expired", handleExpired);
-
     return () => {
       window.removeEventListener("wt:session-expired", handleExpired);
       if (expiryWarningTimerRef.current)
@@ -1625,6 +2021,9 @@ export default function AdminDashboard() {
     lowStock: products.filter((p) => p.stockStatus === "Low Stock").length,
   };
 
+  // Unread notification count (pending quotes + stock issues)
+  const notifCount = stats.pending + stats.outOfStock + stats.lowStock;
+
   const filteredQuotations = quotations
     .filter((q) => {
       const ms = statusFilter === "all" || q.status === statusFilter;
@@ -1682,14 +2081,12 @@ export default function AdminDashboard() {
     );
 
   const activeTabData = TABS.find((t) => t.id === activeTab);
-
   const SORT_OPTIONS = [
     { value: "newest", label: "Newest first" },
     { value: "oldest", label: "Oldest first" },
     { value: "highest", label: "Highest value" },
     { value: "lowest", label: "Lowest value" },
   ];
-
   const STOCK_FILTER_OPTIONS = [
     {
       value: "all",
@@ -1722,7 +2119,32 @@ export default function AdminDashboard() {
       <ToastStack toasts={toasts} />
       <ConfirmGlobal />
 
-      {/* ── FIX 3: Session expiry warning banner ── */}
+      {/* ── Command palette (⌘K) ── */}
+      <CommandPalette
+        open={cmdOpen}
+        onClose={() => setCmdOpen(false)}
+        quotations={quotations}
+        products={products}
+        customers={customers}
+        onSelectQuotation={(q) => {
+          setSelectedQuotation(q);
+        }}
+        onNavigate={(tab) => setActiveTab(tab)}
+      />
+
+      {/* ── Notifications slide-in panel ── */}
+      <NotificationsPanel
+        open={notifOpen}
+        onClose={() => setNotifOpen(false)}
+        quotations={quotations}
+        products={products}
+        onSelectQuotation={(q) => {
+          setSelectedQuotation(q);
+          setNotifOpen(false);
+        }}
+      />
+
+      {/* Session expiry banner */}
       {showExpiryWarning && (
         <div className="fixed top-0 left-0 right-0 z-[200] flex items-center justify-between gap-4 px-5 py-3 bg-amber-500 text-white shadow-lg">
           <div className="flex items-center gap-2.5">
@@ -1899,80 +2321,154 @@ export default function AdminDashboard() {
 
       {/* ── MAIN AREA ── */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* ── FIX 3: push content down when warning banner is showing ── */}
+        {/* ════════════════════════════════════════════════════════════════
+            UPGRADED HEADER
+            Changes from original:
+            1. Global search bar (⌘K) — opens CommandPalette
+            2. Notification bell with live unread badge — opens NotificationsPanel
+            3. User avatar button with dropdown — shows name, role, nav links, sign out
+            Removed: individual Quotation / Delivery Note quick-links (now in user dropdown)
+                     "Updated X:XX" time stamp moved inside the search row on md+
+        ════════════════════════════════════════════════════════════════ */}
         <header
-          className={`bg-white border-b border-slate-100 px-5 sm:px-6 h-16 flex items-center gap-4 sticky z-10 shadow-sm ${
+          className={`bg-white border-b border-slate-100 px-4 sm:px-6 sticky z-10 shadow-sm ${
             showExpiryWarning ? "top-[52px]" : "top-0"
           }`}
         >
-          <button
-            onClick={() => setSidebarOpen((o) => !o)}
-            className="lg:hidden w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-100 transition-colors"
-          >
-            <Icon.Menu className="w-5 h-5 text-slate-600" />
-          </button>
-          <div className="flex items-center gap-3 shrink-0">
-            {activeTabData && (
-              <activeTabData.TabIcon className="w-5 h-5 text-orange-500" />
-            )}
-            <div>
-              <h1 className="font-extrabold text-slate-900 text-base leading-none tracking-tight">
-                {activeTabData?.label}
-              </h1>
-              <p className="text-slate-400 text-xs mt-0.5">
-                Welcome back, {user?.name?.split(" ")[0]}
-              </p>
+          <div className="flex items-center gap-3 h-16">
+            {/* Mobile sidebar toggle */}
+            <button
+              onClick={() => setSidebarOpen((o) => !o)}
+              className="lg:hidden w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center shrink-0 cursor-pointer hover:bg-slate-100 transition-colors"
+            >
+              <Icon.Menu className="w-5 h-5 text-slate-600" />
+            </button>
+
+            {/* Page title (hidden on very small screens to make room for search) */}
+            <div className="hidden sm:flex items-center gap-3 shrink-0">
+              {activeTabData && (
+                <activeTabData.TabIcon className="w-5 h-5 text-orange-500" />
+              )}
+              <div>
+                <h1 className="font-extrabold text-slate-900 text-base leading-none tracking-tight">
+                  {activeTabData?.label}
+                </h1>
+                <p className="text-slate-400 text-xs mt-0.5">
+                  Welcome back, {user?.name?.split(" ")[0]}
+                </p>
+              </div>
+            </div>
+
+            {/* ── Global search bar ── */}
+            <button
+              onClick={() => setCmdOpen(true)}
+              className="flex-1 flex items-center gap-2.5 px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-400 hover:border-orange-300 hover:bg-orange-50/30 transition-colors cursor-pointer text-left max-w-md mx-auto sm:mx-0"
+            >
+              <Icon.Search className="w-4 h-4 shrink-0 text-slate-400" />
+              <span className="flex-1 truncate">
+                Search quotations, products…
+              </span>
+              <kbd className="hidden sm:flex items-center gap-0.5 text-[10px] font-mono bg-white border border-slate-200 text-slate-400 px-1.5 py-0.5 rounded-md shrink-0">
+                ⌘K
+              </kbd>
+            </button>
+
+            {/* ── Right-side controls ── */}
+            <div className="flex items-center gap-2 shrink-0 ml-auto sm:ml-0">
+              {/* Last refreshed — only md+ */}
+              {lastRefreshed && (
+                <span className="hidden lg:flex items-center gap-1 text-xs text-slate-400 font-medium">
+                  <Icon.Clock className="w-3.5 h-3.5" />
+                  {lastRefreshed.toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              )}
+
+              {/* Pending badge pill */}
+              {stats.pending > 0 && (
+                <button
+                  onClick={() => {
+                    setActiveTab("quotations");
+                    setStatusFilter("pending");
+                  }}
+                  className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs font-bold cursor-pointer hover:bg-amber-100 transition-colors"
+                >
+                  <span className="relative flex w-2 h-2">
+                    <span className="animate-ping absolute inset-0 rounded-full bg-amber-400 opacity-75" />
+                    <span className="relative rounded-full w-2 h-2 bg-amber-500" />
+                  </span>
+                  {stats.pending} pending
+                </button>
+              )}
+
+              {/* Refresh */}
+              <button
+                onClick={() => {
+                  hasFetched.current = false;
+                  fetchAll();
+                }}
+                className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+                title="Refresh data"
+              >
+                <Icon.RefreshCw className="w-4 h-4 text-slate-600" />
+              </button>
+
+              {/* ── Notification bell ── */}
+              <button
+                onClick={() => {
+                  setNotifOpen(true);
+                  setUserMenuOpen(false);
+                }}
+                className="relative w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
+                title="Notifications"
+              >
+                <Icon.Bell
+                  className="w-4.5 h-4.5 text-slate-600"
+                  style={{ width: 18, height: 18 }}
+                />
+                {notifCount > 0 && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white" />
+                )}
+              </button>
+
+              {/* ── User avatar + dropdown ── */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setUserMenuOpen((o) => !o);
+                    setNotifOpen(false);
+                  }}
+                  className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-xl border border-slate-200 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shrink-0">
+                    <span className="text-white font-black text-xs">
+                      {user?.name?.[0]?.toUpperCase()}
+                    </span>
+                  </div>
+                  <span className="hidden sm:block text-xs font-bold text-slate-700 max-w-[80px] truncate">
+                    {user?.name?.split(" ")[0]}
+                  </span>
+                  <Icon.ChevronDown
+                    className="w-3.5 h-3.5 text-slate-400"
+                    style={{ width: 14, height: 14 }}
+                  />
+                </button>
+
+                {userMenuOpen && (
+                  <UserDropdown
+                    user={user}
+                    logout={logout}
+                    navigate={navigate}
+                    onClose={() => setUserMenuOpen(false)}
+                  />
+                )}
+              </div>
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            {lastRefreshed && (
-              <span className="hidden md:flex items-center gap-1 text-xs text-slate-400 font-medium">
-                <Icon.Clock className="w-3.5 h-3.5" />
-                Updated{" "}
-                {lastRefreshed.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </span>
-            )}
-            {stats.pending > 0 && (
-              <button
-                onClick={() => setActiveTab("quotations")}
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-amber-50 border border-amber-200 rounded-xl text-amber-700 text-xs font-bold cursor-pointer hover:bg-amber-100 transition-colors"
-              >
-                <span className="relative flex w-2 h-2">
-                  <span className="animate-ping absolute inset-0 rounded-full bg-amber-400 opacity-75" />
-                  <span className="relative rounded-full w-2 h-2 bg-amber-500" />
-                </span>
-                {stats.pending} pending
-              </button>
-            )}
-            <button
-              onClick={() => navigate("/quotation")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-orange-50 border border-orange-200 text-orange-600 hover:bg-orange-100 transition-colors cursor-pointer"
-            >
-              <Icon.FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Quotation</span>
-            </button>
-            <button
-              onClick={() => navigate("/delivery-note")}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 border border-slate-200 text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
-            >
-              <Icon.Truck className="w-4 h-4" />
-              <span className="hidden sm:inline">Delivery Note</span>
-            </button>
-            <button
-              onClick={() => {
-                hasFetched.current = false;
-                fetchAll();
-              }}
-              className="w-10 h-10 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center hover:bg-slate-100 transition-colors shrink-0 cursor-pointer"
-              title="Refresh data"
-            >
-              <Icon.RefreshCw className="w-4 h-4 text-slate-600" />
-            </button>
-          </div>
         </header>
+        {/* ── END HEADER ── */}
 
         <main className="flex-1 p-5 sm:p-7 overflow-auto">
           {loading ? (
@@ -2143,6 +2639,7 @@ export default function AdminDashboard() {
                             className="flex items-center gap-4 px-6 py-4 hover:bg-slate-50 cursor-pointer transition-colors border-b border-slate-50 last:border-0 group"
                           >
                             {/* ── FIX 2: show quoteNumber in overview recent list ── */}
+
                             <div className="w-10 h-10 rounded-xl bg-orange-50 border border-orange-100 flex items-center justify-center shrink-0">
                               <span className="text-[9px] font-extrabold text-orange-500 text-center leading-tight px-0.5">
                                 {q.quoteNumber ||
@@ -2250,7 +2747,6 @@ export default function AdminDashboard() {
                               : ""
                           }`}
                         >
-                          {/* ── FIX 2: show quoteNumber in the quotations list ── */}
                           <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-orange-50 to-amber-50 border border-orange-100 flex items-center justify-center shrink-0">
                             <span className="text-[9px] font-black text-orange-500 text-center leading-tight px-0.5">
                               {q.quoteNumber ||

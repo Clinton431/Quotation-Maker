@@ -12,9 +12,16 @@ const getInitials = (name) =>
     .join("");
 
 // GET /api/companies — fetch all companies
+// Optional ?search=burn → filters by name (case-insensitive)
 router.get("/", async (req, res) => {
   try {
-    const companies = await Company.find().sort({ createdAt: -1 });
+    const filter = {};
+
+    if (req.query.search) {
+      filter.name = { $regex: req.query.search, $options: "i" };
+    }
+
+    const companies = await Company.find(filter).sort({ createdAt: -1 });
     res.json(companies);
   } catch (err) {
     res.status(500).json({

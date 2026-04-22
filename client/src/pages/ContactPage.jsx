@@ -65,7 +65,7 @@ export default function ContactPage() {
   const contactItems = [
     {
       key: "address",
-      icon: "📍",
+      icon: "🌍",
       label: "Address",
       value: "P.O Box 273-00206, Kiserian, Kajiado County",
     },
@@ -864,7 +864,7 @@ export default function ContactPage() {
         <div className="cp-map-wrap">
           <div className="cp-map">
             <div className="cp-map-in">
-              <span className="cp-map-pin">📍</span>
+              <span className="cp-map-pin">🌍</span>
               <div className="cp-map-city">Kiserian, Kajiado County</div>
               <div className="cp-map-po">P.O Box 273-00206</div>
               <a

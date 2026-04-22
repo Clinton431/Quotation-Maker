@@ -1524,7 +1524,7 @@ function QuotationPage() {
                   </div>
                   <div className="space-y-1.5 text-xs text-slate-700">
                     <div className="flex items-center gap-2">
-                      <span>📍</span>
+                      <span>🌍</span>
                       <span>{formData.companyInfo.address}</span>
                     </div>
                     <div className="flex items-start gap-2">
@@ -1561,7 +1561,7 @@ function QuotationPage() {
                       <p className="text-sm text-slate-600 mb-3">Wimwa Tech</p>
                       <div className="space-y-1.5 text-sm text-slate-700">
                         <div className="flex items-center gap-2">
-                          <span>📍</span>
+                          <span>🌍</span>
                           <span>{formData.companyInfo.address}</span>
                         </div>
                         <div className="flex items-start gap-2">

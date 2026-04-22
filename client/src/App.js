@@ -18,6 +18,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import QuotationRequestPage from "./pages/QuotationRequestPage";
 import ContactPage from "./pages/ContactPage";
+import ProductDetailPage from "./pages/ProductDetailPage"; // ← NEW
 
 // ── Spinner ────────────────────────────────────────────────────────────────────
 function Spinner() {
@@ -56,8 +57,13 @@ function AppRoutes() {
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       <Route path="/terms" element={<Terms />} />
+
+      {/* ── NEW: Product detail page — public ── */}
+      <Route path="/products/:id" element={<ProductDetailPage />} />
+
       {/* Quotation request — open to all visitors */}
       <Route path="/request-quotation" element={<QuotationRequestPage />} />
+
       {/* Logged-in users only */}
       <Route
         path="/my-orders"
@@ -67,6 +73,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
+
       {/* Admin only */}
       <Route
         path="/admin"
@@ -92,6 +99,7 @@ function AppRoutes() {
           </AdminRoute>
         }
       />
+
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
